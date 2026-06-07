@@ -230,6 +230,169 @@ public sealed class ListsHandler
         return TypedResults.NoContent();
     }
 
+    public async Task<Results<Ok<ListResponse>, NotFound, ProblemHttpResult, UnauthorizedHttpResult>> AddMemberAsync(
+        HttpContext ctx,
+        Guid listId,
+        AddMemberRequest request,
+        CancellationToken ct)
+    {
+        var email = _user.Email;
+        if (email is null)
+        {
+            return TypedResults.Unauthorized();
+        }
+
+        var target = NormalizeEmail(request.Email);
+        if (target is null)
+        {
+            return Problems.BadRequest("A member email is required.");
+        }
+
+        // Any member may add another user (direct-add, no invite/accept).
+        var access = await _access.RequireMembershipAsync(listId, email, ListRole.Viewer, ct);
+        if (!access.Allowed)
+        {
+            return TypedResults.NotFound();
+        }
+
+        var commandId = ResolveCommandId(ctx);
+        var seen = await _idempotency.SeenAsync(commandId, ct);
+        if (seen is not null)
+        {
+            return TypedResults.Ok(access.List!.ToResponse());
+        }
+
+        // Reuse an existing member's stored casing so a re-add (different case) updates the
+        // role rather than spawning a duplicate (the snapshot Apply matches case-sensitively).
+        var existing = access.List!.Members
+            .Find(m => string.Equals(m.Email, target, StringComparison.OrdinalIgnoreCase));
+        var memberEmail = existing?.Email ?? target;
+        var role = request.Role ?? ListRole.Editor;
+
+        _session.SetHeader(EventActor.HeaderKey, email);
+        await _idempotency.AppendDedupAsync(
+            commandId, listId, new object[] { new MemberAdded(listId, memberEmail, role) }, ct);
+
+        var updated = await _session.LoadAsync<TodoList>(listId, ct);
+        return TypedResults.Ok(updated!.ToResponse());
+    }
+
+    public async Task<Results<Ok<ListResponse>, NotFound, ProblemHttpResult, UnauthorizedHttpResult>> ChangeMemberRoleAsync(
+        HttpContext ctx,
+        Guid listId,
+        string memberEmail,
+        UpdateMemberRoleRequest request,
+        CancellationToken ct)
+    {
+        var email = _user.Email;
+        if (email is null)
+        {
+            return TypedResults.Unauthorized();
+        }
+
+        var target = NormalizeEmail(memberEmail);
+        if (target is null)
+        {
+            return Problems.BadRequest("A member email is required.");
+        }
+
+        // Member-but-not-owner → 403; non-member → 404 (don't leak the list).
+        var membership = await _access.RequireMembershipAsync(listId, email, ListRole.Viewer, ct);
+        if (!membership.Allowed)
+        {
+            return TypedResults.NotFound();
+        }
+        if (!AccessResolver.Satisfies(membership.Role, ListRole.Owner))
+        {
+            return Forbidden("Only an owner can change member roles.");
+        }
+
+        var members = membership.List!.Members;
+        var targetMember = members.Find(m => string.Equals(m.Email, target, StringComparison.OrdinalIgnoreCase));
+        if (targetMember is null)
+        {
+            return TypedResults.NotFound();
+        }
+
+        // Never strand the list without an owner.
+        if (request.Role != ListRole.Owner && targetMember.Role == ListRole.Owner && !OtherOwnerExists(members, target))
+        {
+            return Problems.BadRequest("The list must keep at least one owner.");
+        }
+
+        var commandId = ResolveCommandId(ctx);
+        var seen = await _idempotency.SeenAsync(commandId, ct);
+        if (seen is not null)
+        {
+            return TypedResults.Ok(membership.List!.ToResponse());
+        }
+
+        _session.SetHeader(EventActor.HeaderKey, email);
+        await _idempotency.AppendDedupAsync(
+            commandId, listId, new object[] { new MemberRoleChanged(listId, targetMember.Email, request.Role) }, ct);
+
+        var updated = await _session.LoadAsync<TodoList>(listId, ct);
+        return TypedResults.Ok(updated!.ToResponse());
+    }
+
+    public async Task<Results<NoContent, NotFound, ProblemHttpResult, UnauthorizedHttpResult>> RemoveMemberAsync(
+        HttpContext ctx,
+        Guid listId,
+        string memberEmail,
+        CancellationToken ct)
+    {
+        var email = _user.Email;
+        if (email is null)
+        {
+            return TypedResults.Unauthorized();
+        }
+
+        var target = NormalizeEmail(memberEmail);
+        if (target is null)
+        {
+            return Problems.BadRequest("A member email is required.");
+        }
+
+        var isSelf = string.Equals(target, email, StringComparison.OrdinalIgnoreCase);
+
+        // Must be a member (404 otherwise). Removing OTHERS needs Owner (403); leaving is always allowed.
+        var membership = await _access.RequireMembershipAsync(listId, email, ListRole.Viewer, ct);
+        if (!membership.Allowed)
+        {
+            return TypedResults.NotFound();
+        }
+        if (!isSelf && !AccessResolver.Satisfies(membership.Role, ListRole.Owner))
+        {
+            return Forbidden("Only an owner can remove other members.");
+        }
+
+        var members = membership.List!.Members;
+        var targetMember = members.Find(m => string.Equals(m.Email, target, StringComparison.OrdinalIgnoreCase));
+        if (targetMember is null)
+        {
+            return TypedResults.NoContent(); // already not a member — idempotent no-op
+        }
+
+        var commandId = ResolveCommandId(ctx);
+        var seen = await _idempotency.SeenAsync(commandId, ct);
+        if (seen is not null)
+        {
+            return TypedResults.NoContent();
+        }
+
+        var events = new List<object> { new MemberRemoved(listId, targetMember.Email) };
+        // The last owner leaving/being removed auto-deletes the list (tombstone) for everyone.
+        if (targetMember.Role == ListRole.Owner && !OtherOwnerExists(members, target))
+        {
+            events.Add(new ListDeleted(listId, "last owner left"));
+        }
+
+        _session.SetHeader(EventActor.HeaderKey, email);
+        await _idempotency.AppendDedupAsync(commandId, listId, events, ct);
+
+        return TypedResults.NoContent();
+    }
+
     private async Task<Results<Ok<ListResponse>, NotFound, ProblemHttpResult, UnauthorizedHttpResult>> OwnerLifecycleAsync(
         HttpContext ctx,
         Guid listId,
@@ -269,6 +432,25 @@ public sealed class ListsHandler
     /// </summary>
     private static Guid ResolveCommandId(HttpContext ctx) =>
         Idempotency.KeyFrom(ctx) ?? Guid.CreateVersion7();
+
+    private const int MaxEmailLength = 320;
+
+    /// <summary>Trim + length-check a member email; <c>null</c> if empty/too long. Casing is preserved
+    /// (the snapshot Apply matches case-sensitively, and the owner email keeps its token casing).</summary>
+    private static string? NormalizeEmail(string? raw)
+    {
+        var e = raw?.Trim();
+        return string.IsNullOrEmpty(e) || e.Length > MaxEmailLength ? null : e;
+    }
+
+    /// <summary>True if some member other than <paramref name="exceptEmail"/> is still an Owner.</summary>
+    private static bool OtherOwnerExists(IEnumerable<Member> members, string exceptEmail) =>
+        members.Any(m => m.Role == ListRole.Owner
+            && !string.Equals(m.Email, exceptEmail, StringComparison.OrdinalIgnoreCase));
+
+    /// <summary>A plain 403 (used when a member lacks the Owner role — distinct from 404 for non-members).</summary>
+    private static ProblemHttpResult Forbidden(string detail) =>
+        TypedResults.Problem(detail: detail, statusCode: StatusCodes.Status403Forbidden);
 
     /// <summary>
     /// Re-resolve the aggregate after losing the create dedup race: prefer the stored

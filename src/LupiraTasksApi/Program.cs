@@ -46,6 +46,7 @@ builder.Services.AddScoped<CurrentUser>();
 builder.Services.AddScoped<AccessResolver>();
 builder.Services.AddScoped<Idempotency>();
 builder.Services.AddScoped<MeHandler>();
+builder.Services.AddScoped<UsersHandler>();
 builder.Services.AddScoped<ListsHandler>();
 builder.Services.AddScoped<ItemsHandler>();
 builder.Services.AddScoped<SyncHandler>();
@@ -236,6 +237,7 @@ app.MapGet("/", () => TypedResults.Redirect("/scalar"))
 app.MapAppHealthChecks(app.Environment);
 
 app.MapMe();
+app.MapUsers();
 app.MapLists();
 app.MapItems();
 app.MapSync();
