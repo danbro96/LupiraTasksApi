@@ -155,7 +155,16 @@ public static class ItemLww
     /// is idempotent.
     /// </summary>
     private static bool Wins(DateTimeOffset occurredAt, Guid commandId, DateTimeOffset guardTs, Guid guardCmd) =>
-        occurredAt > guardTs || (occurredAt == guardTs && commandId.CompareTo(guardCmd) > 0);
+        occurredAt > guardTs || (occurredAt == guardTs && CompareCommandId(commandId, guardCmd) > 0);
+
+    /// <summary>
+    /// Tiebreaker for an exact OccurredAt tie: an ordinal comparison of the canonical
+    /// lowercase GUID strings. Deliberately NOT <see cref="Guid.CompareTo"/>, whose
+    /// byte-group ordering the JS client reducer can't reproduce — both server and client
+    /// compare the GUID string ordinally so they converge on the same winner.
+    /// </summary>
+    internal static int CompareCommandId(Guid a, Guid b) =>
+        string.CompareOrdinal(a.ToString(), b.ToString());
 
     /// <summary>True when this tag op is strictly newer than the tag's last recorded (OccurredAt, CommandId).</summary>
     private static bool NewerTag(ItemState s, Guid tagId, DateTimeOffset occurredAt, Guid commandId)
