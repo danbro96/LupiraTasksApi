@@ -34,6 +34,9 @@ builder.Services
     })
     .UseLightweightSessions();
 
+// Liveness (/livez) + readiness (/readyz, pings Postgres) probes.
+builder.Services.AddAppHealthChecks();
+
 builder.Services.Configure<OidcAuthOptions>(builder.Configuration.GetSection(OidcAuthOptions.SectionName));
 
 // Caller identity + authorization + per-request handlers. CurrentUser reads the
@@ -203,6 +206,18 @@ if (!string.IsNullOrWhiteSpace(otlpEndpoint))
 
 var app = builder.Build();
 
+// One-shot schema migration. Prod runs with AutoCreate.None, so schema changes are a
+// deliberate `--apply-schema` invocation (e.g. `docker exec ... --apply-schema`), never
+// a side-effect of boot. Short-circuits before the host starts.
+if (args.Contains("--apply-schema"))
+{
+    await using var scope = app.Services.CreateAsyncScope();
+    var store = scope.ServiceProvider.GetRequiredService<IDocumentStore>();
+    await store.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+    Console.WriteLine("Schema applied.");
+    return;
+}
+
 if (allowedOrigins.Length > 0) app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
@@ -218,7 +233,7 @@ app.MapGet("/", () => TypedResults.Redirect("/scalar"))
    .ExcludeFromDescription()
    .AllowAnonymous();
 
-app.MapHealthEndpoint();
+app.MapAppHealthChecks(app.Environment);
 
 app.MapMe();
 app.MapLists();
