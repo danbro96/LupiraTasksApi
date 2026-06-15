@@ -37,7 +37,7 @@ public sealed class ItemService
     public async Task<OpResult<ItemCollectionResponse>> ListAsync(
         Caller caller, Guid listId, ItemFilter filter, CancellationToken ct)
     {
-        var access = await _access.RequireMembershipAsync(listId, caller.Email, ListRole.Viewer, ct);
+        var access = await _access.AuthorizeAsync(caller, listId, ListRole.Viewer, ct);
         if (!access.Allowed) return OpResult<ItemCollectionResponse>.NotFound();
 
         // Marten can't translate the per-field-LWW snapshot's computed members across all
@@ -64,7 +64,7 @@ public sealed class ItemService
     public async Task<OpResult<ItemResponse>> CreateAsync(
         Caller caller, Guid? cmdId, Guid listId, CreateItemRequest request, CancellationToken ct)
     {
-        var access = await _access.RequireMembershipAsync(listId, caller.Email, ListRole.Editor, ct);
+        var access = await _access.AuthorizeAsync(caller, listId, ListRole.Editor, ct);
         if (!access.Allowed) return OpResult<ItemResponse>.NotFound();
 
         var title = request.Title?.Trim();
@@ -90,7 +90,7 @@ public sealed class ItemService
 
         var occurredAt = request.OccurredAt ?? DateTimeOffset.UtcNow;
 
-        _session.SetHeader(EventActor.HeaderKey, caller.Email);
+        _session.SetHeader(EventActor.HeaderKey, caller.Actor);
         try
         {
             var seed = new List<object>
@@ -133,7 +133,7 @@ public sealed class ItemService
 
     public async Task<OpResult<ItemResponse>> GetAsync(Caller caller, Guid listId, Guid itemId, CancellationToken ct)
     {
-        var access = await _access.RequireMembershipAsync(listId, caller.Email, ListRole.Viewer, ct);
+        var access = await _access.AuthorizeAsync(caller, listId, ListRole.Viewer, ct);
         if (!access.Allowed) return OpResult<ItemResponse>.NotFound();
 
         var item = await LoadInListAsync(itemId, listId, ct);
@@ -143,7 +143,7 @@ public sealed class ItemService
     public async Task<OpResult<ItemResponse>> UpdateAsync(
         Caller caller, Guid? cmdId, Guid listId, Guid itemId, UpdateItemRequest request, CancellationToken ct)
     {
-        var access = await _access.RequireMembershipAsync(listId, caller.Email, ListRole.Editor, ct);
+        var access = await _access.AuthorizeAsync(caller, listId, ListRole.Editor, ct);
         if (!access.Allowed) return OpResult<ItemResponse>.NotFound();
 
         var item = await LoadInListAsync(itemId, listId, ct);
@@ -187,7 +187,7 @@ public sealed class ItemService
 
         if (events.Count == 0) return OpResult<ItemResponse>.Ok(item.ToResponse());
 
-        _session.SetHeader(EventActor.HeaderKey, caller.Email);
+        _session.SetHeader(EventActor.HeaderKey, caller.Actor);
         await _idempotency.AppendDedupAsync(commandId, itemId, events, ct);
 
         var updated = await _session.LoadAsync<Item>(itemId, ct);
@@ -214,7 +214,7 @@ public sealed class ItemService
     public async Task<OpResult> DeleteAsync(
         Caller caller, Guid? cmdId, Guid listId, Guid itemId, DateTimeOffset? occurredAt, CancellationToken ct)
     {
-        var access = await _access.RequireMembershipAsync(listId, caller.Email, ListRole.Editor, ct);
+        var access = await _access.AuthorizeAsync(caller, listId, ListRole.Editor, ct);
         if (!access.Allowed) return OpResult.NotFound();
 
         var item = await LoadInListAsync(itemId, listId, ct);
@@ -225,7 +225,7 @@ public sealed class ItemService
         if (seen is not null) return OpResult.Ok();
 
         var occurredAtValue = occurredAt ?? DateTimeOffset.UtcNow;
-        _session.SetHeader(EventActor.HeaderKey, caller.Email);
+        _session.SetHeader(EventActor.HeaderKey, caller.Actor);
         await _idempotency.AppendDedupAsync(
             commandId, itemId, new object[] { new ItemDeleted(itemId, occurredAtValue, commandId) }, ct);
 
@@ -241,7 +241,7 @@ public sealed class ItemService
         Func<Guid, DateTimeOffset, Guid, object> makeEvent,
         CancellationToken ct)
     {
-        var access = await _access.RequireMembershipAsync(listId, caller.Email, ListRole.Editor, ct);
+        var access = await _access.AuthorizeAsync(caller, listId, ListRole.Editor, ct);
         if (!access.Allowed) return OpResult<ItemResponse>.NotFound();
 
         var item = await LoadInListAsync(itemId, listId, ct);
@@ -252,7 +252,7 @@ public sealed class ItemService
         if (seen is not null) return OpResult<ItemResponse>.Ok(item.ToResponse());
 
         var occurredAt = occurredAtRaw ?? DateTimeOffset.UtcNow;
-        _session.SetHeader(EventActor.HeaderKey, caller.Email);
+        _session.SetHeader(EventActor.HeaderKey, caller.Actor);
         await _idempotency.AppendDedupAsync(
             commandId, itemId, new[] { makeEvent(itemId, occurredAt, commandId) }, ct);
 

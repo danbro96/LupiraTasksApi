@@ -1,3 +1,4 @@
+using LupiraTasksApi.Application;
 using LupiraTasksApi.Domain;
 using LupiraTasksApi.Domain.Lists;
 using Marten;
@@ -37,6 +38,30 @@ public sealed class AccessResolver
     public AccessResolver(IDocumentSession session)
     {
         _session = session;
+    }
+
+    /// <summary>
+    /// Authorize any <see cref="Caller"/> for <paramref name="listId"/> at <paramref name="minRole"/>.
+    /// A member is checked against the list's membership; a share-link caller is granted iff its grant
+    /// is scoped to this list and its access level meets the requirement (ReadWrite ≈ Editor, Read ≈
+    /// Viewer). Either way a denial surfaces as 404 (never leaking existence), and the loaded list +
+    /// the caller's effective role come back on success.
+    /// </summary>
+    public async Task<AccessResult> AuthorizeAsync(Caller caller, Guid listId, ListRole minRole, CancellationToken ct)
+    {
+        if (caller.Share is { } share)
+        {
+            // A share grant is bound to exactly one list at one access level.
+            if (share.ListId != listId) return AccessResult.Denied;
+
+            var list = await _session.LoadAsync<TodoList>(listId, ct);
+            if (list is null || list.IsDeleted) return AccessResult.Denied;
+
+            var effective = share.Access == ShareAccess.ReadWrite ? ListRole.Editor : ListRole.Viewer;
+            return Satisfies(effective, minRole) ? AccessResult.Granted(list, effective) : AccessResult.Denied;
+        }
+
+        return await RequireMembershipAsync(listId, caller.Email!, minRole, ct);
     }
 
     /// <summary>

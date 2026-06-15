@@ -37,7 +37,7 @@ public sealed class ListService
 
     public async Task<OpResult<ListCollectionResponse>> ListAsync(Caller caller, bool archived, CancellationToken ct)
     {
-        var email = caller.Email;
+        var email = caller.Email!; // member-only surface: list management is never reached by a share-link caller
 
         // "My lists" = not deleted, archived-flag matches the filter, caller is a member.
         var docs = await _session.Query<TodoList>()
@@ -54,7 +54,7 @@ public sealed class ListService
 
     public async Task<OpResult<ListResponse>> CreateAsync(Caller caller, Guid? cmdId, CreateListRequest request, CancellationToken ct)
     {
-        var email = caller.Email;
+        var email = caller.Email!; // member-only surface: list management is never reached by a share-link caller
 
         var name = request.Name?.Trim();
         if (string.IsNullOrEmpty(name) || name.Length > MaxNameLength)
@@ -104,7 +104,7 @@ public sealed class ListService
 
     public async Task<OpResult<ListResponse>> GetAsync(Caller caller, Guid listId, CancellationToken ct)
     {
-        var access = await _access.RequireMembershipAsync(listId, caller.Email, ListRole.Viewer, ct);
+        var access = await _access.RequireMembershipAsync(listId, caller.Email!, ListRole.Viewer, ct);
         return access.Allowed
             ? OpResult<ListResponse>.Ok(access.List!.ToResponse())
             : OpResult<ListResponse>.NotFound();
@@ -112,7 +112,7 @@ public sealed class ListService
 
     public async Task<OpResult<ListResponse>> UpdateAsync(Caller caller, Guid? cmdId, Guid listId, UpdateListRequest request, CancellationToken ct)
     {
-        var email = caller.Email;
+        var email = caller.Email!; // member-only surface: list management is never reached by a share-link caller
         var access = await _access.RequireMembershipAsync(listId, email, ListRole.Editor, ct);
         if (!access.Allowed) return OpResult<ListResponse>.NotFound();
 
@@ -148,7 +148,7 @@ public sealed class ListService
 
     public async Task<OpResult> DeleteAsync(Caller caller, Guid? cmdId, Guid listId, CancellationToken ct)
     {
-        var email = caller.Email;
+        var email = caller.Email!; // member-only surface: list management is never reached by a share-link caller
         var access = await _access.RequireMembershipAsync(listId, email, ListRole.Owner, ct);
         if (!access.Allowed) return OpResult.NotFound();
 
@@ -165,7 +165,7 @@ public sealed class ListService
 
     public async Task<OpResult<ListResponse>> AddMemberAsync(Caller caller, Guid? cmdId, Guid listId, AddMemberRequest request, CancellationToken ct)
     {
-        var email = caller.Email;
+        var email = caller.Email!; // member-only surface: list management is never reached by a share-link caller
         var target = NormalizeEmail(request.Email);
         if (target is null) return OpResult<ListResponse>.Invalid("A member email is required.");
 
@@ -194,7 +194,7 @@ public sealed class ListService
 
     public async Task<OpResult<ListResponse>> ChangeMemberRoleAsync(Caller caller, Guid? cmdId, Guid listId, string memberEmail, UpdateMemberRoleRequest request, CancellationToken ct)
     {
-        var email = caller.Email;
+        var email = caller.Email!; // member-only surface: list management is never reached by a share-link caller
         var target = NormalizeEmail(memberEmail);
         if (target is null) return OpResult<ListResponse>.Invalid("A member email is required.");
 
@@ -226,7 +226,7 @@ public sealed class ListService
 
     public async Task<OpResult> RemoveMemberAsync(Caller caller, Guid? cmdId, Guid listId, string memberEmail, CancellationToken ct)
     {
-        var email = caller.Email;
+        var email = caller.Email!; // member-only surface: list management is never reached by a share-link caller
         var target = NormalizeEmail(memberEmail);
         if (target is null) return OpResult.Invalid("A member email is required.");
 
@@ -260,7 +260,7 @@ public sealed class ListService
     private async Task<OpResult<ListResponse>> OwnerLifecycleAsync(
         Caller caller, Guid? cmdId, Guid listId, Func<TodoList, object> makeEvent, CancellationToken ct)
     {
-        var email = caller.Email;
+        var email = caller.Email!; // member-only surface: list management is never reached by a share-link caller
         var access = await _access.RequireMembershipAsync(listId, email, ListRole.Owner, ct);
         if (!access.Allowed) return OpResult<ListResponse>.NotFound();
 

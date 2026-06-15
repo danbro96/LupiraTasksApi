@@ -41,6 +41,7 @@ builder.Services
 builder.Services.AddAppHealthChecks();
 
 builder.Services.Configure<OidcAuthOptions>(builder.Configuration.GetSection(OidcAuthOptions.SectionName));
+builder.Services.Configure<ShareLinkOptions>(builder.Configuration.GetSection(ShareLinkOptions.SectionName));
 
 // Caller identity + authorization + per-request handlers. CurrentUser reads the
 // validated JWT via IHttpContextAccessor and never writes to the DB.
@@ -54,12 +55,15 @@ builder.Services.AddScoped<Idempotency>();
 builder.Services.AddScoped<ListService>();
 builder.Services.AddScoped<ItemService>();
 builder.Services.AddScoped<SyncService>();
+builder.Services.AddScoped<ShareService>();
 
 builder.Services.AddScoped<MeHandler>();
 builder.Services.AddScoped<UsersHandler>();
 builder.Services.AddScoped<ListsHandler>();
 builder.Services.AddScoped<ItemsHandler>();
 builder.Services.AddScoped<SyncHandler>();
+builder.Services.AddScoped<SharesHandler>();
+builder.Services.AddScoped<SharedHandler>();
 
 // MCP agent surface. The [McpServerToolType] tools in this assembly call the same
 // Application services as the REST handlers (no second source of truth). Mounted at /mcp
@@ -172,6 +176,10 @@ authBuilder.AddJwtBearer(opts =>
     };
 });
 
+// Account-less share-link recipients on /shared/{token}. Always registered (share links work in
+// prod); used only by the "ShareToken" policy below, so it never affects the default scheme.
+authBuilder.AddScheme<AuthenticationSchemeOptions, ShareTokenAuthHandler>(ShareTokenAuthHandler.SchemeName, _ => { });
+
 if (builder.Environment.IsDevelopment())
 {
     // Development-only: allow X-Dev-User header auth so the API can be exercised without Authentik.
@@ -185,7 +193,14 @@ if (builder.Environment.IsDevelopment())
     });
 }
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(o =>
+{
+    // The /shared/{token} group authenticates specifically with the ShareToken scheme, regardless of
+    // the default (member) scheme.
+    o.AddPolicy(ShareTokenAuthHandler.SchemeName, p => p
+        .AddAuthenticationSchemes(ShareTokenAuthHandler.SchemeName)
+        .RequireAuthenticatedUser());
+});
 
 builder.Services.AddRateLimiter(o =>
 {
@@ -291,6 +306,8 @@ app.MapUsers();
 app.MapLists();
 app.MapItems();
 app.MapSync();
+app.MapShares();
+app.MapShared();
 
 // Agent MCP surface (Streamable HTTP). Mapped AFTER UseAuthentication/UseAuthorization so
 // the same JWT bearer validates it; RequireAuthorization rejects anonymous calls with 401.

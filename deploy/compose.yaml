@@ -10,6 +10,9 @@ services:
 
       RateLimit__RequestsPerMinute: ${RATE_LIMIT:-120}
 
+      # Public base of the share web client; returned share links are {base}/s/{token}.
+      Share__LinkBaseUrl: ${SHARE_LINK_BASE_URL:-https://tasks.lupira.com}
+
       OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
       OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL:-http/protobuf}
       OTEL_EXPORTER_OTLP_HEADERS: ${OTEL_EXPORTER_OTLP_HEADERS:-}

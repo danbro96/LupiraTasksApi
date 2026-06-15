@@ -43,6 +43,17 @@ internal static class OpResultMap
         _ => throw Unexpected(r.Status),
     };
 
+    /// <summary>Like <see cref="OkNotFoundProblem{T}"/> but projects the value (e.g. trims to a public DTO) on success.</summary>
+    public static Results<Ok<TOut>, NotFound, ProblemHttpResult, UnauthorizedHttpResult> OkNotFoundProblem<TIn, TOut>(
+        OpResult<TIn> r, Func<TIn, TOut> project) => r.Status switch
+    {
+        OpStatus.Ok => TypedResults.Ok(project(r.Value!)),
+        OpStatus.NotFound => TypedResults.NotFound(),
+        OpStatus.Forbidden => Problems.Forbidden(r.Error!),
+        OpStatus.Invalid => Problems.BadRequest(r.Error!),
+        _ => throw Unexpected(r.Status),
+    };
+
     public static Results<NoContent, NotFound, UnauthorizedHttpResult> NoContentNotFound(OpResult r) => r.Status switch
     {
         OpStatus.Ok => TypedResults.NoContent(),

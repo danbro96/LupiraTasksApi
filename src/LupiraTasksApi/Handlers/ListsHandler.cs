@@ -31,7 +31,7 @@ public sealed class ListsHandler
     {
         var email = _user.Email;
         if (email is null) return TypedResults.Unauthorized();
-        var caller = new Caller(email, _user.Groups);
+        var caller = Caller.Member(email, _user.Groups);
         return OpResultMap.OkOnly(await _lists.ListAsync(caller, archived, ct));
     }
 
@@ -42,7 +42,7 @@ public sealed class ListsHandler
     {
         var email = _user.Email;
         if (email is null) return TypedResults.Unauthorized();
-        var caller = new Caller(email, _user.Groups);
+        var caller = Caller.Member(email, _user.Groups);
         return OpResultMap.OkProblem(await _lists.CreateAsync(caller, Idempotency.KeyFrom(ctx), request, ct));
     }
 
@@ -52,7 +52,7 @@ public sealed class ListsHandler
     {
         var email = _user.Email;
         if (email is null) return TypedResults.Unauthorized();
-        var caller = new Caller(email, _user.Groups);
+        var caller = Caller.Member(email, _user.Groups);
         return OpResultMap.OkNotFound(await _lists.GetAsync(caller, listId, ct));
     }
 
@@ -64,7 +64,7 @@ public sealed class ListsHandler
     {
         var email = _user.Email;
         if (email is null) return TypedResults.Unauthorized();
-        var caller = new Caller(email, _user.Groups);
+        var caller = Caller.Member(email, _user.Groups);
         return OpResultMap.OkNotFoundProblem(await _lists.UpdateAsync(caller, Idempotency.KeyFrom(ctx), listId, request, ct));
     }
 
@@ -73,7 +73,7 @@ public sealed class ListsHandler
     {
         var email = _user.Email;
         if (email is null) return TypedResults.Unauthorized();
-        var caller = new Caller(email, _user.Groups);
+        var caller = Caller.Member(email, _user.Groups);
         return OpResultMap.OkNotFoundProblem(await _lists.ArchiveAsync(caller, Idempotency.KeyFrom(ctx), listId, ct));
     }
 
@@ -82,7 +82,7 @@ public sealed class ListsHandler
     {
         var email = _user.Email;
         if (email is null) return TypedResults.Unauthorized();
-        var caller = new Caller(email, _user.Groups);
+        var caller = Caller.Member(email, _user.Groups);
         return OpResultMap.OkNotFoundProblem(await _lists.RestoreAsync(caller, Idempotency.KeyFrom(ctx), listId, ct));
     }
 
@@ -91,7 +91,7 @@ public sealed class ListsHandler
     {
         var email = _user.Email;
         if (email is null) return TypedResults.Unauthorized();
-        var caller = new Caller(email, _user.Groups);
+        var caller = Caller.Member(email, _user.Groups);
         return OpResultMap.NoContentNotFound(await _lists.DeleteAsync(caller, Idempotency.KeyFrom(ctx), listId, ct));
     }
 
@@ -103,7 +103,7 @@ public sealed class ListsHandler
     {
         var email = _user.Email;
         if (email is null) return TypedResults.Unauthorized();
-        var caller = new Caller(email, _user.Groups);
+        var caller = Caller.Member(email, _user.Groups);
         return OpResultMap.OkNotFoundProblem(await _lists.AddMemberAsync(caller, Idempotency.KeyFrom(ctx), listId, request, ct));
     }
 
@@ -116,7 +116,7 @@ public sealed class ListsHandler
     {
         var email = _user.Email;
         if (email is null) return TypedResults.Unauthorized();
-        var caller = new Caller(email, _user.Groups);
+        var caller = Caller.Member(email, _user.Groups);
         return OpResultMap.OkNotFoundProblem(
             await _lists.ChangeMemberRoleAsync(caller, Idempotency.KeyFrom(ctx), listId, memberEmail, request, ct));
     }
@@ -129,7 +129,7 @@ public sealed class ListsHandler
     {
         var email = _user.Email;
         if (email is null) return TypedResults.Unauthorized();
-        var caller = new Caller(email, _user.Groups);
+        var caller = Caller.Member(email, _user.Groups);
         return OpResultMap.NoContentNotFoundProblem(
             await _lists.RemoveMemberAsync(caller, Idempotency.KeyFrom(ctx), listId, memberEmail, ct));
     }

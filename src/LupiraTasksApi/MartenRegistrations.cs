@@ -3,6 +3,7 @@ using LupiraTasksApi.Domain;
 using LupiraTasksApi.Domain.Identity;
 using LupiraTasksApi.Domain.Items;
 using LupiraTasksApi.Domain.Lists;
+using LupiraTasksApi.Domain.Shares;
 using Marten;
 
 namespace LupiraTasksApi;
@@ -20,6 +21,11 @@ public static class MartenRegistrations
         // immediately consistent — no async daemon, no multi-stream projection).
         opts.Projections.Snapshot<TodoList>(SnapshotLifecycle.Inline);
         opts.Projections.Snapshot<Item>(SnapshotLifecycle.Inline);
+        opts.Projections.Snapshot<ShareLink>(SnapshotLifecycle.Inline);
+
+        // A share token is the opaque secret a recipient presents; consumption looks the link up
+        // by it, so index it uniquely (the stream id is the non-secret ShareId).
+        opts.Schema.For<ShareLink>().Index(x => x.Token, i => i.IsUnique = true);
 
         // Plain identity cache, keyed by email.
         opts.Schema.For<UserProfile>().Identity(x => x.Id);

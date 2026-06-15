@@ -27,7 +27,8 @@ public sealed class SyncService
 
     public async Task<OpResult<SyncResponse>> GetAsync(Caller caller, Guid listId, long? since, CancellationToken ct)
     {
-        var access = await _access.RequireMembershipAsync(listId, caller.Email, ListRole.Viewer, ct);
+        // Member-only surface: offline delta-pull is never reached by a share-link caller.
+        var access = await _access.RequireMembershipAsync(listId, caller.Email!, ListRole.Viewer, ct);
         if (!access.Allowed) return OpResult<SyncResponse>.NotFound();
 
         // `since` is accepted and plumbed through, but v1 always re-derives the whole list.

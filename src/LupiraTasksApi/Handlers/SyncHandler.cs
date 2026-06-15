@@ -28,7 +28,7 @@ public sealed class SyncHandler
     {
         var email = _user.Email;
         if (email is null) return TypedResults.Unauthorized();
-        var caller = new Caller(email, _user.Groups);
+        var caller = Caller.Member(email, _user.Groups);
         return OpResultMap.OkNotFound(await _sync.GetAsync(caller, listId, since, ct));
     }
 }

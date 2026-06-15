@@ -4,6 +4,7 @@ using LupiraTasksApi.Auth;
 using LupiraTasksApi.Domain;
 using LupiraTasksApi.Models.Items;
 using LupiraTasksApi.Models.Lists;
+using LupiraTasksApi.Models.Shares;
 using ModelContextProtocol;
 using ModelContextProtocol.Server;
 
@@ -23,12 +24,14 @@ public sealed class TaskTools
     private readonly CurrentUser _user;
     private readonly ListService _lists;
     private readonly ItemService _items;
+    private readonly ShareService _shares;
 
-    public TaskTools(CurrentUser user, ListService lists, ItemService items)
+    public TaskTools(CurrentUser user, ListService lists, ItemService items, ShareService shares)
     {
         _user = user;
         _lists = lists;
         _items = items;
+        _shares = shares;
     }
 
     /// <summary>A list as the agent sees it — trimmed, with the caller's own role.</summary>
@@ -182,9 +185,52 @@ public sealed class TaskTools
         return Summarize(caller, updated);
     }
 
+    /// <summary>A public share link as the agent sees it (includes the opaque token + ready URL).</summary>
+    public sealed record ShareLinkSummary(
+        Guid ShareId, string Token, string Url, ShareAccess Access, string Label, DateTimeOffset? ExpiresAt, bool Revoked);
+
+    [McpServerTool(Name = "create_share_link")]
+    [Description("Create a public share link for a list (no account needed to open it). Read = view only; ReadWrite = full item editing. Owner only.")]
+    public async Task<ShareLinkSummary> CreateShareLink(
+        [Description("The list to share.")] Guid listId,
+        [Description("Access level: Read or ReadWrite.")] ShareAccess access,
+        [Description("Optional human label (used to attribute writes and shown in the owner's link list).")] string? label = null,
+        [Description("Optional number of days until the link auto-expires.")] int? expiresInDays = null,
+        CancellationToken ct = default)
+    {
+        var caller = Caller();
+        DateTimeOffset? expiresAt = expiresInDays is { } d and > 0 ? DateTimeOffset.UtcNow.AddDays(d) : null;
+        var request = new CreateShareRequest { Access = access, Label = label, ExpiresAt = expiresAt };
+        return ToShareSummary(Require(await _shares.CreateAsync(caller, Guid.CreateVersion7(), listId, request, ct)));
+    }
+
+    [McpServerTool(Name = "list_share_links")]
+    [Description("List the active public share links for a list (owner only).")]
+    public async Task<IReadOnlyList<ShareLinkSummary>> ListShareLinks(
+        [Description("The list.")] Guid listId, CancellationToken ct = default)
+    {
+        var caller = Caller();
+        var result = Require(await _shares.ListAsync(caller, listId, ct));
+        return result.Shares.Select(ToShareSummary).ToList();
+    }
+
+    [McpServerTool(Name = "revoke_share_link")]
+    [Description("Revoke a public share link by its id (owner only). The link stops working immediately.")]
+    public async Task<object> RevokeShareLink(
+        [Description("The list.")] Guid listId,
+        [Description("The share id (from create_share_link / list_share_links).")] Guid shareId,
+        CancellationToken ct = default)
+    {
+        var caller = Caller();
+        var result = await _shares.RevokeAsync(caller, Guid.CreateVersion7(), listId, shareId, ct);
+        if (result.Status != OpStatus.Ok)
+            throw new McpException(result.Error ?? "Not found, or you don't have access to it.");
+        return new { revoked = true, shareId };
+    }
+
     // ── helpers ───────────────────────────────────────────────────────────────────────────
 
-    private Caller Caller() => new(_user.RequireEmail(), _user.Groups);
+    private Caller Caller() => Application.Caller.Member(_user.RequireEmail(), _user.Groups);
 
     /// <summary>Resolve the task's list (bare lookup), run the mutation (which re-checks membership), and summarize.</summary>
     private async Task<TaskSummary> MutateAsync(
@@ -213,6 +259,9 @@ public sealed class TaskTools
         var listName = (await _lists.GetAsync(caller, listId, ct)).Value?.Name ?? string.Empty;
         return new TaskSummary(item.Id, listId, listName, item.Title, item.Completed, item.DueAt, item.AssignedTo);
     }
+
+    private static ShareLinkSummary ToShareSummary(ShareResponse s) =>
+        new(s.ShareId, s.Token, s.Url, s.Access, s.Label, s.ExpiresAt, s.Revoked);
 
     private static ListSummary Summarize(Caller caller, ListResponse list) =>
         new(list.Id, list.Name, list.Kind, RoleOf(caller, list), list.IsArchived);

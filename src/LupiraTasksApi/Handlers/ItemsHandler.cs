@@ -35,7 +35,7 @@ public sealed class ItemsHandler
     {
         var email = _user.Email;
         if (email is null) return TypedResults.Unauthorized();
-        var caller = new Caller(email, _user.Groups);
+        var caller = Caller.Member(email, _user.Groups);
         return OpResultMap.OkNotFound(
             await _items.ListAsync(caller, listId, new ItemFilter(completed, tagId, parentItemId, assignedTo), ct));
     }
@@ -48,7 +48,7 @@ public sealed class ItemsHandler
     {
         var email = _user.Email;
         if (email is null) return TypedResults.Unauthorized();
-        var caller = new Caller(email, _user.Groups);
+        var caller = Caller.Member(email, _user.Groups);
         return OpResultMap.OkNotFoundProblem(
             await _items.CreateAsync(caller, Idempotency.KeyFrom(ctx), listId, request, ct));
     }
@@ -60,7 +60,7 @@ public sealed class ItemsHandler
     {
         var email = _user.Email;
         if (email is null) return TypedResults.Unauthorized();
-        var caller = new Caller(email, _user.Groups);
+        var caller = Caller.Member(email, _user.Groups);
         return OpResultMap.OkNotFound(await _items.GetAsync(caller, listId, itemId, ct));
     }
 
@@ -73,7 +73,7 @@ public sealed class ItemsHandler
     {
         var email = _user.Email;
         if (email is null) return TypedResults.Unauthorized();
-        var caller = new Caller(email, _user.Groups);
+        var caller = Caller.Member(email, _user.Groups);
         return OpResultMap.OkNotFoundProblem(
             await _items.UpdateAsync(caller, Idempotency.KeyFrom(ctx), listId, itemId, request, ct));
     }
@@ -83,7 +83,7 @@ public sealed class ItemsHandler
     {
         var email = _user.Email;
         if (email is null) return TypedResults.Unauthorized();
-        var caller = new Caller(email, _user.Groups);
+        var caller = Caller.Member(email, _user.Groups);
         return OpResultMap.OkNotFoundProblem(
             await _items.CompleteAsync(caller, Idempotency.KeyFrom(ctx), listId, itemId, body?.OccurredAt, ct));
     }
@@ -93,7 +93,7 @@ public sealed class ItemsHandler
     {
         var email = _user.Email;
         if (email is null) return TypedResults.Unauthorized();
-        var caller = new Caller(email, _user.Groups);
+        var caller = Caller.Member(email, _user.Groups);
         return OpResultMap.OkNotFoundProblem(
             await _items.ReopenAsync(caller, Idempotency.KeyFrom(ctx), listId, itemId, body?.OccurredAt, ct));
     }
@@ -103,7 +103,7 @@ public sealed class ItemsHandler
     {
         var email = _user.Email;
         if (email is null) return TypedResults.Unauthorized();
-        var caller = new Caller(email, _user.Groups);
+        var caller = Caller.Member(email, _user.Groups);
         return OpResultMap.OkNotFoundProblem(
             await _items.MoveAsync(caller, Idempotency.KeyFrom(ctx), listId, itemId, request, ct));
     }
@@ -113,7 +113,7 @@ public sealed class ItemsHandler
     {
         var email = _user.Email;
         if (email is null) return TypedResults.Unauthorized();
-        var caller = new Caller(email, _user.Groups);
+        var caller = Caller.Member(email, _user.Groups);
         return OpResultMap.NoContentNotFound(
             await _items.DeleteAsync(caller, Idempotency.KeyFrom(ctx), listId, itemId, occurredAt, ct));
     }
