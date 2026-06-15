@@ -1,7 +1,7 @@
 using LupiraTasksApi.Application;
 using LupiraTasksApi.Auth;
 using LupiraTasksApi.Http;
-using LupiraTasksApi.Models.Sync;
+using LupiraTasksApi.Dtos.Sync;
 using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace LupiraTasksApi.Handlers;

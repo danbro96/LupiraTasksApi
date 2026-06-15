@@ -1,6 +1,6 @@
 using LupiraTasksApi.Domain;
 
-namespace LupiraTasksApi.Models.Lists;
+namespace LupiraTasksApi.Dtos.Lists;
 
 /// <summary>
 /// Create a list. The client supplies a GUIDv7 <see cref="Id"/> so the create is

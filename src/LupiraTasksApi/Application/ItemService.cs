@@ -3,7 +3,7 @@ using LupiraTasksApi.Auth;
 using LupiraTasksApi.Domain;
 using LupiraTasksApi.Domain.Items;
 using LupiraTasksApi.Mappers;
-using LupiraTasksApi.Models.Items;
+using LupiraTasksApi.Dtos.Items;
 using LupiraTasksApi.Services;
 using Marten;
 using Marten.Exceptions;

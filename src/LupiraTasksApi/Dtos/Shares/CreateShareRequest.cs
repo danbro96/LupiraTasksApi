@@ -1,6 +1,6 @@
 using LupiraTasksApi.Domain;
 
-namespace LupiraTasksApi.Models.Shares;
+namespace LupiraTasksApi.Dtos.Shares;
 
 /// <summary>
 /// Mint a share link for a list. <see cref="Access"/> picks read vs read/write; an optional

@@ -1,4 +1,4 @@
-namespace LupiraTasksApi.Models.Items;
+namespace LupiraTasksApi.Dtos.Items;
 
 /// <summary>
 /// Reparent and/or reorder an item. <see cref="SortOrder"/> is a fractional-index

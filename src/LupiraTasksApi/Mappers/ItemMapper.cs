@@ -1,5 +1,5 @@
 using LupiraTasksApi.Domain.Items;
-using LupiraTasksApi.Models.Items;
+using LupiraTasksApi.Dtos.Items;
 
 namespace LupiraTasksApi.Mappers;
 

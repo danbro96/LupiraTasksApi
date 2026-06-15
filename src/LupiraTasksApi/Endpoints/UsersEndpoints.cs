@@ -1,5 +1,5 @@
 using LupiraTasksApi.Handlers;
-using LupiraTasksApi.Models.Users;
+using LupiraTasksApi.Dtos.Users;
 
 namespace LupiraTasksApi.Endpoints;
 

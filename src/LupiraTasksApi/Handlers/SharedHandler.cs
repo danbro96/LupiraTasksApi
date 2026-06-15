@@ -3,8 +3,8 @@ using LupiraTasksApi.Auth;
 using LupiraTasksApi.Domain;
 using LupiraTasksApi.Http;
 using LupiraTasksApi.Mappers;
-using LupiraTasksApi.Models.Items;
-using LupiraTasksApi.Models.Shared;
+using LupiraTasksApi.Dtos.Items;
+using LupiraTasksApi.Dtos.Shared;
 using LupiraTasksApi.Services;
 using Microsoft.AspNetCore.Http.HttpResults;
 

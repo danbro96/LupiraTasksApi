@@ -1,8 +1,8 @@
 using LupiraTasksApi.Domain;
 using LupiraTasksApi.Domain.Items;
 using LupiraTasksApi.Domain.Lists;
-using LupiraTasksApi.Models.Items;
-using LupiraTasksApi.Models.Shared;
+using LupiraTasksApi.Dtos.Items;
+using LupiraTasksApi.Dtos.Shared;
 
 namespace LupiraTasksApi.Mappers;
 

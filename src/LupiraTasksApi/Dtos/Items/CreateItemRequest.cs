@@ -1,4 +1,4 @@
-namespace LupiraTasksApi.Models.Items;
+namespace LupiraTasksApi.Dtos.Items;
 
 /// <summary>
 /// Add an item. The client supplies a GUIDv7 <see cref="Id"/> (idempotent create) and a

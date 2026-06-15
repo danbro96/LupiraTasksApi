@@ -2,9 +2,9 @@ using System.ComponentModel;
 using LupiraTasksApi.Application;
 using LupiraTasksApi.Auth;
 using LupiraTasksApi.Domain;
-using LupiraTasksApi.Models.Items;
-using LupiraTasksApi.Models.Lists;
-using LupiraTasksApi.Models.Shares;
+using LupiraTasksApi.Dtos.Items;
+using LupiraTasksApi.Dtos.Lists;
+using LupiraTasksApi.Dtos.Shares;
 using ModelContextProtocol;
 using ModelContextProtocol.Server;
 
@@ -161,10 +161,14 @@ public sealed class TaskTools
             ?? throw new McpException($"No task found with id {taskId}.");
         var request = new UpdateItemRequest
         {
-            Title = title, TitleProvided = title is not null,
-            Notes = notes, NotesProvided = notes is not null,
-            DueAt = dueAt, DueAtProvided = dueAt is not null,
-            AssigneeEmail = assignee, AssigneeEmailProvided = assignee is not null,
+            Title = title,
+            TitleProvided = title is not null,
+            Notes = notes,
+            NotesProvided = notes is not null,
+            DueAt = dueAt,
+            DueAtProvided = dueAt is not null,
+            AssigneeEmail = assignee,
+            AssigneeEmailProvided = assignee is not null,
             OccurredAt = DateTimeOffset.UtcNow,
         };
         var item = Require(await _items.UpdateAsync(caller, Guid.CreateVersion7(), listId, taskId, request, ct));

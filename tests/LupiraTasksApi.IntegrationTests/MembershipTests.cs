@@ -6,7 +6,7 @@ using LupiraTasksApi.Auth;
 using LupiraTasksApi.Domain;
 using LupiraTasksApi.Domain.Lists;
 using LupiraTasksApi.Handlers;
-using LupiraTasksApi.Models.Lists;
+using LupiraTasksApi.Dtos.Lists;
 using LupiraTasksApi.Services;
 using Marten;
 using Microsoft.AspNetCore.Http;

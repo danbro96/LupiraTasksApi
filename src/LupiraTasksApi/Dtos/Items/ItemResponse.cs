@@ -1,4 +1,4 @@
-namespace LupiraTasksApi.Models.Items;
+namespace LupiraTasksApi.Dtos.Items;
 
 /// <summary>An item's current snapshot. Clients nest by <see cref="ParentItemId"/>.</summary>
 public sealed class ItemResponse

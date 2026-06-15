@@ -1,4 +1,4 @@
-namespace LupiraTasksApi.Models.Me;
+namespace LupiraTasksApi.Dtos.Me;
 
 /// <summary>The caller's provisioned identity, returned by <c>GET</c>/<c>PATCH /me</c>.</summary>
 public sealed class MeResponse

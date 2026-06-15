@@ -1,6 +1,6 @@
 using LupiraTasksApi.Domain;
 
-namespace LupiraTasksApi.Models.Lists;
+namespace LupiraTasksApi.Dtos.Lists;
 
 /// <summary>
 /// Add a member to a list by email. Any member may add someone; the role defaults to
