@@ -1,30 +1,24 @@
+using LupiraTasksApi.Application;
 using LupiraTasksApi.Auth;
-using LupiraTasksApi.Domain;
-using LupiraTasksApi.Domain.Items;
-using LupiraTasksApi.Mappers;
+using LupiraTasksApi.Http;
 using LupiraTasksApi.Models.Sync;
-using Marten;
 using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace LupiraTasksApi.Handlers;
 
 /// <summary>
-/// Offline delta-pull. v1 is the simplest-correct shape: return the current list plus
-/// all its live items (full re-derive) regardless of the <c>since</c> cursor, and report
-/// a <c>nextCursor</c> the client plumbs back on the next pull. The client rebases its
-/// local mirror onto this base, then re-applies its non-acked outbox rows.
+/// REST adapter for the offline delta-pull: resolves the caller from the JWT and delegates
+/// to the transport-neutral <see cref="SyncService"/>.
 /// </summary>
 public sealed class SyncHandler
 {
-    private readonly IDocumentSession _session;
     private readonly CurrentUser _user;
-    private readonly AccessResolver _access;
+    private readonly SyncService _sync;
 
-    public SyncHandler(IDocumentSession session, CurrentUser user, AccessResolver access)
+    public SyncHandler(CurrentUser user, SyncService sync)
     {
-        _session = session;
         _user = user;
-        _access = access;
+        _sync = sync;
     }
 
     public async Task<Results<Ok<SyncResponse>, NotFound, UnauthorizedHttpResult>> GetAsync(
@@ -34,29 +28,7 @@ public sealed class SyncHandler
     {
         var email = _user.Email;
         if (email is null) return TypedResults.Unauthorized();
-
-        var access = await _access.RequireMembershipAsync(listId, email, ListRole.Viewer, ct);
-        if (!access.Allowed) return TypedResults.NotFound();
-
-        // `since` is accepted and plumbed through, but v1 always re-derives the whole list.
-        _ = since;
-
-        var items = await _session.Query<Item>()
-            .Where(i => i.ListId == listId && !i.Deleted)
-            .ToListAsync(ct);
-
-        var ordered = items
-            .OrderBy(i => i.SortOrder, StringComparer.Ordinal)
-            .Select(i => i.ToResponse())
-            .ToList();
-
-        var nextCursor = ordered.Count == 0 ? 0L : ordered.Max(i => (long)i.Version);
-
-        return TypedResults.Ok(new SyncResponse
-        {
-            List = access.List!.ToResponse(),
-            Items = ordered,
-            NextCursor = nextCursor,
-        });
+        var caller = new Caller(email, _user.Groups);
+        return OpResultMap.OkNotFound(await _sync.GetAsync(caller, listId, since, ct));
     }
 }

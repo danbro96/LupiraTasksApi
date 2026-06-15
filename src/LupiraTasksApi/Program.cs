@@ -1,10 +1,13 @@
 ﻿using JasperFx;
 using LupiraTasksApi;
+using LupiraTasksApi.Application;
 using LupiraTasksApi.Auth;
 using LupiraTasksApi.Endpoints;
 using LupiraTasksApi.Handlers;
 using LupiraTasksApi.Services;
 using Marten;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
@@ -45,11 +48,27 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<CurrentUser>();
 builder.Services.AddScoped<AccessResolver>();
 builder.Services.AddScoped<Idempotency>();
+
+// Transport-neutral application services — the single source of truth shared by the REST
+// handlers and the MCP tools (no second source of truth).
+builder.Services.AddScoped<ListService>();
+builder.Services.AddScoped<ItemService>();
+builder.Services.AddScoped<SyncService>();
+
 builder.Services.AddScoped<MeHandler>();
 builder.Services.AddScoped<UsersHandler>();
 builder.Services.AddScoped<ListsHandler>();
 builder.Services.AddScoped<ItemsHandler>();
 builder.Services.AddScoped<SyncHandler>();
+
+// MCP agent surface. The [McpServerToolType] tools in this assembly call the same
+// Application services as the REST handlers (no second source of truth). Mounted at /mcp
+// over Streamable HTTP, secured by the same OIDC JWT bearer (see MapMcp below), and kept
+// LAN/WireGuard-only — never published through the Cloudflare Tunnel.
+builder.Services
+    .AddMcpServer()
+    .WithHttpTransport()
+    .WithToolsFromAssembly();
 
 builder.Services.AddOpenApi("v1", options =>
 {
@@ -117,28 +136,55 @@ if (string.IsNullOrWhiteSpace(oidc.Audience))
 {
     throw new InvalidOperationException("Auth:Oidc:Audience is required.");
 }
-builder.Services
-    .AddAuthentication(Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(opts =>
+// In Development a policy scheme is the default: it forwards to the dev-header handler when
+// X-Dev-User is present, else to the real JWT bearer (so real Authentik tokens still work in
+// dev). In every other environment the default is plain JWT bearer and the dev handler below
+// is never registered.
+const string devOrJwtScheme = "DevOrJwt";
+var defaultScheme = builder.Environment.IsDevelopment()
+    ? devOrJwtScheme
+    : JwtBearerDefaults.AuthenticationScheme;
+
+var authBuilder = builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = defaultScheme;
+    options.DefaultChallengeScheme = defaultScheme;
+});
+
+authBuilder.AddJwtBearer(opts =>
+{
+    opts.Authority = oidc.Authority;
+    opts.Audience = oidc.Audience;
+    // Subject = email; group membership drives admin. Keep raw claim types (Authentik
+    // emits "email"/"groups"), so don't remap inbound claims to legacy XML URIs.
+    opts.MapInboundClaims = false;
+    opts.TokenValidationParameters = new TokenValidationParameters
     {
-        opts.Authority = oidc.Authority;
-        opts.Audience = oidc.Audience;
-        // Subject = email; group membership drives admin. Keep raw claim types (Authentik
-        // emits "email"/"groups"), so don't remap inbound claims to legacy XML URIs.
-        opts.MapInboundClaims = false;
-        opts.TokenValidationParameters = new TokenValidationParameters
-        {
-            // Issuer + audience are mandatory (guarded at startup above), so validate
-            // unconditionally — never silently disable validation on a blank config.
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateLifetime = true,
-            RequireExpirationTime = true,
-            RequireSignedTokens = true,
-            NameClaimType = "email",
-            RoleClaimType = "groups",
-        };
+        // Issuer + audience are mandatory (guarded at startup above), so validate
+        // unconditionally — never silently disable validation on a blank config.
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        RequireExpirationTime = true,
+        RequireSignedTokens = true,
+        NameClaimType = "email",
+        RoleClaimType = "groups",
+    };
+});
+
+if (builder.Environment.IsDevelopment())
+{
+    // Development-only: allow X-Dev-User header auth so the API can be exercised without Authentik.
+    authBuilder.AddScheme<AuthenticationSchemeOptions, DevAuthHandler>(DevAuthHandler.SchemeName, _ => { });
+    authBuilder.AddPolicyScheme(devOrJwtScheme, devOrJwtScheme, options =>
+    {
+        options.ForwardDefaultSelector = ctx =>
+            ctx.Request.Headers.ContainsKey(DevAuthHandler.HeaderName)
+                ? DevAuthHandler.SchemeName
+                : JwtBearerDefaults.AuthenticationScheme;
     });
+}
+
 builder.Services.AddAuthorization();
 
 builder.Services.AddRateLimiter(o =>
@@ -224,6 +270,10 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.UseRateLimiter();
 
+// Keep the MCP surface LAN/WireGuard-only: reject any /mcp request that arrived via the
+// Cloudflare Tunnel (backstop behind the tunnel ingress not routing /mcp at all).
+app.UseMcpLanOnly();
+
 app.MapOpenApi("/openapi/{documentName}.json").AllowAnonymous();
 app.MapScalarApiReference("/scalar", o => o
         .WithTitle("Lupira Tasks API")
@@ -241,5 +291,11 @@ app.MapUsers();
 app.MapLists();
 app.MapItems();
 app.MapSync();
+
+// Agent MCP surface (Streamable HTTP). Mapped AFTER UseAuthentication/UseAuthorization so
+// the same JWT bearer validates it; RequireAuthorization rejects anonymous calls with 401.
+// Exposure is LAN/WireGuard-only — the Cloudflare Tunnel must not route /mcp (see deploy docs).
+app.MapMcp("/mcp")
+   .RequireAuthorization();
 
 app.Run();

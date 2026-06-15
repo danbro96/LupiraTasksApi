@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using JasperFx;
 using LupiraTasksApi;
+using LupiraTasksApi.Application;
 using LupiraTasksApi.Auth;
 using LupiraTasksApi.Domain;
 using LupiraTasksApi.Domain.Lists;
@@ -66,7 +67,9 @@ public sealed class MembershipTests : IAsyncLifetime
     {
         await using var s = _store.LightweightSession();
         var ctx = CtxFor(actor);
-        var handler = new ListsHandler(s, new CurrentUser(new HttpContextAccessor { HttpContext = ctx }), new AccessResolver(s), new Idempotency(s));
+        var handler = new ListsHandler(
+            new CurrentUser(new HttpContextAccessor { HttpContext = ctx }),
+            new ListService(s, new AccessResolver(s), new Idempotency(s)));
         return await action(handler, ctx);
     }
 

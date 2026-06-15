@@ -14,8 +14,8 @@ namespace LupiraTasksApi.Auth;
 /// </summary>
 public sealed class CurrentUser
 {
-    /// <summary>Authentik groups that grant admin rights.</summary>
-    private static readonly string[] AdminGroups = ["tasks-admins", "platform-admins"];
+    /// <summary>Authentik groups that grant admin rights. Shared with <c>Application.Caller</c> as the single source.</summary>
+    internal static readonly string[] AdminGroups = ["tasks-admins", "platform-admins"];
 
     private readonly IHttpContextAccessor _accessor;
 
