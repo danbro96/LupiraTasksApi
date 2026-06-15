@@ -8,6 +8,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- The bounded context (Domain + Application + Data). The host is a thin transport/composition
+         layer over it; the project boundary keeps ASP.NET out of the core. -->
+    <ProjectReference Include="..\LupiraTasksApi.Core\LupiraTasksApi.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.8" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.8" />
     <PackageReference Include="Scalar.AspNetCore" Version="2.14.14" />

@@ -2,7 +2,6 @@ using LupiraTasksApi.Application;
 using LupiraTasksApi.Auth;
 using LupiraTasksApi.Http;
 using LupiraTasksApi.Dtos.Items;
-using LupiraTasksApi.Services;
 using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace LupiraTasksApi.Handlers;
@@ -50,7 +49,7 @@ public sealed class ItemsHandler
         if (email is null) return TypedResults.Unauthorized();
         var caller = Caller.Member(email, _user.Groups);
         return OpResultMap.OkNotFoundProblem(
-            await _items.CreateAsync(caller, Idempotency.KeyFrom(ctx), listId, request, ct));
+            await _items.CreateAsync(caller, IdempotencyKey.From(ctx), listId, request, ct));
     }
 
     public async Task<Results<Ok<ItemResponse>, NotFound, UnauthorizedHttpResult>> GetAsync(
@@ -75,7 +74,7 @@ public sealed class ItemsHandler
         if (email is null) return TypedResults.Unauthorized();
         var caller = Caller.Member(email, _user.Groups);
         return OpResultMap.OkNotFoundProblem(
-            await _items.UpdateAsync(caller, Idempotency.KeyFrom(ctx), listId, itemId, request, ct));
+            await _items.UpdateAsync(caller, IdempotencyKey.From(ctx), listId, itemId, request, ct));
     }
 
     public async Task<Results<Ok<ItemResponse>, NotFound, ProblemHttpResult, UnauthorizedHttpResult>> CompleteAsync(
@@ -85,7 +84,7 @@ public sealed class ItemsHandler
         if (email is null) return TypedResults.Unauthorized();
         var caller = Caller.Member(email, _user.Groups);
         return OpResultMap.OkNotFoundProblem(
-            await _items.CompleteAsync(caller, Idempotency.KeyFrom(ctx), listId, itemId, body?.OccurredAt, ct));
+            await _items.CompleteAsync(caller, IdempotencyKey.From(ctx), listId, itemId, body?.OccurredAt, ct));
     }
 
     public async Task<Results<Ok<ItemResponse>, NotFound, ProblemHttpResult, UnauthorizedHttpResult>> ReopenAsync(
@@ -95,7 +94,7 @@ public sealed class ItemsHandler
         if (email is null) return TypedResults.Unauthorized();
         var caller = Caller.Member(email, _user.Groups);
         return OpResultMap.OkNotFoundProblem(
-            await _items.ReopenAsync(caller, Idempotency.KeyFrom(ctx), listId, itemId, body?.OccurredAt, ct));
+            await _items.ReopenAsync(caller, IdempotencyKey.From(ctx), listId, itemId, body?.OccurredAt, ct));
     }
 
     public async Task<Results<Ok<ItemResponse>, NotFound, ProblemHttpResult, UnauthorizedHttpResult>> MoveAsync(
@@ -105,7 +104,7 @@ public sealed class ItemsHandler
         if (email is null) return TypedResults.Unauthorized();
         var caller = Caller.Member(email, _user.Groups);
         return OpResultMap.OkNotFoundProblem(
-            await _items.MoveAsync(caller, Idempotency.KeyFrom(ctx), listId, itemId, request, ct));
+            await _items.MoveAsync(caller, IdempotencyKey.From(ctx), listId, itemId, request, ct));
     }
 
     public async Task<Results<NoContent, NotFound, UnauthorizedHttpResult>> DeleteAsync(
@@ -115,6 +114,6 @@ public sealed class ItemsHandler
         if (email is null) return TypedResults.Unauthorized();
         var caller = Caller.Member(email, _user.Groups);
         return OpResultMap.NoContentNotFound(
-            await _items.DeleteAsync(caller, Idempotency.KeyFrom(ctx), listId, itemId, occurredAt, ct));
+            await _items.DeleteAsync(caller, IdempotencyKey.From(ctx), listId, itemId, occurredAt, ct));
     }
 }

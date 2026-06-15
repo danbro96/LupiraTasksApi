@@ -1,5 +1,6 @@
 <Solution>
   <Folder Name="/src/">
+    <Project Path="src/LupiraTasksApi.Core/LupiraTasksApi.Core.csproj" />
     <Project Path="src/LupiraTasksApi/LupiraTasksApi.csproj" />
   </Folder>
   <Folder Name="/tests/">

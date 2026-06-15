@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using LupiraTasksApi.Application;
 
 namespace LupiraTasksApi.Auth;
 
@@ -14,9 +15,6 @@ namespace LupiraTasksApi.Auth;
 /// </summary>
 public sealed class CurrentUser
 {
-    /// <summary>Authentik groups that grant admin rights. Shared with <c>Application.Caller</c> as the single source.</summary>
-    internal static readonly string[] AdminGroups = ["tasks-admins", "platform-admins"];
-
     private readonly IHttpContextAccessor _accessor;
 
     public CurrentUser(IHttpContextAccessor accessor)
@@ -60,8 +58,8 @@ public sealed class CurrentUser
     public IReadOnlyList<string> Groups =>
         Principal?.FindAll("groups").Select(c => c.Value).ToArray() ?? [];
 
-    /// <summary>True when the caller belongs to an admin group.</summary>
-    public bool IsAdmin => Groups.Any(g => AdminGroups.Contains(g, StringComparer.OrdinalIgnoreCase));
+    /// <summary>True when the caller belongs to an admin group (shared list lives on <see cref="Caller"/>).</summary>
+    public bool IsAdmin => Groups.Any(g => Caller.AdminGroups.Contains(g, StringComparer.OrdinalIgnoreCase));
 
     /// <summary>The caller's email or throws — for handlers that have already passed <c>[Authorize]</c>.</summary>
     public string RequireEmail() =>

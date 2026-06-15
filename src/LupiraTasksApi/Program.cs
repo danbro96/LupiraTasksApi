@@ -1,9 +1,10 @@
-﻿using JasperFx;
+using JasperFx;
 using LupiraTasksApi;
 using LupiraTasksApi.Application;
 using LupiraTasksApi.Auth;
 using LupiraTasksApi.Endpoints;
 using LupiraTasksApi.Handlers;
+using LupiraTasksApi.Http;
 using LupiraTasksApi.Services;
 using Marten;
 using Microsoft.AspNetCore.Authentication;
@@ -117,7 +118,7 @@ builder.Services.AddOpenApi("v1", options =>
             operation.Parameters ??= [];
             operation.Parameters.Add(new OpenApiParameter
             {
-                Name = Idempotency.HeaderName,
+                Name = IdempotencyKey.HeaderName,
                 In = ParameterLocation.Header,
                 Required = false,
                 Description =

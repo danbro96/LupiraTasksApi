@@ -15,5 +15,5 @@ jobs:
       - uses: actions/setup-dotnet@v5
         with:
           dotnet-version: '10.0.x'
-      - run: dotnet restore src/LupiraTasksApi/LupiraTasksApi.csproj
-      - run: dotnet build src/LupiraTasksApi/LupiraTasksApi.csproj --no-restore -c Release
+      - run: dotnet restore LupiraTasksApi.slnx
+      - run: dotnet build LupiraTasksApi.slnx --no-restore -c Release

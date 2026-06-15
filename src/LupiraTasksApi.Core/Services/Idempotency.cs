@@ -28,21 +28,12 @@ namespace LupiraTasksApi.Services;
 /// </summary>
 public sealed class Idempotency
 {
-    public const string HeaderName = "Idempotency-Key";
-
     private readonly IDocumentSession _session;
 
     public Idempotency(IDocumentSession session)
     {
         _session = session;
     }
-
-    /// <summary>Reads the <c>Idempotency-Key</c> header as a GUID, or <c>null</c> if absent/malformed.</summary>
-    public static Guid? KeyFrom(HttpContext ctx) =>
-        ctx.Request.Headers.TryGetValue(HeaderName, out var raw)
-        && Guid.TryParse(raw.ToString(), out var key)
-            ? key
-            : null;
 
     /// <summary>
     /// Returns the <see cref="ProcessedCommand"/> already recorded for

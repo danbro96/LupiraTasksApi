@@ -1,4 +1,3 @@
-using LupiraTasksApi.Auth;
 using LupiraTasksApi.Domain;
 
 namespace LupiraTasksApi.Application;
@@ -17,6 +16,9 @@ namespace LupiraTasksApi.Application;
 /// </summary>
 public sealed record Caller
 {
+    /// <summary>Authentik groups that grant admin rights — the single source for member admin checks.</summary>
+    public static readonly string[] AdminGroups = ["tasks-admins", "platform-admins"];
+
     /// <summary>Member identity (OIDC subject). <c>null</c> for a share-link caller.</summary>
     public string? Email { get; private init; }
 
@@ -41,7 +43,7 @@ public sealed record Caller
 
     /// <summary>True only for a member in an admin group; a share-link caller is never admin.</summary>
     public bool IsAdmin =>
-        Email is not null && Groups.Any(g => CurrentUser.AdminGroups.Contains(g, StringComparer.OrdinalIgnoreCase));
+        Email is not null && Groups.Any(g => AdminGroups.Contains(g, StringComparer.OrdinalIgnoreCase));
 }
 
 /// <summary>A validated share-link grant: scoped to exactly one list at one access level.</summary>

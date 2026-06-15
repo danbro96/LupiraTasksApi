@@ -5,7 +5,6 @@ using LupiraTasksApi.Http;
 using LupiraTasksApi.Mappers;
 using LupiraTasksApi.Dtos.Items;
 using LupiraTasksApi.Dtos.Shared;
-using LupiraTasksApi.Services;
 using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace LupiraTasksApi.Handlers;
@@ -64,7 +63,7 @@ public sealed class SharedHandler
         if (caller is null) return TypedResults.Unauthorized();
         if (caller.Share!.Access != ShareAccess.ReadWrite) return Problems.Forbidden("This share link is read-only.");
         return OpResultMap.NoContentNotFoundProblem(
-            await _items.DeleteAsync(caller, Idempotency.KeyFrom(ctx), caller.Share.ListId, itemId, occurredAt, ct));
+            await _items.DeleteAsync(caller, IdempotencyKey.From(ctx), caller.Share.ListId, itemId, occurredAt, ct));
     }
 
     /// <summary>Shared item write: require an authenticated read/write share, run the op, trim the result.</summary>
@@ -76,7 +75,7 @@ public sealed class SharedHandler
         if (caller.Share!.Access != ShareAccess.ReadWrite)
             return Problems.Forbidden("This share link is read-only.");
 
-        var result = await op(caller, caller.Share.ListId, Idempotency.KeyFrom(ctx));
+        var result = await op(caller, caller.Share.ListId, IdempotencyKey.From(ctx));
         return OpResultMap.OkNotFoundProblem(result, it => it.ToShared());
     }
 

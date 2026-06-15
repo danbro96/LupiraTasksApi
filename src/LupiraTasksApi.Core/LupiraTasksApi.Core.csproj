@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <!-- Keep the LupiraTasksApi.* namespaces unchanged across the project split. -->
+    <RootNamespace>LupiraTasksApi</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- The bounded context: Domain (event-sourced aggregates), Application (services),
+         Data (Marten config + idempotency). No ASP.NET dependency — that lives in the host. -->
+    <PackageReference Include="Marten" Version="9.6.0" />
+  </ItemGroup>
+
+</Project>

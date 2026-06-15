@@ -11,7 +11,7 @@ namespace LupiraTasksApi.Mappers;
 /// share-link recipient may see. Every email field (owner, members, assignee, creator, completer)
 /// is intentionally dropped here.
 /// </summary>
-internal static class SharedMapper
+public static class SharedMapper
 {
     public static SharedItemResponse ToShared(this Item item) => new()
     {
