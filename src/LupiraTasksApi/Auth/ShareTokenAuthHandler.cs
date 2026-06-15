@@ -1,11 +1,11 @@
-using System.Security.Claims;
-using System.Text.Encodings.Web;
-using LupiraTasksApi.Application;
+﻿using LupiraTasksApi.Application;
 using LupiraTasksApi.Domain;
 using LupiraTasksApi.Domain.Shares;
 using Marten;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Options;
+using System.Security.Claims;
+using System.Text.Encodings.Web;
 
 namespace LupiraTasksApi.Auth;
 

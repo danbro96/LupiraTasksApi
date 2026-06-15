@@ -1,5 +1,5 @@
+﻿using LupiraTasksApi.Application;
 using System.Security.Claims;
-using LupiraTasksApi.Application;
 
 namespace LupiraTasksApi.Auth;
 

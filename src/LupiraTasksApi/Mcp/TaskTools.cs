@@ -1,5 +1,4 @@
-using System.ComponentModel;
-using LupiraTasksApi.Application;
+﻿using LupiraTasksApi.Application;
 using LupiraTasksApi.Auth;
 using LupiraTasksApi.Domain;
 using LupiraTasksApi.Dtos.Items;
@@ -7,6 +6,7 @@ using LupiraTasksApi.Dtos.Lists;
 using LupiraTasksApi.Dtos.Shares;
 using ModelContextProtocol;
 using ModelContextProtocol.Server;
+using System.ComponentModel;
 
 namespace LupiraTasksApi.Mcp;
 

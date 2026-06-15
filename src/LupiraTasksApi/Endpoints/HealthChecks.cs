@@ -1,4 +1,4 @@
-using Marten;
+﻿using Marten;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 

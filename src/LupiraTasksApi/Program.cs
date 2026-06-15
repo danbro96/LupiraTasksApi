@@ -1,11 +1,10 @@
-using JasperFx;
-using LupiraTasksApi;
+﻿using JasperFx;
 using LupiraTasksApi.Application;
 using LupiraTasksApi.Auth;
+using LupiraTasksApi.Data;
 using LupiraTasksApi.Endpoints;
 using LupiraTasksApi.Handlers;
 using LupiraTasksApi.Http;
-using LupiraTasksApi.Data;
 using Marten;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;

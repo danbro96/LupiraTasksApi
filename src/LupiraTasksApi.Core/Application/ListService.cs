@@ -1,10 +1,10 @@
-using JasperFx;
+﻿using JasperFx;
 using LupiraTasksApi.Auth;
+using LupiraTasksApi.Data;
 using LupiraTasksApi.Domain;
 using LupiraTasksApi.Domain.Lists;
-using LupiraTasksApi.Mappers;
 using LupiraTasksApi.Dtos.Lists;
-using LupiraTasksApi.Data;
+using LupiraTasksApi.Mappers;
 using Marten;
 using Marten.Exceptions;
 

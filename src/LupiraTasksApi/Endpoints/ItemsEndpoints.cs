@@ -1,5 +1,5 @@
+﻿using LupiraTasksApi.Dtos.Items;
 using LupiraTasksApi.Handlers;
-using LupiraTasksApi.Dtos.Items;
 
 namespace LupiraTasksApi.Endpoints;
 

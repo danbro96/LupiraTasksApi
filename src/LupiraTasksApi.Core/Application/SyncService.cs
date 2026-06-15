@@ -1,8 +1,8 @@
-using LupiraTasksApi.Auth;
+﻿using LupiraTasksApi.Auth;
 using LupiraTasksApi.Domain;
 using LupiraTasksApi.Domain.Items;
-using LupiraTasksApi.Mappers;
 using LupiraTasksApi.Dtos.Sync;
+using LupiraTasksApi.Mappers;
 using Marten;
 
 namespace LupiraTasksApi.Application;
