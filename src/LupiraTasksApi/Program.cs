@@ -48,15 +48,11 @@ builder.Services.Configure<ShareLinkOptions>(builder.Configuration.GetSection(Sh
 // validated JWT via IHttpContextAccessor and never writes to the DB.
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<CurrentUser>();
-builder.Services.AddScoped<AccessResolver>();
-builder.Services.AddScoped<Idempotency>();
 
-// Transport-neutral application services — the single source of truth shared by the REST
-// handlers and the MCP tools (no second source of truth).
-builder.Services.AddScoped<ListService>();
-builder.Services.AddScoped<ItemService>();
-builder.Services.AddScoped<SyncService>();
-builder.Services.AddScoped<ShareService>();
+// The bounded context (Application + Data services from LupiraTasksApi.Core) in one call —
+// the single source of truth shared by REST handlers and MCP tools, reused as-is by any future
+// host (worker/CLI). Host-specific composition (Marten store, CurrentUser, handlers) stays here.
+builder.Services.AddTasksCore();
 
 builder.Services.AddScoped<MeHandler>();
 builder.Services.AddScoped<UsersHandler>();
