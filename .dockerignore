@@ -1,0 +1,15 @@
+# Build artifacts must never enter the build context: COPY would overlay them on top of the
+# container's clean restore, and `dotnet publish --no-restore` then chokes on the host's
+# project.assets.json (foreign paths). This is why a local `docker build` failed while CI
+# (clean checkout, no bin/obj) succeeded.
+**/bin/
+**/obj/
+
+# Noise that doesn't belong in the image build context.
+**/.vs/
+.git/
+.github/
+.claude/
+**/*.user
+Dockerfile
+.dockerignore
