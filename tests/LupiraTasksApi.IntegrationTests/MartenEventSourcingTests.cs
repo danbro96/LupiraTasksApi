@@ -1,5 +1,6 @@
 using JasperFx;
 using LupiraTasksApi;
+using LupiraTasksApi.Data;
 using LupiraTasksApi.Domain;
 using LupiraTasksApi.Domain.Items;
 using Marten;

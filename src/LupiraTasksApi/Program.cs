@@ -5,7 +5,7 @@ using LupiraTasksApi.Auth;
 using LupiraTasksApi.Endpoints;
 using LupiraTasksApi.Handlers;
 using LupiraTasksApi.Http;
-using LupiraTasksApi.Services;
+using LupiraTasksApi.Data;
 using Marten;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;

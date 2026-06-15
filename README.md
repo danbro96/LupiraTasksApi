@@ -10,8 +10,8 @@ see the fleet guide *dotnet-service-architecture* in the DevOps repo's `Guides/`
 - **`src/LupiraTasksApi.Core/`** — the bounded context (`Microsoft.NET.Sdk` class library; `RootNamespace`
   is `LupiraTasksApi`, so namespaces are unchanged across the split). Holds `Domain/` (event-sourced
   aggregates + pure logic), `Application/` (the transport-neutral services + `Caller` + `OpResult`),
-  `Dtos/`, `Mappers/`, `Services/` (the idempotency ledger), `Auth/AccessResolver.cs`, and
-  `MartenRegistrations.cs`. Depends only on Marten — **no ASP.NET reference**.
+  `Dtos/`, `Mappers/`, `Data/` (Marten registrations + the idempotency ledger), and
+  `Auth/AccessResolver.cs`. Depends only on Marten — **no ASP.NET reference**.
 - **`src/LupiraTasksApi/`** — the thin ASP.NET host (`Microsoft.NET.Sdk.Web`), referencing Core. Holds
   `Program.cs`, the surface adapters (`Endpoints/`+`Handlers/`, `Mcp/`, the `/shared` endpoints),
   HTTP concerns (`Http/`: result mapping, the `Idempotency-Key` reader), and the auth handlers

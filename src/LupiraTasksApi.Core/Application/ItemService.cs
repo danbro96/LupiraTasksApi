@@ -4,7 +4,7 @@ using LupiraTasksApi.Domain;
 using LupiraTasksApi.Domain.Items;
 using LupiraTasksApi.Mappers;
 using LupiraTasksApi.Dtos.Items;
-using LupiraTasksApi.Services;
+using LupiraTasksApi.Data;
 using Marten;
 using Marten.Exceptions;
 

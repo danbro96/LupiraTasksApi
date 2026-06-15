@@ -7,7 +7,7 @@ using LupiraTasksApi.Domain.Shares;
 using LupiraTasksApi.Mappers;
 using LupiraTasksApi.Dtos.Shared;
 using LupiraTasksApi.Dtos.Shares;
-using LupiraTasksApi.Services;
+using LupiraTasksApi.Data;
 using Marten;
 using Marten.Exceptions;
 using Microsoft.Extensions.Options;

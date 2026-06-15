@@ -7,7 +7,7 @@ using LupiraTasksApi.Domain;
 using LupiraTasksApi.Domain.Lists;
 using LupiraTasksApi.Handlers;
 using LupiraTasksApi.Dtos.Lists;
-using LupiraTasksApi.Services;
+using LupiraTasksApi.Data;
 using Marten;
 using Microsoft.AspNetCore.Http;
 using Xunit;
