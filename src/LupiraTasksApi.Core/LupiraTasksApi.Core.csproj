@@ -11,7 +11,7 @@
   <ItemGroup>
     <!-- The bounded context: Domain (event-sourced aggregates), Application (services),
          Data (Marten config + idempotency). No ASP.NET dependency — that lives in the host. -->
-    <PackageReference Include="Marten" Version="9.6.0" />
+    <PackageReference Include="Marten" Version="9.8.2" />
   </ItemGroup>
 
 </Project>
