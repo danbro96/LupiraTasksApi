@@ -32,6 +32,22 @@ public sealed class ItemState
 
     public string SortOrder { get; set; } = "";
 
+    /// <summary>
+    /// The stable external identifier used as the CalDAV resource name (<c>{Uid}.ics</c>).
+    /// Never null once created: a DAV-created item keeps the client-supplied VTODO UID; an
+    /// item created on any other surface defaults it to <c>Id.ToString()</c> (set in
+    /// <see cref="ItemLww.ApplyAdded"/>). Must round-trip verbatim so a DAV client's local
+    /// resource URL stays valid across syncs.
+    /// </summary>
+    public string Uid { get; set; } = "";
+
+    /// <summary>
+    /// The raw VTODO blob from the last CalDAV PUT, kept so properties this model doesn't
+    /// represent (PRIORITY, RRULE, X-*, …) survive a phone→server→phone round-trip. Null for
+    /// items never written over DAV.
+    /// </summary>
+    public string? SourceVtodo { get; set; }
+
     public string? CreatedBy { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
@@ -57,6 +73,10 @@ public sealed class ItemState
     public Guid CompletedCmd { get; set; }
     public DateTimeOffset MoveTs { get; set; }
     public Guid MoveCmd { get; set; }
+
+    /// <summary>Guard for the raw <see cref="SourceVtodo"/> blob written by a CalDAV PUT.</summary>
+    public DateTimeOffset VtodoTs { get; set; }
+    public Guid VtodoCmd { get; set; }
 
     /// <summary>
     /// Per-tag last-touched guard (OccurredAt + tiebreaker CommandId), so a tag add and

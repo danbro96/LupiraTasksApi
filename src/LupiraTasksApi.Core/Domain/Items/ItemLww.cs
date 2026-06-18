@@ -32,6 +32,10 @@ public static class ItemLww
         s.ParentItemId = e.ParentItemId;
         s.Title = e.Title;
         s.SortOrder = e.SortOrder;
+        // Every item carries a stable, non-null Uid from birth — the CalDAV resource name.
+        // The client UID when created over DAV, else the item id (a valid iCalendar UID).
+        // This is the ONLY place Uid is defaulted; no read-site fallback exists.
+        s.Uid = e.Uid ?? e.ItemId.ToString();
         s.CreatedBy = actor;
         s.CreatedAt = e.OccurredAt;
         s.UpdatedAt = e.OccurredAt;
@@ -40,6 +44,93 @@ public static class ItemLww
         s.NameCmd = e.CommandId;
         s.MoveTs = e.OccurredAt;
         s.MoveCmd = e.CommandId;
+    }
+
+    /// <summary>
+    /// A whole-VTODO write from CalDAV. Establishes identity on a new stream, then applies each
+    /// modeled field through its existing per-field guard, so a DAV PUT interleaves with granular
+    /// REST/MCP edits under one LWW rule. The raw blob is stored under its own guard for round-trip.
+    /// </summary>
+    public static void ApplyVtodoPut(ItemState s, ItemVtodoPut e, string? actor)
+    {
+        // First event on the stream → a DAV-created item. Seed identity + creation metadata.
+        if (s.CreatedAt == default)
+        {
+            s.Id = e.ItemId;
+            s.ListId = e.ListId;
+            s.Uid = e.Uid;
+            s.SortOrder = e.SortOrder;
+            s.CreatedBy = actor;
+            s.CreatedAt = e.OccurredAt;
+            s.UpdatedAt = e.OccurredAt;
+        }
+        if (s.Deleted) return;
+
+        if (Wins(e.OccurredAt, e.CommandId, s.NameTs, s.NameCmd))
+        {
+            s.Title = e.Title;
+            s.NameTs = e.OccurredAt;
+            s.NameCmd = e.CommandId;
+            Touch(s, e.OccurredAt);
+        }
+        if (Wins(e.OccurredAt, e.CommandId, s.NotesTs, s.NotesCmd))
+        {
+            s.Notes = e.Notes;
+            s.NotesTs = e.OccurredAt;
+            s.NotesCmd = e.CommandId;
+            Touch(s, e.OccurredAt);
+        }
+        if (Wins(e.OccurredAt, e.CommandId, s.DueTs, s.DueCmd))
+        {
+            s.DueAt = e.DueAt;
+            s.DueTs = e.OccurredAt;
+            s.DueCmd = e.CommandId;
+            Touch(s, e.OccurredAt);
+        }
+        if (Wins(e.OccurredAt, e.CommandId, s.CompletedTs, s.CompletedCmd))
+        {
+            s.Completed = e.Completed;
+            s.CompletedAt = e.Completed ? (e.CompletedAt ?? e.OccurredAt) : null;
+            s.CompletedBy = e.Completed ? actor : null;
+            s.CompletedTs = e.OccurredAt;
+            s.CompletedCmd = e.CommandId;
+            Touch(s, e.OccurredAt);
+        }
+
+        // CATEGORIES are a full desired set: add the wanted tags and drop the rest, each under its
+        // own per-tag guard so it commutes with concurrent granular tag add/remove events.
+        ReconcileTags(s, e.Tags, e.OccurredAt, e.CommandId);
+
+        if (Wins(e.OccurredAt, e.CommandId, s.VtodoTs, s.VtodoCmd))
+        {
+            s.SourceVtodo = e.SourceVtodo;
+            s.Uid = e.Uid;
+            s.VtodoTs = e.OccurredAt;
+            s.VtodoCmd = e.CommandId;
+        }
+    }
+
+    /// <summary>Drives the item's tag set toward <paramref name="desired"/> (a VTODO's CATEGORIES),
+    /// adding/removing per-tag only when this op is newer than that tag's last (OccurredAt, CommandId).</summary>
+    private static void ReconcileTags(ItemState s, IReadOnlyList<Guid> desired, DateTimeOffset ts, Guid cmd)
+    {
+        var want = new HashSet<Guid>(desired);
+        foreach (var tagId in want)
+        {
+            if (!NewerTag(s, tagId, ts, cmd)) continue;
+            if (!s.Tags.Contains(tagId)) s.Tags.Add(tagId);
+            s.TagTs[tagId] = ts;
+            s.TagCmd[tagId] = cmd;
+            Touch(s, ts);
+        }
+        foreach (var tagId in s.Tags.ToList())
+        {
+            if (want.Contains(tagId) || !NewerTag(s, tagId, ts, cmd)) continue;
+            s.Tags.Remove(tagId);
+            s.TagTs[tagId] = ts;
+            s.TagCmd[tagId] = cmd;
+            Touch(s, ts);
+        }
     }
 
     public static void ApplyRenamed(ItemState s, ItemRenamed e)

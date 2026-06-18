@@ -27,6 +27,10 @@ public static class MartenRegistrations
         // by it, so index it uniquely (the stream id is the non-secret ShareId).
         opts.Schema.For<ShareLink>().Index(x => x.Token, i => i.IsUnique = true);
 
+        // The CalDAV surface resolves a resource by (ListId, Uid); index the read-through Uid so
+        // those per-resource GET/PUT/DELETE lookups don't table-scan the items.
+        opts.Schema.For<Item>().Index(x => x.Uid);
+
         // Plain identity cache, keyed by email.
         opts.Schema.For<UserProfile>().Identity(x => x.Id);
 

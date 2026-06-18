@@ -35,6 +35,8 @@ public sealed class Item
     public string? Unit => State.Unit;
     public IReadOnlyList<Guid> Tags => State.Tags;
     public string SortOrder => State.SortOrder;
+    public string Uid => State.Uid;
+    public string? SourceVtodo => State.SourceVtodo;
     public string? CreatedBy => State.CreatedBy;
     public DateTimeOffset CreatedAt => State.CreatedAt;
     public DateTimeOffset UpdatedAt => State.UpdatedAt;
@@ -52,4 +54,5 @@ public sealed class Item
     public void Apply(IEvent<ItemReopened> e) => ItemLww.ApplyReopened(State, e.Data);
     public void Apply(IEvent<ItemMoved> e) => ItemLww.ApplyMoved(State, e.Data);
     public void Apply(IEvent<ItemDeleted> e) => ItemLww.ApplyDeleted(State, e.Data);
+    public void Apply(IEvent<ItemVtodoPut> e) => ItemLww.ApplyVtodoPut(State, e.Data, EventActor.Of(e));
 }

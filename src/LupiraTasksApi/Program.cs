@@ -2,6 +2,7 @@
 using LupiraTasksApi.Application;
 using LupiraTasksApi.Auth;
 using LupiraTasksApi.Data;
+using LupiraTasksApi.Dav;
 using LupiraTasksApi.Endpoints;
 using LupiraTasksApi.Handlers;
 using LupiraTasksApi.Http;
@@ -21,19 +22,26 @@ using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
-var connectionString = builder.Configuration.GetConnectionString("tasks")
-    ?? throw new InvalidOperationException("ConnectionStrings:tasks is required.");
-
+// Config (connection string) + environment are read LAZILY from the service provider at build
+// time — not eagerly off `builder` — so a test host (WebApplicationFactory) can override the
+// connection via ConfigureAppConfiguration before Marten resolves it.
 builder.Services
-    .AddMarten(opts =>
+    .AddMarten(sp =>
     {
+        var config = sp.GetRequiredService<IConfiguration>();
+        var env = sp.GetRequiredService<IHostEnvironment>();
+        var connectionString = config.GetConnectionString("tasks")
+            ?? throw new InvalidOperationException("ConnectionStrings:tasks is required.");
+
+        var opts = new StoreOptions();
         opts.Connection(connectionString);
         opts.DatabaseSchemaName = "tasks";
         opts.UseSystemTextJsonForSerialization();
-        opts.AutoCreateSchemaObjects = builder.Environment.IsDevelopment()
+        opts.AutoCreateSchemaObjects = env.IsDevelopment()
             ? AutoCreate.CreateOrUpdate
             : AutoCreate.None;
         MartenRegistrations.Configure(opts);
+        return opts;
     })
     .UseLightweightSessions();
 
@@ -176,6 +184,10 @@ authBuilder.AddJwtBearer(opts =>
 // prod); used only by the "ShareToken" policy below, so it never affects the default scheme.
 authBuilder.AddScheme<AuthenticationSchemeOptions, ShareTokenAuthHandler>(ShareTokenAuthHandler.SchemeName, _ => { });
 
+// CalDAV (/dav) clients (DAVx5) authenticate via HTTP Basic → Authentik LDAP bind — they can't use
+// the OIDC JWT. Used only by the "dav" policy below, so it never affects the default (JWT) scheme.
+authBuilder.AddScheme<AuthenticationSchemeOptions, DavBasicAuthHandler>(DavConstants.Scheme, _ => { });
+
 if (builder.Environment.IsDevelopment())
 {
     // Development-only: allow X-Dev-User header auth so the API can be exercised without Authentik.
@@ -195,6 +207,11 @@ builder.Services.AddAuthorization(o =>
     // the default (member) scheme.
     o.AddPolicy(ShareTokenAuthHandler.SchemeName, p => p
         .AddAuthenticationSchemes(ShareTokenAuthHandler.SchemeName)
+        .RequireAuthenticatedUser());
+
+    // The /dav surface authenticates specifically with the DAV Basic scheme.
+    o.AddPolicy(DavConstants.Scheme, p => p
+        .AddAuthenticationSchemes(DavConstants.Scheme)
         .RequireAuthenticatedUser());
 });
 
@@ -305,6 +322,17 @@ app.MapSync();
 app.MapShares();
 app.MapShared();
 
+// CalDAV (VTODO) surface for DAVx5 → Android task apps, discovered via /.well-known/caldav.
+// Authenticated by the DAV Basic→LDAP scheme (DAVx5 can't use the OIDC JWT). Rate-limiting is
+// disabled here: DAVx5 fans out many requests during a single sync and would trip the per-email
+// limiter; ETag/sync-token make those reads cheap.
+app.MapMethods("/.well-known/caldav", ["GET", "PROPFIND", "OPTIONS"],
+        () => Results.Redirect("/dav/", permanent: true))
+   .AllowAnonymous();
+app.Map("/dav/{**path}", DavRouter.Handle)
+   .RequireAuthorization(DavConstants.Scheme)
+   .DisableRateLimiting();
+
 // Agent MCP surface (Streamable HTTP). Mapped AFTER UseAuthentication/UseAuthorization so
 // the same JWT bearer validates it; RequireAuthorization rejects anonymous calls with 401.
 // Exposure is LAN/WireGuard-only — the Cloudflare Tunnel must not route /mcp (see deploy docs).
@@ -312,3 +340,7 @@ app.MapMcp("/mcp")
    .RequireAuthorization();
 
 app.Run();
+
+// Exposed so the integration test project can host the app in-memory via
+// WebApplicationFactory<Program> (top-level statements otherwise emit an internal Program).
+public partial class Program;

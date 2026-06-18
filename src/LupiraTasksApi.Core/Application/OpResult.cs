@@ -14,6 +14,12 @@ public enum OpStatus
     NotFound,
     Forbidden,
     Invalid,
+
+    /// <summary>
+    /// A precondition failed (CalDAV <c>If-Match</c>/<c>If-None-Match</c> ETag mismatch → 412).
+    /// Only produced by the DAV surface; the REST/MCP result mappers never receive it.
+    /// </summary>
+    Conflict,
 }
 
 /// <summary>A value-returning operation outcome.</summary>
@@ -25,6 +31,7 @@ public readonly record struct OpResult<T>(OpStatus Status, T? Value, string? Err
     public static OpResult<T> NotFound() => new(OpStatus.NotFound, default, null);
     public static OpResult<T> Forbidden(string error) => new(OpStatus.Forbidden, default, error);
     public static OpResult<T> Invalid(string error) => new(OpStatus.Invalid, default, error);
+    public static OpResult<T> Conflict(string error) => new(OpStatus.Conflict, default, error);
 }
 
 /// <summary>A no-content operation outcome (e.g. delete / leave).</summary>
@@ -36,4 +43,5 @@ public readonly record struct OpResult(OpStatus Status, string? Error)
     public static OpResult NotFound() => new(OpStatus.NotFound, null);
     public static OpResult Forbidden(string error) => new(OpStatus.Forbidden, error);
     public static OpResult Invalid(string error) => new(OpStatus.Invalid, error);
+    public static OpResult Conflict(string error) => new(OpStatus.Conflict, error);
 }

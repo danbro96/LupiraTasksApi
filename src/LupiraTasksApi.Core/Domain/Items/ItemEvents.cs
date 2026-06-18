@@ -18,7 +18,11 @@ public record ItemAdded(
     string Title,
     string SortOrder,
     DateTimeOffset OccurredAt,
-    Guid CommandId);
+    Guid CommandId,
+    // The CalDAV resource UID. Null on the REST/MCP/share surfaces (defaults to the item id);
+    // a client-supplied VTODO UID when the item is created over CalDAV. Trailing-optional so the
+    // existing positional call sites are unchanged.
+    string? Uid = null);
 
 public record ItemRenamed(Guid ItemId, string Title, DateTimeOffset OccurredAt, Guid CommandId);
 
@@ -45,3 +49,26 @@ public record ItemMoved(Guid ItemId, Guid? ParentItemId, string SortOrder, DateT
 
 /// <summary>Tombstone (stream retained). Once applied, later field events are ignored.</summary>
 public record ItemDeleted(Guid ItemId, DateTimeOffset OccurredAt, Guid CommandId);
+
+/// <summary>
+/// A whole-VTODO write from the CalDAV surface (a DAVx5 PUT). Carries the parsed modeled
+/// fields plus the raw VTODO blob (<see cref="SourceVtodo"/>) for lossless round-trip of
+/// properties this model doesn't represent. Competes per-field through the same per-field LWW
+/// guards as the granular REST/MCP events, keyed on (OccurredAt, CommandId) — so a DAV PUT and
+/// a concurrent REST edit converge field-by-field. When it is the first event on a stream it
+/// also establishes ListId / Uid / CreatedAt (DAV-created item).
+/// </summary>
+public record ItemVtodoPut(
+    Guid ItemId,
+    Guid ListId,
+    string Uid,
+    string Title,
+    string? Notes,
+    DateTimeOffset? DueAt,
+    bool Completed,
+    DateTimeOffset? CompletedAt,
+    IReadOnlyList<Guid> Tags,
+    string SortOrder,
+    string SourceVtodo,
+    DateTimeOffset OccurredAt,
+    Guid CommandId);

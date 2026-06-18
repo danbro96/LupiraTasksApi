@@ -26,5 +26,6 @@ public static class TasksCoreServiceCollectionExtensions
             .AddScoped<ListService>()
             .AddScoped<ItemService>()
             .AddScoped<SyncService>()
-            .AddScoped<ShareService>();
+            .AddScoped<ShareService>()
+            .AddScoped<TaskDavService>();
 }

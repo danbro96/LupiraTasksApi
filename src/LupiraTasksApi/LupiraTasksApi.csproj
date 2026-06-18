@@ -22,6 +22,9 @@
 
     <PackageReference Include="ModelContextProtocol.AspNetCore" Version="1.4.0" />
 
+    <!-- DAV Basic auth binds against the Authentik LDAP outpost (DAVx5 can't use OIDC JWT). -->
+    <PackageReference Include="System.DirectoryServices.Protocols" Version="10.0.9" />
+
     <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.16.0" />
     <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.16.0" />
     <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.15.2" />
