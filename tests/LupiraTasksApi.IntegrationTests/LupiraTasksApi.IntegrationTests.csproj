@@ -1,9 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <!-- DB-backed integration tests. NOT added to LupiraTasksApi.slnx so the unit
+  <!-- DB-backed HTTP end-to-end integration tests. NOT added to LupiraTasksApi.slnx so the unit
        `dotnet test` on the solution stays unit-only and DB-free. Run explicitly:
-       dotnet test tests/LupiraTasksApi.IntegrationTests, with a Postgres reachable
-       via TASKS_IT_DB (defaults to the local docker container on :5433). -->
+       dotnet test tests/LupiraTasksApi.IntegrationTests, with Docker available — the tests spin up
+       their own ephemeral Postgres via Testcontainers (no external DB to provision). -->
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
@@ -13,7 +13,9 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.*" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.6.0" />
+    <PackageReference Include="Testcontainers.PostgreSql" Version="4.*" />
     <PackageReference Include="xunit" Version="2.9.3" />
     <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5">
       <PrivateAssets>all</PrivateAssets>

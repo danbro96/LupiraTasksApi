@@ -1,6 +1,4 @@
 using JasperFx;
-using LupiraTasksApi;
-using LupiraTasksApi.Data;
 using LupiraTasksApi.Domain;
 using LupiraTasksApi.Domain.Items;
 using Marten;
@@ -9,38 +7,12 @@ using Xunit;
 namespace LupiraTasksApi.IntegrationTests;
 
 /// <summary>
-/// Exercises the Marten event store against a REAL Postgres (the local docker container
-/// by default; override via TASKS_IT_DB). Closes the runtime gaps the unit tests can't:
-/// inline snapshot replay + actor attribution, and that the idempotency dedup truly
-/// fails-fast and rolls back the appended events on a duplicate command id.
+/// Exercises the Marten event store against the shared real Postgres (store-level, not over HTTP).
+/// Closes the runtime gaps the unit tests can't: inline snapshot replay + actor attribution, and that
+/// the idempotency dedup truly fails-fast and rolls back the appended events on a duplicate command id.
 /// </summary>
-public sealed class MartenEventSourcingTests : IAsyncLifetime
+public sealed class MartenEventSourcingTests(TasksApiTestFactory factory) : IntegrationTest(factory)
 {
-    private static string ConnString =>
-        Environment.GetEnvironmentVariable("TASKS_IT_DB")
-        ?? "Host=localhost;Port=5433;Database=tasks_db;Username=tasks;Password=devpw";
-
-    private DocumentStore _store = null!;
-
-    public Task InitializeAsync()
-    {
-        _store = DocumentStore.For(opts =>
-        {
-            opts.Connection(ConnString);
-            opts.DatabaseSchemaName = "tasks_it";
-            opts.UseSystemTextJsonForSerialization();
-            opts.AutoCreateSchemaObjects = AutoCreate.CreateOrUpdate;
-            MartenRegistrations.Configure(opts);
-        });
-        return Task.CompletedTask;
-    }
-
-    public Task DisposeAsync()
-    {
-        _store?.Dispose();
-        return Task.CompletedTask;
-    }
-
     [Fact]
     public async Task Item_event_stream_replays_into_inline_snapshot_with_actor_attribution()
     {
@@ -48,7 +20,7 @@ public sealed class MartenEventSourcingTests : IAsyncLifetime
         var listId = Guid.CreateVersion7();
         var t0 = DateTimeOffset.UtcNow;
 
-        await using (var s = _store.LightweightSession())
+        await using (var s = Store.LightweightSession())
         {
             s.SetHeader(EventActor.HeaderKey, "alice@lupira.com");
             s.Events.StartStream<Item>(
@@ -59,7 +31,7 @@ public sealed class MartenEventSourcingTests : IAsyncLifetime
             await s.SaveChangesAsync();
         }
 
-        await using var q = _store.QuerySession();
+        await using var q = Store.QuerySession();
         var item = await q.LoadAsync<Item>(itemId);
 
         Assert.NotNull(item);
@@ -76,14 +48,14 @@ public sealed class MartenEventSourcingTests : IAsyncLifetime
         var cmd = Guid.CreateVersion7();
         var agg = Guid.CreateVersion7();
 
-        await using (var s1 = _store.LightweightSession())
+        await using (var s1 = Store.LightweightSession())
         {
             s1.Insert(new ProcessedCommand { CommandId = cmd, AggregateId = agg, ResultVersion = 1, ProcessedAt = DateTimeOffset.UtcNow });
             await s1.SaveChangesAsync();
         }
 
         Exception? ex;
-        await using (var s2 = _store.LightweightSession())
+        await using (var s2 = Store.LightweightSession())
         {
             s2.Insert(new ProcessedCommand { CommandId = cmd, AggregateId = agg, ResultVersion = 9, ProcessedAt = DateTimeOffset.UtcNow });
             ex = await Record.ExceptionAsync(() => s2.SaveChangesAsync());
@@ -95,7 +67,7 @@ public sealed class MartenEventSourcingTests : IAsyncLifetime
             ex is DocumentAlreadyExistsException,
             $"Expected JasperFx.DocumentAlreadyExistsException (the type the handlers catch); got {ex!.GetType().FullName}: {ex.Message}");
 
-        await using var q = _store.QuerySession();
+        await using var q = Store.QuerySession();
         var count = await q.Query<ProcessedCommand>().CountAsync(c => c.CommandId == cmd);
         Assert.Equal(1, count);
     }
@@ -111,14 +83,14 @@ public sealed class MartenEventSourcingTests : IAsyncLifetime
         var cmd = Guid.CreateVersion7();
         var t = DateTimeOffset.UtcNow;
 
-        await using (var s0 = _store.LightweightSession())
+        await using (var s0 = Store.LightweightSession())
         {
             s0.Insert(new ProcessedCommand { CommandId = cmd, AggregateId = itemId, ResultVersion = 1, ProcessedAt = t });
             s0.Events.StartStream<Item>(itemId, new ItemAdded(itemId, listId, null, "Original", "a", t, Guid.CreateVersion7()));
             await s0.SaveChangesAsync();
         }
 
-        await using (var s1 = _store.LightweightSession())
+        await using (var s1 = Store.LightweightSession())
         {
             s1.Events.Append(itemId, new ItemRenamed(itemId, "Should NOT persist", t.AddSeconds(1), cmd));
             s1.Insert(new ProcessedCommand { CommandId = cmd, AggregateId = itemId, ResultVersion = 2, ProcessedAt = t });
@@ -126,7 +98,7 @@ public sealed class MartenEventSourcingTests : IAsyncLifetime
             Assert.NotNull(ex); // duplicate command id rolls the whole thing back
         }
 
-        await using var q = _store.QuerySession();
+        await using var q = Store.QuerySession();
         var item = await q.LoadAsync<Item>(itemId);
         Assert.Equal("Original", item!.Title); // the rename rolled back with the failed ledger insert
     }

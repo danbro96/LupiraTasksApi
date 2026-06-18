@@ -1,0 +1,54 @@
+using System.Net;
+using LupiraTasksApi.Dtos.Lists;
+using Xunit;
+
+namespace LupiraTasksApi.IntegrationTests;
+
+/// <summary>Archive / restore / delete and the soft-delete filtering behind the `?archived=` query — through HTTP.</summary>
+public sealed class ListLifecycleTests(TasksApiTestFactory factory) : IntegrationTest(factory)
+{
+    private static async Task<bool> ListVisible(HttpClient api, Guid listId, bool archived)
+    {
+        var resp = await ReadAsync<ListCollectionResponse>(await api.GetAsync($"/lists?archived={archived.ToString().ToLowerInvariant()}"));
+        return resp.Lists.Any(l => l.Id == listId);
+    }
+
+    [Fact]
+    public async Task Created_list_is_active_not_archived()
+    {
+        var alice = Factory.ApiClient("alice@x.test");
+        var list = await CreateListAsync(alice);
+
+        Assert.True(await ListVisible(alice, list.Id, archived: false));
+        Assert.False(await ListVisible(alice, list.Id, archived: true));
+    }
+
+    [Fact]
+    public async Task Archive_hides_from_active_and_restore_brings_it_back()
+    {
+        var alice = Factory.ApiClient("alice@x.test");
+        var list = await CreateListAsync(alice);
+
+        await SendJson(alice, HttpMethod.Post, $"/lists/{list.Id}/archive");
+        Assert.False(await ListVisible(alice, list.Id, archived: false));
+        Assert.True(await ListVisible(alice, list.Id, archived: true));
+
+        await SendJson(alice, HttpMethod.Post, $"/lists/{list.Id}/restore");
+        Assert.True(await ListVisible(alice, list.Id, archived: false));
+        Assert.False(await ListVisible(alice, list.Id, archived: true));
+    }
+
+    [Fact]
+    public async Task Delete_removes_from_all_queries()
+    {
+        var alice = Factory.ApiClient("alice@x.test");
+        var list = await CreateListAsync(alice);
+
+        var del = await SendJson(alice, HttpMethod.Delete, $"/lists/{list.Id}");
+        Assert.Equal(HttpStatusCode.NoContent, del.StatusCode);
+
+        Assert.False(await ListVisible(alice, list.Id, archived: false));
+        Assert.False(await ListVisible(alice, list.Id, archived: true));
+        Assert.Equal(HttpStatusCode.NotFound, (await alice.GetAsync($"/lists/{list.Id}")).StatusCode);
+    }
+}
