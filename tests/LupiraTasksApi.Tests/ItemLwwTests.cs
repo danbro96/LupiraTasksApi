@@ -167,6 +167,39 @@ public class ItemLwwTests
         Assert.Equal("l", s.Unit);
     }
 
+    [Fact]
+    public void Priority_set_respects_lww()
+    {
+        var s = NewItem();
+        Assert.Equal(0, s.Priority);   // default: none
+
+        ItemLww.ApplyPrioritySet(s, new ItemPrioritySet(ItemId, 5, At(20), Cmd));
+        // A stale (older) priority must not clobber the newer one.
+        ItemLww.ApplyPrioritySet(s, new ItemPrioritySet(ItemId, 9, At(10), Cmd));
+        Assert.Equal(5, s.Priority);
+
+        // A newer set wins; clearing back to 0 (= none) is a normal write.
+        ItemLww.ApplyPrioritySet(s, new ItemPrioritySet(ItemId, 0, At(30), Cmd));
+        Assert.Equal(0, s.Priority);
+
+        // An exact (OccurredAt, CommandId) replay is idempotent.
+        ItemLww.ApplyPrioritySet(s, new ItemPrioritySet(ItemId, 7, At(30), Cmd));
+        Assert.Equal(0, s.Priority);
+    }
+
+    [Fact]
+    public void Priority_has_its_own_independent_guard()
+    {
+        var s = NewItem();
+        ItemLww.ApplyPrioritySet(s, new ItemPrioritySet(ItemId, 4, At(50), Cmd));
+
+        // An older edit to a different field still applies — guards are per-field.
+        ItemLww.ApplyRenamed(s, new ItemRenamed(ItemId, "Renamed", At(20), Cmd));
+
+        Assert.Equal(4, s.Priority);
+        Assert.Equal("Renamed", s.Title);
+    }
+
     // --- Vector: tag add/remove commutativity + add-vs-remove race by OccurredAt ---
 
     private static readonly Guid TagRed = Guid.Parse("0190a000-0000-7000-8000-0000000000a1");

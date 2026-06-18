@@ -33,6 +33,7 @@ public sealed class Item
     public DateTimeOffset? DueAt => State.DueAt;
     public decimal? Quantity => State.Quantity;
     public string? Unit => State.Unit;
+    public int Priority => State.Priority;
     public IReadOnlyList<Guid> Tags => State.Tags;
     public string SortOrder => State.SortOrder;
     public string Uid => State.Uid;
@@ -50,6 +51,7 @@ public sealed class Item
     public void Apply(IEvent<ItemTagAdded> e) => ItemLww.ApplyTagAdded(State, e.Data);
     public void Apply(IEvent<ItemTagRemoved> e) => ItemLww.ApplyTagRemoved(State, e.Data);
     public void Apply(IEvent<ItemQuantitySet> e) => ItemLww.ApplyQuantitySet(State, e.Data);
+    public void Apply(IEvent<ItemPrioritySet> e) => ItemLww.ApplyPrioritySet(State, e.Data);
     public void Apply(IEvent<ItemCompleted> e) => ItemLww.ApplyCompleted(State, e.Data, EventActor.Of(e));
     public void Apply(IEvent<ItemReopened> e) => ItemLww.ApplyReopened(State, e.Data);
     public void Apply(IEvent<ItemMoved> e) => ItemLww.ApplyMoved(State, e.Data);

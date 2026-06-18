@@ -24,6 +24,10 @@ public sealed class UpdateItemRequest
     public string? Unit { get; set; }
     public bool QuantityProvided { get; set; }
 
+    /// <summary>Standard iCalendar priority, 0..9 (0 = none). Only applied when <see cref="PriorityProvided"/> is true.</summary>
+    public int Priority { get; set; }
+    public bool PriorityProvided { get; set; }
+
     /// <summary>Tag ids to add (commutative delta).</summary>
     public IReadOnlyList<Guid>? AddTagIds { get; set; }
 

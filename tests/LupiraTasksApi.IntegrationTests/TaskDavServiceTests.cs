@@ -60,6 +60,23 @@ public sealed class TaskDavServiceTests(TasksApiTestFactory factory) : Integrati
     }
 
     [Fact]
+    public async Task Put_with_priority_is_visible_on_the_item_surface()
+    {
+        var listId = await SeedListAsync();
+        const string withPriority =
+            "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//phone//EN\n" +
+            "BEGIN:VTODO\nUID:dav-uid-2\nSUMMARY:Pay rent\nPRIORITY:2\n" +
+            "END:VTODO\nEND:VCALENDAR\n";
+
+        var put = await WithDav(d => d.PutVtodoAsync(Alice, listId, "dav-uid-2", withPriority, ifMatch: null, ifNoneMatchStar: false, CancellationToken.None));
+        Assert.Equal(OpStatus.Ok, put.Status);
+
+        await using var q = Store.QuerySession();
+        var item = Assert.Single(await q.Query<Item>().Where(i => i.ListId == listId && !i.Deleted).ToListAsync());
+        Assert.Equal(2, item.Priority);
+    }
+
+    [Fact]
     public async Task Put_with_if_none_match_star_conflicts_when_the_resource_exists()
     {
         var listId = await SeedListAsync();

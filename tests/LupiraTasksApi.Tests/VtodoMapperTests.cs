@@ -81,22 +81,37 @@ public class VtodoMapperTests
     }
 
     [Fact]
-    public void Regeneration_preserves_unmodeled_properties_from_the_source_blob()
+    public void Regeneration_preserves_unmodeled_properties_but_owns_modeled_ones()
     {
-        // A prior DAV PUT set PRIORITY + RRULE the model doesn't represent. A subsequent GET must
-        // regenerate the current SUMMARY from the snapshot yet keep those properties alive.
+        // A prior DAV PUT set RRULE (unmodeled) plus a now-stale PRIORITY. A subsequent GET must
+        // regenerate SUMMARY and PRIORITY from the snapshot (PRIORITY is now a modeled field) while
+        // still keeping the unmodeled RRULE alive.
         const string source =
             "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//phone//EN\r\n" +
             "BEGIN:VTODO\r\nUID:task-uid-1\r\nSUMMARY:stale title\r\nPRIORITY:1\r\nRRULE:FREQ=DAILY\r\n" +
             "END:VTODO\r\nEND:VCALENDAR\r\n";
-        var item = ItemWith(s => s.Title = "current title");
+        var item = ItemWith(s => { s.Title = "current title"; s.Priority = 6; });
 
         var raw = VtodoMapper.ToVtodo(item, [], sourceRaw: source);
 
         Assert.Contains("SUMMARY:current title", raw);   // regenerated from the snapshot
         Assert.DoesNotContain("stale title", raw);
-        Assert.Contains("PRIORITY:1", raw);              // preserved passthrough
-        Assert.Contains("RRULE:FREQ=DAILY", raw);
+        Assert.Contains("PRIORITY:6", raw);              // from the snapshot, not the stale blob
+        Assert.DoesNotContain("PRIORITY:1", raw);
+        Assert.Contains("RRULE:FREQ=DAILY", raw);        // unmodeled property preserved
+    }
+
+    [Fact]
+    public void Priority_round_trips_through_vtodo()
+    {
+        var raw = VtodoMapper.ToVtodo(ItemWith(s => s.Priority = 3), [], sourceRaw: null);
+        Assert.Contains("PRIORITY:3", raw);
+        Assert.Equal(3, VtodoMapper.Parse(raw).Priority);
+
+        // Default 0 (= none) emits no PRIORITY and parses back as 0.
+        var none = VtodoMapper.ToVtodo(ItemWith(_ => { }), [], sourceRaw: null);
+        Assert.DoesNotContain("PRIORITY", none);
+        Assert.Equal(0, VtodoMapper.Parse(none).Priority);
     }
 
     [Fact]

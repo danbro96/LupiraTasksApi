@@ -76,6 +76,8 @@ public sealed class ItemService
             return OpResult<ItemResponse>.Invalid("`sortOrder` is required.");
         if (request.Quantity is < 0)
             return OpResult<ItemResponse>.Invalid("`quantity` must be non-negative.");
+        if (request.Priority is < 0 or > 9)
+            return OpResult<ItemResponse>.Invalid("`priority` must be 0..9.");
 
         var commandId = cmdId ?? Guid.CreateVersion7();
         var seen = await _idempotency.SeenAsync(commandId, ct);
@@ -103,6 +105,8 @@ public sealed class ItemService
                 seed.Add(new ItemAssigned(request.Id, request.AssigneeEmail.Trim(), occurredAt, commandId));
             if (request.Quantity is not null || !string.IsNullOrWhiteSpace(request.Unit))
                 seed.Add(new ItemQuantitySet(request.Id, request.Quantity, request.Unit, occurredAt, commandId));
+            if (request.Priority != 0)
+                seed.Add(new ItemPrioritySet(request.Id, request.Priority, occurredAt, commandId));
             if (request.TagIds is { Count: > 0 })
                 foreach (var tagId in request.TagIds.Distinct())
                     seed.Add(new ItemTagAdded(request.Id, tagId, occurredAt, commandId));
@@ -177,6 +181,12 @@ public sealed class ItemService
             if (request.Quantity is < 0)
                 return OpResult<ItemResponse>.Invalid("`quantity` must be non-negative.");
             events.Add(new ItemQuantitySet(itemId, request.Quantity, request.Unit, occurredAt, commandId));
+        }
+        if (request.PriorityProvided)
+        {
+            if (request.Priority is < 0 or > 9)
+                return OpResult<ItemResponse>.Invalid("`priority` must be 0..9.");
+            events.Add(new ItemPrioritySet(itemId, request.Priority, occurredAt, commandId));
         }
         if (request.AddTagIds is { Count: > 0 })
             foreach (var tagId in request.AddTagIds.Distinct())

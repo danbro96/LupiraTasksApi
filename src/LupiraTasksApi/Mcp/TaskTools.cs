@@ -39,7 +39,7 @@ public sealed class TaskTools
 
     /// <summary>A task as the agent sees it — trimmed, with its owning list named.</summary>
     public sealed record TaskSummary(
-        Guid Id, Guid ListId, string ListName, string Title, bool Completed, DateTimeOffset? DueAt, string? AssignedTo);
+        Guid Id, Guid ListId, string ListName, string Title, bool Completed, DateTimeOffset? DueAt, string? AssignedTo, int Priority);
 
     [McpServerTool(Name = "list_my_lists")]
     [Description("List the to-do / shopping lists the current user is a member of, with their role on each.")]
@@ -99,7 +99,7 @@ public sealed class TaskTools
             {
                 if (!string.IsNullOrWhiteSpace(query) && !it.Title.Contains(query, StringComparison.OrdinalIgnoreCase))
                     continue;
-                results.Add(new TaskSummary(it.Id, list.Id, list.Name, it.Title, it.Completed, it.DueAt, it.AssignedTo));
+                results.Add(new TaskSummary(it.Id, list.Id, list.Name, it.Title, it.Completed, it.DueAt, it.AssignedTo, it.Priority));
             }
         }
         return results;
@@ -114,6 +114,7 @@ public sealed class TaskTools
         [Description("Optional assignee email.")] string? assignee = null,
         [Description("Optional quantity (useful for shopping lists).")] decimal? quantity = null,
         [Description("Optional unit, e.g. 'kg' (useful for shopping lists).")] string? unit = null,
+        [Description("Optional priority 0..9 (0 = none, the default).")] int priority = 0,
         CancellationToken ct = default)
     {
         var caller = Caller();
@@ -125,6 +126,7 @@ public sealed class TaskTools
             AssigneeEmail = assignee,
             Quantity = quantity,
             Unit = unit,
+            Priority = priority,
             SortOrder = await NextSortOrderAsync(caller, listId, ct),
             OccurredAt = DateTimeOffset.UtcNow,
         };
@@ -154,6 +156,7 @@ public sealed class TaskTools
         [Description("New notes (optional).")] string? notes = null,
         [Description("New due date/time, ISO-8601 (optional).")] DateTimeOffset? dueAt = null,
         [Description("New assignee email (optional).")] string? assignee = null,
+        [Description("New priority 0..9, 0 = none (optional; omitted leaves it unchanged).")] int? priority = null,
         CancellationToken ct = default)
     {
         var caller = Caller();
@@ -169,6 +172,8 @@ public sealed class TaskTools
             DueAtProvided = dueAt is not null,
             AssigneeEmail = assignee,
             AssigneeEmailProvided = assignee is not null,
+            Priority = priority ?? 0,
+            PriorityProvided = priority is not null,
             OccurredAt = DateTimeOffset.UtcNow,
         };
         var item = Require(await _items.UpdateAsync(caller, Guid.CreateVersion7(), listId, taskId, request, ct));
@@ -261,7 +266,7 @@ public sealed class TaskTools
     private async Task<TaskSummary> ToTaskSummaryAsync(Caller caller, Guid listId, ItemResponse item, CancellationToken ct)
     {
         var listName = (await _lists.GetAsync(caller, listId, ct)).Value?.Name ?? string.Empty;
-        return new TaskSummary(item.Id, listId, listName, item.Title, item.Completed, item.DueAt, item.AssignedTo);
+        return new TaskSummary(item.Id, listId, listName, item.Title, item.Completed, item.DueAt, item.AssignedTo, item.Priority);
     }
 
     private static ShareLinkSummary ToShareSummary(ShareResponse s) =>

@@ -21,6 +21,7 @@ internal static class ItemMapper
         DueAt = item.DueAt,
         Quantity = item.Quantity,
         Unit = item.Unit,
+        Priority = item.Priority,
         Tags = item.Tags.ToList(),
         SortOrder = item.SortOrder,
         CreatedBy = item.CreatedBy,

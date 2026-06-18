@@ -18,9 +18,9 @@ public class ItemVtodoLwwTests
 
     private static ItemVtodoPut Put(
         int atSeconds, Guid cmd, string title = "From phone", bool completed = false,
-        IReadOnlyList<Guid>? tags = null, string uid = "phone-uid", string raw = "RAWVTODO") =>
+        IReadOnlyList<Guid>? tags = null, string uid = "phone-uid", string raw = "RAWVTODO", int priority = 0) =>
         new(ItemId, ListId, uid, title, Notes: null, DueAt: null, completed,
-            completed ? At(atSeconds) : null, tags ?? [], SortOrder: "~z", raw, At(atSeconds), cmd);
+            completed ? At(atSeconds) : null, tags ?? [], SortOrder: "~z", raw, At(atSeconds), cmd, priority);
 
     [Fact]
     public void Put_on_a_new_stream_establishes_identity_and_fields()
@@ -69,6 +69,22 @@ public class ItemVtodoLwwTests
         ItemLww.ApplyVtodoPut(s, Put(10, Cmd, completed: false), actor: "a@x.test");
         Assert.False(s.Completed);
         Assert.Null(s.CompletedAt);
+    }
+
+    [Fact]
+    public void Put_sets_priority_and_a_newer_granular_set_wins_over_an_older_put()
+    {
+        var s = new ItemState();
+        ItemLww.ApplyVtodoPut(s, Put(5, Cmd, priority: 3), actor: "a@x.test");
+        Assert.Equal(3, s.Priority);
+
+        // A newer granular priority edit (web) wins over the older phone PUT.
+        ItemLww.ApplyPrioritySet(s, new ItemPrioritySet(ItemId, 7, At(10), Cmd));
+        Assert.Equal(7, s.Priority);
+
+        // An older PUT must not clobber the newer granular value.
+        ItemLww.ApplyVtodoPut(s, Put(8, Cmd, priority: 1), actor: "a@x.test");
+        Assert.Equal(7, s.Priority);
     }
 
     [Fact]

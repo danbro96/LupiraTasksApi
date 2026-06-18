@@ -24,6 +24,7 @@ public static class SharedMapper
         DueAt = item.DueAt,
         Quantity = item.Quantity,
         Unit = item.Unit,
+        Priority = item.Priority,
         Tags = item.Tags.ToList(),
         SortOrder = item.SortOrder,
     };
@@ -40,6 +41,7 @@ public static class SharedMapper
         DueAt = item.DueAt,
         Quantity = item.Quantity,
         Unit = item.Unit,
+        Priority = item.Priority,
         Tags = item.Tags.ToList(),
         SortOrder = item.SortOrder,
     };

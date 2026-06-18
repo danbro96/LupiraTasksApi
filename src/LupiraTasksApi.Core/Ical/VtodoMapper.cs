@@ -17,7 +17,8 @@ public readonly record struct VtodoFields(
     DateTimeOffset? DueAt,
     bool Completed,
     DateTimeOffset? CompletedAt,
-    IReadOnlyList<string> Categories);
+    IReadOnlyList<string> Categories,
+    int Priority);
 
 /// <summary>
 /// Maps <see cref="Item"/> ↔ iCalendar VTODO (RFC 5545) via Ical.Net, for the CalDAV surface.
@@ -35,7 +36,7 @@ public static class VtodoMapper
     private static readonly HashSet<string> ModeledProps = new(StringComparer.OrdinalIgnoreCase)
     {
         "UID", "SUMMARY", "DESCRIPTION", "DUE", "STATUS", "PERCENT-COMPLETE", "COMPLETED",
-        "CATEGORIES", "DTSTAMP", "CREATED", "LAST-MODIFIED",
+        "CATEGORIES", "PRIORITY", "DTSTAMP", "CREATED", "LAST-MODIFIED",
         "X-LUPIRA-ASSIGNEE", "X-LUPIRA-QUANTITY", "X-LUPIRA-UNIT",
     };
 
@@ -46,6 +47,8 @@ public static class VtodoMapper
         if (!string.IsNullOrWhiteSpace(item.Title)) todo.Summary = item.Title;
         if (!string.IsNullOrWhiteSpace(item.Notes)) todo.Description = item.Notes;
         if (item.DueAt is { } due) todo.Due = Utc(due);
+        // Standard VTODO PRIORITY (RFC 5545): 1..9 in range; 0 = undefined, so omit it.
+        if (item.Priority is >= 1 and <= 9) todo.Priority = item.Priority;
 
         if (item.Completed)
         {
@@ -107,7 +110,10 @@ public static class VtodoMapper
             .Select(s => s.Trim())
             .ToList();
 
-        return new VtodoFields(todo.Summary ?? "", todo.Description, dueAt, completed, completedAt, categories);
+        // PRIORITY is defined 0..9; clamp defensively so a stray client value can't fail the sync.
+        var priority = Math.Clamp(todo.Priority, 0, 9);
+
+        return new VtodoFields(todo.Summary ?? "", todo.Description, dueAt, completed, completedAt, categories, priority);
     }
 
     private static CalDateTime Utc(DateTimeOffset value) => new(value.UtcDateTime, "UTC");

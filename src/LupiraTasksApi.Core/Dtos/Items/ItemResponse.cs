@@ -16,6 +16,7 @@ public sealed class ItemResponse
     public DateTimeOffset? DueAt { get; set; }
     public decimal? Quantity { get; set; }
     public string? Unit { get; set; }
+    public required int Priority { get; set; }
     public required IReadOnlyList<Guid> Tags { get; set; }
     public required string SortOrder { get; set; }
     public string? CreatedBy { get; set; }

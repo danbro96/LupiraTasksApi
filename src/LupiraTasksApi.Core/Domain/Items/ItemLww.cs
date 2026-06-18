@@ -87,6 +87,13 @@ public static class ItemLww
             s.DueCmd = e.CommandId;
             Touch(s, e.OccurredAt);
         }
+        if (Wins(e.OccurredAt, e.CommandId, s.PriorityTs, s.PriorityCmd))
+        {
+            s.Priority = e.Priority;
+            s.PriorityTs = e.OccurredAt;
+            s.PriorityCmd = e.CommandId;
+            Touch(s, e.OccurredAt);
+        }
         if (Wins(e.OccurredAt, e.CommandId, s.CompletedTs, s.CompletedCmd))
         {
             s.Completed = e.Completed;
@@ -176,6 +183,15 @@ public static class ItemLww
         s.Unit = e.Unit;
         s.QtyTs = e.OccurredAt;
         s.QtyCmd = e.CommandId;
+        Touch(s, e.OccurredAt);
+    }
+
+    public static void ApplyPrioritySet(ItemState s, ItemPrioritySet e)
+    {
+        if (s.Deleted || !Wins(e.OccurredAt, e.CommandId, s.PriorityTs, s.PriorityCmd)) return;
+        s.Priority = e.Priority;
+        s.PriorityTs = e.OccurredAt;
+        s.PriorityCmd = e.CommandId;
         Touch(s, e.OccurredAt);
     }
 

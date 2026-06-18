@@ -40,6 +40,9 @@ public record ItemTagRemoved(Guid ItemId, Guid TagId, DateTimeOffset OccurredAt,
 
 public record ItemQuantitySet(Guid ItemId, decimal? Quantity, string? Unit, DateTimeOffset OccurredAt, Guid CommandId);
 
+/// <summary>Sets the standard iCalendar priority (0 = none, 1..9 in range).</summary>
+public record ItemPrioritySet(Guid ItemId, int Priority, DateTimeOffset OccurredAt, Guid CommandId);
+
 public record ItemCompleted(Guid ItemId, DateTimeOffset OccurredAt, Guid CommandId);
 
 public record ItemReopened(Guid ItemId, DateTimeOffset OccurredAt, Guid CommandId);
@@ -71,4 +74,7 @@ public record ItemVtodoPut(
     string SortOrder,
     string SourceVtodo,
     DateTimeOffset OccurredAt,
-    Guid CommandId);
+    Guid CommandId,
+    // The standard VTODO PRIORITY (0 = none, 1..9). Trailing-optional so existing positional call
+    // sites are unchanged and historical persisted events (without the field) still deserialize to 0.
+    int Priority = 0);

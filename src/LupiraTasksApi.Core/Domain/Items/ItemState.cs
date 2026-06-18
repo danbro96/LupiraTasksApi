@@ -28,6 +28,9 @@ public sealed class ItemState
     public decimal? Quantity { get; set; }
     public string? Unit { get; set; }
 
+    /// <summary>Standard iCalendar VTODO priority: 0 = none/undefined, 1..9 in range. Defaults to 0.</summary>
+    public int Priority { get; set; }
+
     public List<Guid> Tags { get; set; } = [];
 
     public string SortOrder { get; set; } = "";
@@ -69,6 +72,8 @@ public sealed class ItemState
     public Guid DueCmd { get; set; }
     public DateTimeOffset QtyTs { get; set; }
     public Guid QtyCmd { get; set; }
+    public DateTimeOffset PriorityTs { get; set; }
+    public Guid PriorityCmd { get; set; }
     public DateTimeOffset CompletedTs { get; set; }
     public Guid CompletedCmd { get; set; }
     public DateTimeOffset MoveTs { get; set; }
