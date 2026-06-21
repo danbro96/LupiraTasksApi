@@ -7,6 +7,17 @@
     <RootNamespace>LupiraTasksApi</RootNamespace>
   </PropertyGroup>
 
+  <!--
+    Emit the OpenAPI document at build time (no running server / DB) so the JSON spec stays in
+    lockstep with the Map* endpoints. `dotnet build` writes `openapi/LupiraTasksApi.json` at the
+    repo root — what LupiraTasksMobile runs Orval against.
+  -->
+  <PropertyGroup>
+    <OpenApiGenerateDocuments>true</OpenApiGenerateDocuments>
+    <OpenApiGenerateDocumentsOnBuild>true</OpenApiGenerateDocumentsOnBuild>
+    <OpenApiDocumentsDirectory>$(MSBuildThisFileDirectory)..\..\openapi</OpenApiDocumentsDirectory>
+  </PropertyGroup>
+
   <ItemGroup>
     <!-- The bounded context (Domain + Application + Data). The host is a thin transport/composition
          layer over it; the project boundary keeps ASP.NET out of the core. -->
@@ -15,6 +26,10 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.9" />
+    <PackageReference Include="Microsoft.Extensions.ApiDescription.Server" Version="10.0.9">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.9" />
     <PackageReference Include="Scalar.AspNetCore" Version="2.16.4" />
 

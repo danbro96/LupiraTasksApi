@@ -20,6 +20,13 @@ using Scalar.AspNetCore;
 using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
 
+// The build-time OpenAPI emitter (Microsoft.Extensions.ApiDescription.Server's GetDocument.Insider)
+// loads this assembly to walk the document provider but never serves a request — so skip startup
+// config that requires real infrastructure (here: the OIDC authority/audience), letting `dotnet
+// build` emit the spec on a machine with no auth config or DB.
+var isOpenApiBuild = Environment.GetCommandLineArgs()
+    .Any(a => a.Contains("getdocument", StringComparison.OrdinalIgnoreCase));
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Config (connection string) + environment are read LAZILY from the service provider at build
@@ -103,6 +110,23 @@ builder.Services.AddOpenApi("v1", options =>
     });
     options.AddOperationTransformer((operation, context, _) =>
     {
+        // The "/shared/{token}" group carries the token in the path template, but the handlers read
+        // it from the authenticated principal (ShareToken scheme) rather than binding a route arg —
+        // so the generator omits the parameter and emits an invalid path. Declare it explicitly.
+        if ((context.Description.RelativePath ?? "").Contains("{token}", StringComparison.OrdinalIgnoreCase)
+            && !(operation.Parameters?.Any(p => p.Name == "token" && p.In == ParameterLocation.Path) ?? false))
+        {
+            operation.Parameters ??= [];
+            operation.Parameters.Add(new OpenApiParameter
+            {
+                Name = "token",
+                In = ParameterLocation.Path,
+                Required = true,
+                Description = "Opaque share-link token (validated by the ShareToken auth scheme).",
+                Schema = new OpenApiSchema { Type = JsonSchemaType.String },
+            });
+        }
+
         var endpointMetadata = context.Description.ActionDescriptor.EndpointMetadata;
         var requiresAuth = endpointMetadata.OfType<IAuthorizeData>().Any()
                         && !endpointMetadata.OfType<IAllowAnonymous>().Any();
@@ -136,11 +160,11 @@ builder.Services.AddOpenApi("v1", options =>
 });
 
 var oidc = builder.Configuration.GetSection(OidcAuthOptions.SectionName).Get<OidcAuthOptions>() ?? new OidcAuthOptions();
-if (string.IsNullOrWhiteSpace(oidc.Authority))
+if (!isOpenApiBuild && string.IsNullOrWhiteSpace(oidc.Authority))
 {
     throw new InvalidOperationException("Auth:Oidc:Authority is required.");
 }
-if (string.IsNullOrWhiteSpace(oidc.Audience))
+if (!isOpenApiBuild && string.IsNullOrWhiteSpace(oidc.Audience))
 {
     throw new InvalidOperationException("Auth:Oidc:Audience is required.");
 }
