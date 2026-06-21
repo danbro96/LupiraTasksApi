@@ -4,6 +4,6 @@
     <Project Path="src/LupiraTasksApi/LupiraTasksApi.csproj" />
   </Folder>
   <Folder Name="/tests/">
-    <Project Path="tests/LupiraTasksApi.Tests/LupiraTasksApi.Tests.csproj" />
+    <Project Path="tests/LupiraTasksApi.UnitTests/LupiraTasksApi.UnitTests.csproj" />
   </Folder>
 </Solution>

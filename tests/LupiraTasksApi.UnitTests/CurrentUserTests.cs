@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Http;
 using System.Security.Claims;
 using Xunit;
 
-namespace LupiraTasksApi.Tests;
+namespace LupiraTasksApi.UnitTests;
 
 /// <summary>
 /// <see cref="CurrentUser"/> reads the validated JWT principal off the request. The

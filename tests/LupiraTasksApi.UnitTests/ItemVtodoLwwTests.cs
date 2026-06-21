@@ -1,7 +1,7 @@
 using LupiraTasksApi.Domain.Items;
 using Xunit;
 
-namespace LupiraTasksApi.Tests;
+namespace LupiraTasksApi.UnitTests;
 
 /// <summary>
 /// LWW vectors for the CalDAV write event <see cref="ItemVtodoPut"/>. It must establish identity on

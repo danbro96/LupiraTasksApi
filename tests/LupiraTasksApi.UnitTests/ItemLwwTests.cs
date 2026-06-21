@@ -1,7 +1,7 @@
 using LupiraTasksApi.Domain.Items;
 using Xunit;
 
-namespace LupiraTasksApi.Tests;
+namespace LupiraTasksApi.UnitTests;
 
 /// <summary>
 /// Shared last-writer-wins (LWW) test vectors for the pure <see cref="ItemLww"/>

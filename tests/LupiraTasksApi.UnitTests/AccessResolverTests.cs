@@ -2,7 +2,7 @@ using LupiraTasksApi.Auth;
 using LupiraTasksApi.Domain;
 using Xunit;
 
-namespace LupiraTasksApi.Tests;
+namespace LupiraTasksApi.UnitTests;
 
 /// <summary>
 /// Pure role-ordering math behind <see cref="AccessResolver"/>. The enum is ordered

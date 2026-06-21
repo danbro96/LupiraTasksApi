@@ -3,7 +3,7 @@ using LupiraTasksApi.Domain.Lists;
 using LupiraTasksApi.Ical;
 using Xunit;
 
-namespace LupiraTasksApi.Tests;
+namespace LupiraTasksApi.UnitTests;
 
 /// <summary>
 /// Covers the <see cref="VtodoMapper"/> Item↔VTODO mapping (Ical.Net): the modeled-field round-trip,
