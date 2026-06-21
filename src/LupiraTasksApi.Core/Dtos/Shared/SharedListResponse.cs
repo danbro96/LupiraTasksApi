@@ -20,6 +20,7 @@ public sealed class SharedListResponse
     public required string Name { get; set; }
     public required ListKind Kind { get; set; }
     public string? Color { get; set; }
+    public required bool SimplePriority { get; set; }
     public required ShareAccess Access { get; set; }
     public required IReadOnlyList<SharedTagResponse> Tags { get; set; }
     public required IReadOnlyList<SharedItemResponse> Items { get; set; }

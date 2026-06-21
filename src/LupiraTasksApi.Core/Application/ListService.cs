@@ -130,6 +130,8 @@ public sealed class ListService
         }
         if (request.ColorProvided)
             events.Add(new ListRecolored(listId, request.Color));
+        if (request.SimplePriority is { } simplePriority)
+            events.Add(new ListSimplePrioritySet(listId, simplePriority));
 
         if (events.Count == 0) return OpResult<ListResponse>.Ok(access.List!.ToResponse());
 

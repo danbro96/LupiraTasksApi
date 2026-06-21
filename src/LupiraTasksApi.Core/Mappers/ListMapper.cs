@@ -13,6 +13,7 @@ internal static class ListMapper
         Name = list.Name,
         Kind = list.Kind,
         Color = list.Color,
+        SimplePriority = list.SimplePriority,
         OwnerEmail = list.OwnerEmail,
         IsArchived = list.IsArchived,
         CreatedAt = list.CreatedAt,

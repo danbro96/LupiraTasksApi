@@ -33,6 +33,12 @@ public sealed class TodoList
     public string Name { get; set; } = "";
     public ListKind Kind { get; set; }
     public string? Color { get; set; }
+
+    /// <summary>Whether priority is treated as a simple on/off (default) rather than the full 0..9 scale.
+    /// A render-neutral intent the clients map to their own controls. The <c>= true</c> initializer is the
+    /// default for both new lists and pre-existing snapshots (a snapshot missing the field keeps it).</summary>
+    public bool SimplePriority { get; set; } = true;
+
     public string OwnerEmail { get; set; } = "";
 
     public bool IsArchived { get; set; }
@@ -74,6 +80,12 @@ public sealed class TodoList
     public void Apply(IEvent<ListRecolored> e)
     {
         Color = e.Data.Color;
+        UpdatedAt = e.Timestamp;
+    }
+
+    public void Apply(IEvent<ListSimplePrioritySet> e)
+    {
+        SimplePriority = e.Data.SimplePriority;
         UpdatedAt = e.Timestamp;
     }
 

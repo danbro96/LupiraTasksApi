@@ -27,6 +27,7 @@ public sealed class ListResponse
     public required string Name { get; set; }
     public required ListKind Kind { get; set; }
     public string? Color { get; set; }
+    public required bool SimplePriority { get; set; }
     public required string OwnerEmail { get; set; }
     public required bool IsArchived { get; set; }
     public required DateTimeOffset CreatedAt { get; set; }

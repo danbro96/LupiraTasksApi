@@ -51,6 +51,7 @@ public static class SharedMapper
         Name = list.Name,
         Kind = list.Kind,
         Color = list.Color,
+        SimplePriority = list.SimplePriority,
         Access = access,
         Tags = list.Tags.Select(t => new SharedTagResponse { Id = t.Id, Label = t.Label, Color = t.Color }).ToList(),
         Items = items,

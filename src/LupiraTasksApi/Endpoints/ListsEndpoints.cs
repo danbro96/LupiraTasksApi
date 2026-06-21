@@ -37,8 +37,8 @@ public static class ListsEndpoints
         group.MapPatch("/{listId:guid}", (HttpContext ctx, Guid listId, UpdateListRequest body, ListsHandler h, CancellationToken ct) =>
                 h.UpdateAsync(ctx, listId, body, ct))
             .WithIdempotencyKey()
-            .WithSummary("Rename / recolor a list (Editor+).")
-            .WithDescription("Each provided field emits its own event. Set `colorProvided` to apply `color` (incl. clearing it).")
+            .WithSummary("Rename / recolor a list, or set its priority mode (Editor+).")
+            .WithDescription("Each provided field emits its own event. Set `colorProvided` to apply `color` (incl. clearing it). Send `simplePriority` (bool) to switch between simple on/off and the full 0..9 scale.")
             .Produces<ListResponse>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status401Unauthorized)

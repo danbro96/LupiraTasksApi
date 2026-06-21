@@ -12,6 +12,9 @@ public record ListRenamed(Guid ListId, string Name);
 
 public record ListRecolored(Guid ListId, string? Color);
 
+/// <summary>Sets whether the list treats priority as a simple on/off (true) or the full 0..9 scale (false).</summary>
+public record ListSimplePrioritySet(Guid ListId, bool SimplePriority);
+
 public record ListArchived(Guid ListId);
 
 public record ListRestored(Guid ListId);

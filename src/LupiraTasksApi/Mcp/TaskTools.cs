@@ -35,7 +35,7 @@ public sealed class TaskTools
     }
 
     /// <summary>A list as the agent sees it — trimmed, with the caller's own role.</summary>
-    public sealed record ListSummary(Guid Id, string Name, ListKind Kind, ListRole? Role, bool IsArchived);
+    public sealed record ListSummary(Guid Id, string Name, ListKind Kind, ListRole? Role, bool IsArchived, bool SimplePriority);
 
     /// <summary>A task as the agent sees it — trimmed, with its owning list named.</summary>
     public sealed record TaskSummary(
@@ -273,7 +273,7 @@ public sealed class TaskTools
         new(s.ShareId, s.Token, s.Url, s.Access, s.Label, s.ExpiresAt, s.Revoked);
 
     private static ListSummary Summarize(Caller caller, ListResponse list) =>
-        new(list.Id, list.Name, list.Kind, RoleOf(caller, list), list.IsArchived);
+        new(list.Id, list.Name, list.Kind, RoleOf(caller, list), list.IsArchived, list.SimplePriority);
 
     private static ListRole? RoleOf(Caller caller, ListResponse list) =>
         list.Members.FirstOrDefault(m => string.Equals(m.Email, caller.Email, StringComparison.OrdinalIgnoreCase))?.Role;

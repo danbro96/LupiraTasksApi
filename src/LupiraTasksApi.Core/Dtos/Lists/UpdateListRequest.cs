@@ -14,4 +14,7 @@ public sealed class UpdateListRequest
 
     /// <summary>Set true to apply <see cref="Color"/> (including clearing it to null).</summary>
     public bool ColorProvided { get; set; }
+
+    /// <summary>Whether priority is a simple on/off (true) or the full 0..9 scale (false). Null leaves it unchanged.</summary>
+    public bool? SimplePriority { get; set; }
 }

@@ -14,6 +14,21 @@ public sealed class ListLifecycleTests(TasksApiTestFactory factory) : Integratio
     }
 
     [Fact]
+    public async Task Simple_priority_defaults_true_and_can_be_toggled()
+    {
+        var alice = Factory.ApiClient("alice@x.test");
+        var list = await CreateListAsync(alice);
+        Assert.True(list.SimplePriority);
+
+        var updated = await ReadAsync<ListResponse>(await SendJson(alice, HttpMethod.Patch, $"/lists/{list.Id}",
+            new UpdateListRequest { SimplePriority = false }));
+        Assert.False(updated.SimplePriority);
+
+        var reloaded = await ReadAsync<ListResponse>(await alice.GetAsync($"/lists/{list.Id}"));
+        Assert.False(reloaded.SimplePriority);
+    }
+
+    [Fact]
     public async Task Created_list_is_active_not_archived()
     {
         var alice = Factory.ApiClient("alice@x.test");
