@@ -1,3 +1,6 @@
+# Reference Compose for LupiraTasksApi. Every host, port, and URL below is an overridable
+# ${VAR:-default} sample from the maintainer's deployment — override them for your environment.
+# Values marked :?required must be set.
 services:
   lupira-tasks-api:
     image: danbro96/lupira-tasks-api:${IMAGE_TAG:-latest}
@@ -19,9 +22,9 @@ services:
       OTEL_METRIC_EXPORT_INTERVAL: ${OTEL_METRIC_EXPORT_INTERVAL:-300000}
       OTEL_RESOURCE_ATTRIBUTES: ${OTEL_RESOURCE_ATTRIBUTES:-deployment.environment=prod,host.name=medelynas,service.name=lupira-tasks-api}
     ports:
-      # The agent MCP surface is served at /mcp on this same port. It is LAN/WireGuard-only:
-      # the Cloudflare Tunnel ingress must NOT route /mcp* to this host (the app also rejects
-      # any /mcp request bearing Cloudflare edge headers as a backstop). REST /api stays public.
+      # The agent MCP surface is served at /mcp on this same port — the most powerful surface.
+      # Keep it off the public internet: do NOT route /mcp* through your public ingress (the app
+      # also rejects any /mcp request bearing CDN edge headers as a backstop). REST stays public.
       - "${HOST_PORT:-40980}:8080"
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS http://localhost:8080/readyz || exit 1"]
