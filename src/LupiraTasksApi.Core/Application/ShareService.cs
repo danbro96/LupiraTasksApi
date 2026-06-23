@@ -3,6 +3,7 @@ using LupiraTasksApi.Auth;
 using LupiraTasksApi.Data;
 using LupiraTasksApi.Domain;
 using LupiraTasksApi.Domain.Items;
+using LupiraTasksApi.Domain.Lists;
 using LupiraTasksApi.Domain.Shares;
 using LupiraTasksApi.Dtos.Shared;
 using LupiraTasksApi.Dtos.Shares;
@@ -120,6 +121,48 @@ public sealed class ShareService
             commandId, shareId, new object[] { new ShareLinkRevoked(shareId, "Revoked by owner") }, ct);
 
         return OpResult.Ok();
+    }
+
+    /// <summary>
+    /// Redeem a share link as an authenticated member: add the caller (JWT email) to the linked list,
+    /// mapping the link's access to a role (<c>ReadWrite</c> → Editor, <c>Read</c> → Viewer). Idempotent
+    /// — an existing member keeps their current (possibly higher) role, never downgraded. Returns the
+    /// list id + resulting role so the web client can route to <c>/lists/{listId}</c>. A missing,
+    /// revoked, or expired token (or a deleted list) is <see cref="OpStatus.NotFound"/>.
+    /// </summary>
+    public async Task<OpResult<RedeemShareResponse>> RedeemAsync(Caller caller, Guid? cmdId, string token, CancellationToken ct)
+    {
+        var email = caller.Email!; // member-only surface: redeem is reached only by a JWT caller
+        if (string.IsNullOrWhiteSpace(token))
+            return OpResult<RedeemShareResponse>.Invalid("A share token is required.");
+
+        var link = await _session.Query<ShareLink>()
+            .Where(s => s.Token == token)
+            .FirstOrDefaultAsync(ct);
+        if (link is null || !link.IsActive(DateTimeOffset.UtcNow))
+            return OpResult<RedeemShareResponse>.NotFound();
+
+        var list = await _session.LoadAsync<TodoList>(link.ListId, ct);
+        if (list is null || list.IsDeleted)
+            return OpResult<RedeemShareResponse>.NotFound();
+
+        var role = link.Access == ShareAccess.ReadWrite ? ListRole.Editor : ListRole.Viewer;
+
+        // Already a member: idempotent no-op — return their current role (don't downgrade).
+        var existing = list.Members.Find(m => string.Equals(m.Email, email, StringComparison.OrdinalIgnoreCase));
+        if (existing is not null)
+            return OpResult<RedeemShareResponse>.Ok(new RedeemShareResponse { ListId = list.Id, Role = existing.Role });
+
+        var commandId = cmdId ?? Guid.CreateVersion7();
+        var seen = await _idempotency.SeenAsync(commandId, ct);
+        if (seen is null)
+        {
+            _session.SetHeader(EventActor.HeaderKey, email); // the joiner adds themselves
+            await _idempotency.AppendDedupAsync(
+                commandId, link.ListId, new object[] { new MemberAdded(link.ListId, email, role) }, ct);
+        }
+
+        return OpResult<RedeemShareResponse>.Ok(new RedeemShareResponse { ListId = link.ListId, Role = role });
     }
 
     /// <summary>

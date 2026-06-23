@@ -48,4 +48,13 @@ public sealed class SharesHandler
         var caller = Caller.Member(email, _user.Groups);
         return OpResultMap.NoContentNotFound(await _shares.RevokeAsync(caller, IdempotencyKey.From(ctx), listId, shareId, ct));
     }
+
+    public async Task<Results<Ok<RedeemShareResponse>, NotFound, ProblemHttpResult, UnauthorizedHttpResult>> RedeemAsync(
+        HttpContext ctx, RedeemShareRequest request, CancellationToken ct)
+    {
+        var email = _user.Email;
+        if (email is null) return TypedResults.Unauthorized();
+        var caller = Caller.Member(email, _user.Groups);
+        return OpResultMap.OkNotFoundProblem(await _shares.RedeemAsync(caller, IdempotencyKey.From(ctx), request.Token, ct));
+    }
 }

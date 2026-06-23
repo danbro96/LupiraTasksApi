@@ -36,6 +36,21 @@ public static class SharesEndpoints
             .Produces(StatusCodes.Status401Unauthorized)
             .Produces(StatusCodes.Status404NotFound);
 
+        // Member-side redemption: an authenticated caller "cashes in" a share token to join the list.
+        // JWT-authed (the default scheme) — distinct from the account-less ShareToken `/shared/{token}`
+        // surface, and a different path segment ("shares" ≠ "shared") so the ShareToken handler ignores it.
+        app.MapPost("/shares/redeem", (HttpContext ctx, RedeemShareRequest body, SharesHandler h, CancellationToken ct) =>
+                h.RedeemAsync(ctx, body, ct))
+            .RequireAuthorization()
+            .WithTags("Shares")
+            .WithIdempotencyKey()
+            .WithSummary("Redeem a share link as the authenticated caller (join the list).")
+            .WithDescription("Body `{ token }`. Adds the caller to the linked list — `ReadWrite` → Editor, `Read` → Viewer — and returns `{ listId, role }`. Idempotent: an existing member keeps their current role. Used by the web client to cash in a share link after SSO.")
+            .Produces<RedeemShareResponse>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status404NotFound);
+
         return app;
     }
 }

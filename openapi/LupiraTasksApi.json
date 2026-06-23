@@ -61,6 +61,69 @@
         ]
       }
     },
+    "/shares/redeem": {
+      "post": {
+        "tags": [
+          "Shares"
+        ],
+        "summary": "Redeem a share link as the authenticated caller (join the list).",
+        "description": "Body `{ token }`. Adds the caller to the linked list — `ReadWrite` → Editor, `Read` → Viewer — and returns `{ listId, role }`. Idempotent: an existing member keeps their current role. Used by the web client to cash in a share link after SSO.",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Client-generated GUIDv7 command id. A redelivery with the same key is a no-op that returns the prior result (offline-safe retry).",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RedeemShareRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RedeemShareResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
     "/.well-known/caldav": {
       "get": {
         "tags": [
@@ -2553,6 +2616,33 @@
           }
         }
       },
+      "RedeemShareRequest": {
+        "required": [
+          "token"
+        ],
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string"
+          }
+        }
+      },
+      "RedeemShareResponse": {
+        "required": [
+          "listId",
+          "role"
+        ],
+        "type": "object",
+        "properties": {
+          "listId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "role": {
+            "$ref": "#/components/schemas/ListRole"
+          }
+        }
+      },
       "ShareAccess": {
         "enum": [
           "Read",
@@ -2960,6 +3050,9 @@
       "name": "Sync"
     },
     {
+      "name": "Shares"
+    },
+    {
       "name": "LupiraTasksApi"
     },
     {
@@ -2973,9 +3066,6 @@
     },
     {
       "name": "Items"
-    },
-    {
-      "name": "Shares"
     },
     {
       "name": "Shared"
