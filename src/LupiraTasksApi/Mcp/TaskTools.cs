@@ -3,10 +3,13 @@ using LupiraTasksApi.Auth;
 using LupiraTasksApi.Domain;
 using LupiraTasksApi.Dtos.Items;
 using LupiraTasksApi.Dtos.Lists;
+using LupiraTasksApi.Dtos.Relations;
 using LupiraTasksApi.Dtos.Shares;
 using ModelContextProtocol;
 using ModelContextProtocol.Server;
 using System.ComponentModel;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 
 namespace LupiraTasksApi.Mcp;
 
@@ -24,13 +27,15 @@ public sealed class TaskTools
     private readonly CurrentUser _user;
     private readonly ListService _lists;
     private readonly ItemService _items;
+    private readonly RelationService _relations;
     private readonly ShareService _shares;
 
-    public TaskTools(CurrentUser user, ListService lists, ItemService items, ShareService shares)
+    public TaskTools(CurrentUser user, ListService lists, ItemService items, RelationService relations, ShareService shares)
     {
         _user = user;
         _lists = lists;
         _items = items;
+        _relations = relations;
         _shares = shares;
     }
 
@@ -40,6 +45,9 @@ public sealed class TaskTools
     /// <summary>A task as the agent sees it — trimmed, with its owning list named.</summary>
     public sealed record TaskSummary(
         Guid Id, Guid ListId, string ListName, string Title, bool Completed, DateTimeOffset? DueAt, string? AssignedTo, int Priority);
+
+    /// <summary>A cross-API link as the agent sees it — the edge tuple needed to read or unlink it.</summary>
+    public sealed record RelationSummary(Guid Id, string ToKind, string ToRef, string RelationType, JsonNode? Metadata);
 
     [McpServerTool(Name = "list_my_lists")]
     [Description("List the to-do / shopping lists the current user is a member of, with their role on each.")]
@@ -180,6 +188,62 @@ public sealed class TaskTools
         return await ToTaskSummaryAsync(caller, listId, item, ct);
     }
 
+    [McpServerTool(Name = "link_task")]
+    [Description("Link a task to a cal-api Prompt heartbeat (toKind 'cal-item') or an external ref such as a GitHub " +
+        "issue/PR, a health incident, or a release page (toKind 'url'). Use relationType 'monitors' for the checking " +
+        "heartbeat of a standing monitor; others: 'spawned-by', 'produced', 'blocked-by', 'relates-to'. Idempotent.")]
+    public async Task<RelationSummary> LinkTask(
+        [Description("The task id.")] Guid taskId,
+        [Description("What the task points at: 'cal-item' (a cal-api Prompt/event) or 'url' (an external reference).")] string toKind,
+        [Description("The reference: a cal-api item id, or the URL/identifier of the external thing.")] string toRef,
+        [Description("Relation type, e.g. 'monitors', 'spawned-by', 'produced', 'blocked-by', 'relates-to'.")] string relationType,
+        [Description("Optional JSON object string for extra context (e.g. {\"note\":\"release watch\"}).")] string? metadata = null,
+        CancellationToken ct = default)
+    {
+        var caller = Caller();
+        var listId = await _items.FindListIdAsync(taskId, ct)
+            ?? throw new McpException($"No task found with id {taskId}.");
+        var request = new CreateRelationRequest
+        {
+            ToKind = toKind,
+            ToRef = toRef,
+            RelationType = relationType,
+            Metadata = ParseMetadata(metadata),
+        };
+        var rel = Require(await _relations.LinkAsync(caller, listId, taskId, request, ct));
+        return new RelationSummary(rel.Id, rel.ToKind, rel.ToRef, rel.RelationType, rel.Metadata);
+    }
+
+    [McpServerTool(Name = "list_task_relations")]
+    [Description("List a task's cross-API links (its cal-api heartbeat Prompt and any external refs).")]
+    public async Task<IReadOnlyList<RelationSummary>> ListTaskRelations(
+        [Description("The task id.")] Guid taskId, CancellationToken ct = default)
+    {
+        var caller = Caller();
+        var listId = await _items.FindListIdAsync(taskId, ct)
+            ?? throw new McpException($"No task found with id {taskId}.");
+        var rels = Require(await _relations.ListAsync(caller, listId, taskId, ct));
+        return rels.Select(r => new RelationSummary(r.Id, r.ToKind, r.ToRef, r.RelationType, r.Metadata)).ToList();
+    }
+
+    [McpServerTool(Name = "unlink_task")]
+    [Description("Remove a task link identified by its edge tuple (toKind, toRef, relationType). Idempotent.")]
+    public async Task<object> UnlinkTask(
+        [Description("The task id.")] Guid taskId,
+        [Description("The link's toKind (e.g. 'cal-item' or 'url').")] string toKind,
+        [Description("The link's toRef.")] string toRef,
+        [Description("The link's relationType.")] string relationType,
+        CancellationToken ct = default)
+    {
+        var caller = Caller();
+        var listId = await _items.FindListIdAsync(taskId, ct)
+            ?? throw new McpException($"No task found with id {taskId}.");
+        var result = await _relations.UnlinkAsync(caller, listId, taskId, toKind, toRef, relationType, ct);
+        if (result.Status != OpStatus.Ok)
+            throw new McpException(result.Error ?? "Not found, or you don't have access to it.");
+        return new { unlinked = true, taskId, toKind, toRef, relationType };
+    }
+
     [McpServerTool(Name = "share_list")]
     [Description("Share a list with another family member by email (defaults to editor access).")]
     public async Task<ListSummary> ShareList(
@@ -240,6 +304,14 @@ public sealed class TaskTools
     // ── helpers ───────────────────────────────────────────────────────────────────────────
 
     private Caller Caller() => Application.Caller.Member(_user.RequireEmail(), _user.Groups);
+
+    /// <summary>Parse an optional JSON string for a relation's free-form metadata, surfacing bad JSON as a tool error.</summary>
+    private static JsonNode? ParseMetadata(string? json)
+    {
+        if (string.IsNullOrWhiteSpace(json)) return null;
+        try { return JsonNode.Parse(json); }
+        catch (JsonException ex) { throw new McpException($"`metadata` must be valid JSON: {ex.Message}"); }
+    }
 
     /// <summary>Resolve the task's list (bare lookup), run the mutation (which re-checks membership), and summarize.</summary>
     private async Task<TaskSummary> MutateAsync(

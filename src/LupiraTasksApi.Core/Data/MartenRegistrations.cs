@@ -36,5 +36,9 @@ public static class MartenRegistrations
 
         // Idempotency ledger keyed by command id.
         opts.Schema.For<ProcessedCommand>().Identity(c => c.CommandId);
+
+        // Cross-API links (plain document). Indexed by FromId so listing a task's relations doesn't
+        // table-scan. The document id is the tuple-derived Relation.DeterministicId, so add/remove are idempotent.
+        opts.Schema.For<Relation>().Index(x => x.FromId);
     }
 }

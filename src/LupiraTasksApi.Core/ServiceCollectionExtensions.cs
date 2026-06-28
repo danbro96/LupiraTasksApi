@@ -25,6 +25,7 @@ public static class TasksCoreServiceCollectionExtensions
             .AddScoped<Idempotency>()
             .AddScoped<ListService>()
             .AddScoped<ItemService>()
+            .AddScoped<RelationService>()
             .AddScoped<SyncService>()
             .AddScoped<ShareService>()
             .AddScoped<TaskDavService>();

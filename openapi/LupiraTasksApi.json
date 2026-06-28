@@ -1362,6 +1362,207 @@
         ]
       }
     },
+    "/lists/{listId}/items/{itemId}/relations": {
+      "post": {
+        "tags": [
+          "Relations"
+        ],
+        "summary": "Link a task to a cal-api Prompt heartbeat or an external ref (Editor+).",
+        "description": "Body `{ toKind, toRef, relationType, metadata? }`. `toKind` e.g. `cal-item` (the checking heartbeat Prompt) or `url` (issue/PR/incident/release). `relationType` e.g. `monitors`, `spawned-by`, `produced`, `blocked-by`, `relates-to`. Idempotent: re-linking the same edge is a no-op.",
+        "parameters": [
+          {
+            "name": "listId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "itemId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRelationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RelationDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      },
+      "get": {
+        "tags": [
+          "Relations"
+        ],
+        "summary": "List a task's relations (Viewer+).",
+        "parameters": [
+          {
+            "name": "listId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "itemId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RelationDto"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Relations"
+        ],
+        "summary": "Remove a task relation by its edge tuple (Editor+).",
+        "description": "Identify the edge with `?toKind=&toRef=&relationType=`. Idempotent: removing a link that isn't there is a no-op (204).",
+        "parameters": [
+          {
+            "name": "listId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "itemId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "toKind",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "toRef",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "relationType",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
     "/lists/{listId}/shares": {
       "post": {
         "tags": [
@@ -2202,6 +2403,35 @@
           }
         }
       },
+      "CreateRelationRequest": {
+        "required": [
+          "toKind",
+          "toRef",
+          "relationType"
+        ],
+        "type": "object",
+        "properties": {
+          "toKind": {
+            "type": "string"
+          },
+          "toRef": {
+            "type": "string"
+          },
+          "relationType": {
+            "type": "string"
+          },
+          "metadata": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/JsonNode"
+              }
+            ]
+          }
+        }
+      },
       "CreateShareRequest": {
         "required": [
           "access"
@@ -2408,6 +2638,7 @@
           }
         }
       },
+      "JsonNode": { },
       "ListCollectionResponse": {
         "required": [
           "lists"
@@ -2640,6 +2871,49 @@
           },
           "role": {
             "$ref": "#/components/schemas/ListRole"
+          }
+        }
+      },
+      "RelationDto": {
+        "required": [
+          "id",
+          "fromKind",
+          "fromId",
+          "toKind",
+          "toRef",
+          "relationType"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "fromKind": {
+            "type": "string"
+          },
+          "fromId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "toKind": {
+            "type": "string"
+          },
+          "toRef": {
+            "type": "string"
+          },
+          "relationType": {
+            "type": "string"
+          },
+          "metadata": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/JsonNode"
+              }
+            ]
           }
         }
       },
@@ -3066,6 +3340,9 @@
     },
     {
       "name": "Items"
+    },
+    {
+      "name": "Relations"
     },
     {
       "name": "Shared"
