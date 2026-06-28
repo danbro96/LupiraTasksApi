@@ -1,3 +1,4 @@
+using LupiraTasksApi.Domain;
 using LupiraTasksApi.Domain.Items;
 using Xunit;
 
@@ -18,9 +19,13 @@ public class ItemVtodoLwwTests
 
     private static ItemVtodoPut Put(
         int atSeconds, Guid cmd, string title = "From phone", bool completed = false,
-        IReadOnlyList<Guid>? tags = null, string uid = "phone-uid", string raw = "RAWVTODO", int priority = 0) =>
-        new(ItemId, ListId, uid, title, Notes: null, DueAt: null, completed,
-            completed ? At(atSeconds) : null, tags ?? [], SortOrder: "~z", raw, At(atSeconds), cmd, priority);
+        ItemStatus? status = null,
+        IReadOnlyList<Guid>? tags = null, string uid = "phone-uid", string raw = "RAWVTODO", int priority = 0)
+    {
+        var s = status ?? (completed ? ItemStatus.Done : ItemStatus.Open);
+        return new(ItemId, ListId, uid, title, Notes: null, DueAt: null, s,
+            s == ItemStatus.Done ? At(atSeconds) : null, tags ?? [], SortOrder: "~z", raw, At(atSeconds), cmd, priority);
+    }
 
     [Fact]
     public void Put_on_a_new_stream_establishes_identity_and_fields()
@@ -69,6 +74,22 @@ public class ItemVtodoLwwTests
         ItemLww.ApplyVtodoPut(s, Put(10, Cmd, completed: false), actor: "a@x.test");
         Assert.False(s.Completed);
         Assert.Null(s.CompletedAt);
+    }
+
+    [Fact]
+    public void Put_status_competes_with_a_granular_status_change_on_one_guard()
+    {
+        var s = new ItemState();
+        ItemLww.ApplyVtodoPut(s, Put(5, Cmd, status: ItemStatus.Blocked), actor: "a@x.test");
+        Assert.Equal(ItemStatus.Blocked, s.Status);
+
+        // A newer granular status change wins over the older PUT (one shared status guard).
+        ItemLww.ApplyStatusChanged(s, new ItemStatusChanged(ItemId, ItemStatus.InProgress, null, At(10), Cmd), actor: "a@x.test");
+        Assert.Equal(ItemStatus.InProgress, s.Status);
+
+        // An older granular change loses to the newer PUT-established state.
+        ItemLww.ApplyStatusChanged(s, new ItemStatusChanged(ItemId, ItemStatus.Waiting, null, At(8), Cmd), actor: "a@x.test");
+        Assert.Equal(ItemStatus.InProgress, s.Status);
     }
 
     [Fact]

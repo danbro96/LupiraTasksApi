@@ -1,3 +1,4 @@
+using LupiraTasksApi.Domain;
 using LupiraTasksApi.Domain.Items;
 using Xunit;
 
@@ -346,8 +347,83 @@ public class ItemLwwTests
         ItemLww.ApplyCompleted(s, new ItemCompleted(ItemId, At(30), Cmd), "dave@x.test");
 
         Assert.True(s.Completed);
+        Assert.Equal(ItemStatus.Done, s.Status);
         Assert.Equal(At(30), s.CompletedAt);
         Assert.Equal("dave@x.test", s.CompletedBy);
+    }
+
+    [Fact]
+    public void Status_change_sets_status_and_reason()
+    {
+        var s = NewItem();
+        ItemLww.ApplyStatusChanged(s, new ItemStatusChanged(ItemId, ItemStatus.Blocked, "waiting on vendor", At(30), Cmd), "dave@x.test");
+
+        Assert.Equal(ItemStatus.Blocked, s.Status);
+        Assert.Equal("waiting on vendor", s.StatusReason);
+        Assert.False(s.Completed);
+        Assert.Null(s.CompletedAt);
+    }
+
+    [Fact]
+    public void Status_change_to_done_completes_with_attribution_and_clears_reason()
+    {
+        var s = NewItem();
+        ItemLww.ApplyStatusChanged(s, new ItemStatusChanged(ItemId, ItemStatus.Blocked, "stuck", At(20), CmdLo), "a@x.test");
+        ItemLww.ApplyStatusChanged(s, new ItemStatusChanged(ItemId, ItemStatus.Done, null, At(30), CmdHi), "dave@x.test");
+
+        Assert.True(s.Completed);
+        Assert.Equal(At(30), s.CompletedAt);
+        Assert.Equal("dave@x.test", s.CompletedBy);
+        Assert.Null(s.StatusReason);
+    }
+
+    [Fact]
+    public void Complete_and_status_change_share_one_guard()
+    {
+        // A newer status change wins over an older complete; an older one loses — one lifecycle guard.
+        var s = NewItem();
+        ItemLww.ApplyCompleted(s, new ItemCompleted(ItemId, At(20), Cmd), "a@x.test");
+        ItemLww.ApplyStatusChanged(s, new ItemStatusChanged(ItemId, ItemStatus.Waiting, null, At(30), Cmd), "b@x.test");
+        Assert.Equal(ItemStatus.Waiting, s.Status);
+        Assert.False(s.Completed);
+        Assert.Null(s.CompletedAt);
+
+        ItemLww.ApplyStatusChanged(s, new ItemStatusChanged(ItemId, ItemStatus.Blocked, null, At(15), Cmd), "c@x.test");
+        Assert.Equal(ItemStatus.Waiting, s.Status); // older → no-op
+    }
+
+    [Fact]
+    public void Status_change_with_equal_occurredAt_and_command_is_a_no_op()
+    {
+        var s = NewItem();
+        ItemLww.ApplyStatusChanged(s, new ItemStatusChanged(ItemId, ItemStatus.InProgress, null, At(20), Cmd), "a@x.test");
+        ItemLww.ApplyStatusChanged(s, new ItemStatusChanged(ItemId, ItemStatus.Blocked, "late replay", At(20), Cmd), "a@x.test");
+        Assert.Equal(ItemStatus.InProgress, s.Status); // equal (OccurredAt, CommandId) replay loses
+    }
+
+    [Fact]
+    public void Status_set_converges_under_every_permutation()
+    {
+        Action<ItemState>[] ops =
+        [
+            s => ItemLww.ApplyStatusChanged(s, new ItemStatusChanged(ItemId, ItemStatus.InProgress, null, At(20), CmdA), "a@x.test"),
+            s => ItemLww.ApplyCompleted(s, new ItemCompleted(ItemId, At(20), CmdB), "b@x.test"),
+            s => ItemLww.ApplyStatusChanged(s, new ItemStatusChanged(ItemId, ItemStatus.Blocked, "x", At(20), CmdC), "c@x.test"),
+            s => ItemLww.ApplyStatusChanged(s, new ItemStatusChanged(ItemId, ItemStatus.Waiting, null, At(15), CmdC), "c@x.test"),
+        ];
+
+        (ItemStatus Status, string? Reason, DateTimeOffset Ts, Guid Cmd)? expected = null;
+        foreach (var perm in Permutations(ops))
+        {
+            var s = NewItem();
+            foreach (var op in perm) op(s);
+            var got = (s.Status, s.StatusReason, s.StatusTs, s.StatusCmd);
+            expected ??= got;
+            Assert.Equal(expected, got);
+        }
+
+        // CmdC is highest at the winning instant At(20): status=Blocked wins.
+        Assert.Equal((ItemStatus.Blocked, "x", At(20), CmdC), expected!.Value);
     }
 
     [Fact]
@@ -495,7 +571,7 @@ public class ItemLwwTests
         {
             var s = NewItem();
             foreach (var op in perm) op(s);
-            var got = (s.Completed, s.CompletedTs, s.CompletedCmd, s.CompletedBy);
+            var got = (s.Completed, s.StatusTs, s.StatusCmd, s.CompletedBy);
             expected ??= got;
             Assert.Equal(expected, got);
         }

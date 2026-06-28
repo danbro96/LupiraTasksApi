@@ -1,4 +1,5 @@
-﻿using LupiraTasksApi.Dtos.Items;
+﻿using LupiraTasksApi.Domain;
+using LupiraTasksApi.Dtos.Items;
 using LupiraTasksApi.Handlers;
 
 namespace LupiraTasksApi.Endpoints;
@@ -17,11 +18,12 @@ public static class ItemsEndpoints
                 Guid? tagId,
                 Guid? parentItemId,
                 string? assignedTo,
+                ItemStatus? status,
                 ItemsHandler h,
                 CancellationToken ct) =>
-            h.ListAsync(listId, completed, tagId, parentItemId, assignedTo, ct))
+            h.ListAsync(listId, completed, tagId, parentItemId, assignedTo, status, ct))
             .WithSummary("List a list's items (Viewer+).")
-            .WithDescription("Excludes deleted items; ordered by `sortOrder`. Filters: `completed`, `tagId`, `parentItemId`, `assignedTo`.")
+            .WithDescription("Excludes deleted items; ordered by `sortOrder`. Filters: `completed`, `tagId`, `parentItemId`, `assignedTo`, `status`.")
             .Produces<ItemCollectionResponse>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status401Unauthorized)
             .Produces(StatusCodes.Status404NotFound);
@@ -66,6 +68,17 @@ public static class ItemsEndpoints
             .WithIdempotencyKey()
             .WithSummary("Reopen a completed item (Editor+).")
             .Produces<ItemResponse>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status404NotFound);
+
+        group.MapPost("/{itemId:guid}/status", (HttpContext ctx, Guid listId, Guid itemId, SetStatusRequest body, ItemsHandler h, CancellationToken ct) =>
+                h.SetStatusAsync(ctx, listId, itemId, body, ct))
+            .WithIdempotencyKey()
+            .WithSummary("Set an item's lifecycle status (Editor+).")
+            .WithDescription("Body `{ status (Open|InProgress|Blocked|Waiting|Done|Cancelled), reason?, occurredAt? }`. " +
+                "`Done` is equivalent to completing the item; `completed` is the derived `status == Done`.")
+            .Produces<ItemResponse>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status401Unauthorized)
             .Produces(StatusCodes.Status404NotFound);
 

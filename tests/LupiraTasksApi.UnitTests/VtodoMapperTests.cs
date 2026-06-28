@@ -1,3 +1,4 @@
+using LupiraTasksApi.Domain;
 using LupiraTasksApi.Domain.Items;
 using LupiraTasksApi.Domain.Lists;
 using LupiraTasksApi.Ical;
@@ -40,14 +41,14 @@ public class VtodoMapperTests
         Assert.Equal("Buy milk", parsed.Title);
         Assert.Equal("2 litres", parsed.Notes);
         Assert.Equal(Due, parsed.DueAt);
-        Assert.False(parsed.Completed);
+        Assert.Equal(ItemStatus.Open, parsed.Status);
     }
 
     [Fact]
     public void Completed_item_serializes_as_completed_and_parses_back()
     {
         var completedAt = new DateTimeOffset(2026, 6, 3, 8, 0, 0, TimeSpan.Zero);
-        var item = ItemWith(s => { s.Completed = true; s.CompletedAt = completedAt; });
+        var item = ItemWith(s => { s.Status = ItemStatus.Done; s.CompletedAt = completedAt; });
 
         var raw = VtodoMapper.ToVtodo(item, [], sourceRaw: null);
 
@@ -55,7 +56,7 @@ public class VtodoMapperTests
         Assert.Contains("PERCENT-COMPLETE:100", raw);
 
         var parsed = VtodoMapper.Parse(raw);
-        Assert.True(parsed.Completed);
+        Assert.Equal(ItemStatus.Done, parsed.Status);
         Assert.Equal(completedAt, parsed.CompletedAt);
     }
 
@@ -64,7 +65,41 @@ public class VtodoMapperTests
     {
         var raw = VtodoMapper.ToVtodo(ItemWith(_ => { }), [], sourceRaw: null);
         Assert.Contains("STATUS:NEEDS-ACTION", raw);
-        Assert.False(VtodoMapper.Parse(raw).Completed);
+        Assert.Equal(ItemStatus.Open, VtodoMapper.Parse(raw).Status);
+    }
+
+    [Theory]
+    [InlineData(ItemStatus.Cancelled, "STATUS:CANCELLED")]
+    [InlineData(ItemStatus.InProgress, "STATUS:IN-PROCESS")]
+    public void Standard_statuses_round_trip(ItemStatus status, string expectedLine)
+    {
+        var raw = VtodoMapper.ToVtodo(ItemWith(s => s.Status = status), [], sourceRaw: null);
+        Assert.Contains(expectedLine, raw);
+        Assert.Equal(status, VtodoMapper.Parse(raw).Status);
+    }
+
+    [Theory]
+    [InlineData(ItemStatus.Blocked)]
+    [InlineData(ItemStatus.Waiting)]
+    public void Blocked_and_waiting_round_trip_via_x_prop(ItemStatus status)
+    {
+        var raw = VtodoMapper.ToVtodo(ItemWith(s => s.Status = status), [], sourceRaw: null);
+
+        // No native VTODO status — they ride NEEDS-ACTION plus the precise X-prop.
+        Assert.Contains("STATUS:NEEDS-ACTION", raw);
+        Assert.Contains($"X-LUPIRA-STATUS:{status}", raw);
+        Assert.Equal(status, VtodoMapper.Parse(raw).Status);
+    }
+
+    [Fact]
+    public void Completed_status_wins_over_a_stale_x_status_prop()
+    {
+        // A client preserved X-LUPIRA-STATUS:Blocked but then completed the task — done-detection must win.
+        const string raw =
+            "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//phone//EN\r\n" +
+            "BEGIN:VTODO\r\nUID:task-uid-1\r\nSUMMARY:x\r\nSTATUS:COMPLETED\r\nX-LUPIRA-STATUS:Blocked\r\n" +
+            "END:VTODO\r\nEND:VCALENDAR\r\n";
+        Assert.Equal(ItemStatus.Done, VtodoMapper.Parse(raw).Status);
     }
 
     [Fact]

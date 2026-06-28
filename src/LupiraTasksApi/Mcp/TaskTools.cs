@@ -44,7 +44,7 @@ public sealed class TaskTools
 
     /// <summary>A task as the agent sees it — trimmed, with its owning list named.</summary>
     public sealed record TaskSummary(
-        Guid Id, Guid ListId, string ListName, string Title, bool Completed, DateTimeOffset? DueAt, string? AssignedTo, int Priority);
+        Guid Id, Guid ListId, string ListName, string Title, ItemStatus Status, bool Completed, DateTimeOffset? DueAt, string? AssignedTo, int Priority);
 
     /// <summary>A cross-API link as the agent sees it — the edge tuple needed to read or unlink it.</summary>
     public sealed record RelationSummary(Guid Id, string ToKind, string ToRef, string RelationType, JsonNode? Metadata);
@@ -76,12 +76,14 @@ public sealed class TaskTools
     }
 
     [McpServerTool(Name = "find_tasks")]
-    [Description("Find tasks across the user's lists. Optionally scope to one list, or filter by a title substring, completion state, or assignee.")]
+    [Description("Find tasks across the user's lists. Optionally scope to one list, or filter by a title substring, " +
+        "completion state, assignee, or lifecycle status (e.g. Blocked/Waiting to see what's stuck).")]
     public async Task<IReadOnlyList<TaskSummary>> FindTasks(
         [Description("Restrict to a single list id (optional; searches all the user's lists when omitted).")] Guid? listId = null,
         [Description("Case-insensitive substring to match in the task title (optional).")] string? query = null,
         [Description("Filter by completion state (optional).")] bool? completed = null,
         [Description("Filter by assignee email (optional).")] string? assignedTo = null,
+        [Description("Filter by lifecycle status: Open, InProgress, Blocked, Waiting, Done, Cancelled (optional).")] ItemStatus? status = null,
         CancellationToken ct = default)
     {
         var caller = Caller();
@@ -101,13 +103,13 @@ public sealed class TaskTools
         var results = new List<TaskSummary>();
         foreach (var list in lists)
         {
-            var items = await _items.ListAsync(caller, list.Id, new ItemFilter(completed, null, null, assignedTo), ct);
+            var items = await _items.ListAsync(caller, list.Id, new ItemFilter(completed, null, null, assignedTo, status), ct);
             if (!items.IsOk) continue;
             foreach (var it in items.Value!.Items)
             {
                 if (!string.IsNullOrWhiteSpace(query) && !it.Title.Contains(query, StringComparison.OrdinalIgnoreCase))
                     continue;
-                results.Add(new TaskSummary(it.Id, list.Id, list.Name, it.Title, it.Completed, it.DueAt, it.AssignedTo, it.Priority));
+                results.Add(new TaskSummary(it.Id, list.Id, list.Name, it.Title, it.Status, it.Completed, it.DueAt, it.AssignedTo, it.Priority));
             }
         }
         return results;
@@ -155,6 +157,17 @@ public sealed class TaskTools
         [Description("The task id.")] Guid taskId, CancellationToken ct = default) =>
         MutateAsync(taskId, (caller, listId) =>
             _items.ReopenAsync(caller, Guid.CreateVersion7(), listId, taskId, DateTimeOffset.UtcNow, ct), ct);
+
+    [McpServerTool(Name = "set_task_status")]
+    [Description("Set a task's lifecycle status with an optional reason. Use Blocked/Waiting (with a reason) to record " +
+        "stuck work, InProgress while working it, Cancelled to close without doing. Done is equivalent to completing it.")]
+    public Task<TaskSummary> SetTaskStatus(
+        [Description("The task id.")] Guid taskId,
+        [Description("The new status: Open, InProgress, Blocked, Waiting, Done, or Cancelled.")] ItemStatus status,
+        [Description("Optional reason (e.g. what it's blocked/waiting on).")] string? reason = null,
+        CancellationToken ct = default) =>
+        MutateAsync(taskId, (caller, listId) =>
+            _items.SetStatusAsync(caller, Guid.CreateVersion7(), listId, taskId, status, reason, DateTimeOffset.UtcNow, ct), ct);
 
     [McpServerTool(Name = "update_task")]
     [Description("Update a task's fields. Only the arguments you pass are changed; omitted arguments are left as-is.")]
@@ -338,7 +351,7 @@ public sealed class TaskTools
     private async Task<TaskSummary> ToTaskSummaryAsync(Caller caller, Guid listId, ItemResponse item, CancellationToken ct)
     {
         var listName = (await _lists.GetAsync(caller, listId, ct)).Value?.Name ?? string.Empty;
-        return new TaskSummary(item.Id, listId, listName, item.Title, item.Completed, item.DueAt, item.AssignedTo, item.Priority);
+        return new TaskSummary(item.Id, listId, listName, item.Title, item.Status, item.Completed, item.DueAt, item.AssignedTo, item.Priority);
     }
 
     private static ShareLinkSummary ToShareSummary(ShareResponse s) =>

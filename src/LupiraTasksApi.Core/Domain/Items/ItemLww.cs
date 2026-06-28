@@ -1,3 +1,5 @@
+using LupiraTasksApi.Domain;
+
 namespace LupiraTasksApi.Domain.Items;
 
 /// <summary>
@@ -94,13 +96,10 @@ public static class ItemLww
             s.PriorityCmd = e.CommandId;
             Touch(s, e.OccurredAt);
         }
-        if (Wins(e.OccurredAt, e.CommandId, s.CompletedTs, s.CompletedCmd))
+        if (Wins(e.OccurredAt, e.CommandId, s.StatusTs, s.StatusCmd))
         {
-            s.Completed = e.Completed;
-            s.CompletedAt = e.Completed ? (e.CompletedAt ?? e.OccurredAt) : null;
-            s.CompletedBy = e.Completed ? actor : null;
-            s.CompletedTs = e.OccurredAt;
-            s.CompletedCmd = e.CommandId;
+            // VTODO is a whole-item write and can't model a status reason; setting the lifecycle clears it.
+            SetStatus(s, e.Status, reason: null, e.OccurredAt, e.CommandId, actor, completedAtOverride: e.CompletedAt);
             Touch(s, e.OccurredAt);
         }
 
@@ -195,26 +194,54 @@ public static class ItemLww
         Touch(s, e.OccurredAt);
     }
 
+    /// <summary>Completing is the terminal lifecycle transition: it sets Status=Done through the one status guard.</summary>
     public static void ApplyCompleted(ItemState s, ItemCompleted e, string? actor)
     {
-        if (s.Deleted || !Wins(e.OccurredAt, e.CommandId, s.CompletedTs, s.CompletedCmd)) return;
-        s.Completed = true;
-        s.CompletedAt = e.OccurredAt;
-        s.CompletedBy = actor;
-        s.CompletedTs = e.OccurredAt;
-        s.CompletedCmd = e.CommandId;
+        if (s.Deleted || !Wins(e.OccurredAt, e.CommandId, s.StatusTs, s.StatusCmd)) return;
+        SetStatus(s, ItemStatus.Done, reason: null, e.OccurredAt, e.CommandId, actor);
         Touch(s, e.OccurredAt);
     }
 
+    /// <summary>Reopening returns the item to Open through the one status guard.</summary>
     public static void ApplyReopened(ItemState s, ItemReopened e)
     {
-        if (s.Deleted || !Wins(e.OccurredAt, e.CommandId, s.CompletedTs, s.CompletedCmd)) return;
-        s.Completed = false;
-        s.CompletedAt = null;
-        s.CompletedBy = null;
-        s.CompletedTs = e.OccurredAt;
-        s.CompletedCmd = e.CommandId;
+        if (s.Deleted || !Wins(e.OccurredAt, e.CommandId, s.StatusTs, s.StatusCmd)) return;
+        SetStatus(s, ItemStatus.Open, reason: null, e.OccurredAt, e.CommandId, actor: null);
         Touch(s, e.OccurredAt);
+    }
+
+    /// <summary>The general lifecycle setter: sets Status (+ reason) through the one status guard.</summary>
+    public static void ApplyStatusChanged(ItemState s, ItemStatusChanged e, string? actor)
+    {
+        if (s.Deleted || !Wins(e.OccurredAt, e.CommandId, s.StatusTs, s.StatusCmd)) return;
+        SetStatus(s, e.Status, e.Reason, e.OccurredAt, e.CommandId, actor);
+        Touch(s, e.OccurredAt);
+    }
+
+    /// <summary>
+    /// Writes the lifecycle field group and advances the single status guard. Completion attribution
+    /// (<see cref="ItemState.CompletedAt"/>/<see cref="ItemState.CompletedBy"/>) is recorded only for the terminal
+    /// <see cref="ItemStatus.Done"/> state and cleared otherwise — so the derived <c>Completed</c> (Status==Done)
+    /// and its attribution can never disagree.
+    /// </summary>
+    private static void SetStatus(
+        ItemState s, ItemStatus status, string? reason, DateTimeOffset occurredAt, Guid commandId, string? actor,
+        DateTimeOffset? completedAtOverride = null)
+    {
+        s.Status = status;
+        s.StatusReason = reason;
+        if (status == ItemStatus.Done)
+        {
+            s.CompletedAt = completedAtOverride ?? occurredAt;
+            s.CompletedBy = actor;
+        }
+        else
+        {
+            s.CompletedAt = null;
+            s.CompletedBy = null;
+        }
+        s.StatusTs = occurredAt;
+        s.StatusCmd = commandId;
     }
 
     public static void ApplyMoved(ItemState s, ItemMoved e)

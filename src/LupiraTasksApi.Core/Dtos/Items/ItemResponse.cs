@@ -1,3 +1,5 @@
+using LupiraTasksApi.Domain;
+
 namespace LupiraTasksApi.Dtos.Items;
 
 /// <summary>An item's current snapshot. Clients nest by <see cref="ParentItemId"/>.</summary>
@@ -9,6 +11,9 @@ public sealed class ItemResponse
     public Guid? ParentItemId { get; set; }
     public required string Title { get; set; }
     public string? Notes { get; set; }
+    /// <summary>The lifecycle status; <see cref="Completed"/> is the derived <c>Status == Done</c> convenience.</summary>
+    public required ItemStatus Status { get; set; }
+    public string? StatusReason { get; set; }
     public required bool Completed { get; set; }
     public DateTimeOffset? CompletedAt { get; set; }
     public string? CompletedBy { get; set; }

@@ -68,7 +68,7 @@ public sealed class TaskDavService
             var newId = Guid.CreateVersion7();
             var sortOrder = NewSortOrder(commandId);
             var created = new ItemVtodoPut(
-                newId, listId, uid, f.Title, f.Notes, f.DueAt, f.Completed, f.CompletedAt,
+                newId, listId, uid, f.Title, f.Notes, f.DueAt, f.Status, f.CompletedAt,
                 tagIds, sortOrder, rawVtodo, occurredAt, commandId, f.Priority);
             _session.Events.StartStream<Item>(newId, created);
             await _session.SaveChangesAsync(ct);
@@ -79,7 +79,7 @@ public sealed class TaskDavService
 
         var stream = await _session.Events.FetchForWriting<Item>(existing.Id, ct);
         stream.AppendOne(new ItemVtodoPut(
-            existing.Id, listId, uid, f.Title, f.Notes, f.DueAt, f.Completed, f.CompletedAt,
+            existing.Id, listId, uid, f.Title, f.Notes, f.DueAt, f.Status, f.CompletedAt,
             tagIds, existing.SortOrder, rawVtodo, occurredAt, commandId, f.Priority));
         await _session.SaveChangesAsync(ct);
 

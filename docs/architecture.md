@@ -73,6 +73,8 @@ classDiagram
         +Guid ParentItemId
         +string Title
         +string Notes
+        +ItemStatus Status
+        +string StatusReason
         +bool Completed
         +string AssignedTo
         +DateTimeOffset DueAt
@@ -122,9 +124,10 @@ classDiagram
 
 > Nullable fields (`Color`, `Notes`, `AssignedTo`, `DueAt`, `Quantity`, `Unit`, `SourceVtodo`,
 > `ParentItemId`, `ExpiresAt`, `AddedBy`, `DisplayName`) are shown without the `?` for diagram
-> compatibility; see the source for exact nullability. `Item` also carries per-field LWW guards
-> (`(OccurredAt, CommandId)` for name, notes, assignee, due, quantity, priority, completed, move, and
-> the raw VTODO blob, plus a per-tag guard map) — these live on
+> compatibility; see the source for exact nullability. `Completed` is derived (`Status == Done`), not a
+> stored field. `Item` also carries per-field LWW guards (`(OccurredAt, CommandId)` for name, notes,
+> assignee, due, quantity, priority, status, move, and the raw VTODO blob, plus a per-tag guard map) —
+> the one status guard covers the whole lifecycle (complete/reopen/status-change). These live on
 > [`ItemState`](../src/LupiraTasksApi.Core/Domain/Items/ItemState.cs), not on the wire DTO.
 
 ### Aggregates (event-sourced)

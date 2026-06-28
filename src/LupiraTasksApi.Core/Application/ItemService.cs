@@ -48,6 +48,7 @@ public sealed class ItemService
 
         IEnumerable<Item> filtered = items;
         if (filter.Completed is { } c) filtered = filtered.Where(i => i.Completed == c);
+        if (filter.Status is { } st) filtered = filtered.Where(i => i.Status == st);
         if (filter.TagId is { } t) filtered = filtered.Where(i => i.Tags.Contains(t));
         if (filter.ParentItemId is { } p) filtered = filtered.Where(i => i.ParentItemId == p);
         if (!string.IsNullOrWhiteSpace(filter.AssignedTo))
@@ -211,6 +212,11 @@ public sealed class ItemService
     public Task<OpResult<ItemResponse>> ReopenAsync(
         Caller caller, Guid? cmdId, Guid listId, Guid itemId, DateTimeOffset? occurredAt, CancellationToken ct) =>
         SingleEventAsync(caller, cmdId, listId, itemId, occurredAt, (id, at, cmd) => new ItemReopened(id, at, cmd), ct);
+
+    public Task<OpResult<ItemResponse>> SetStatusAsync(
+        Caller caller, Guid? cmdId, Guid listId, Guid itemId, ItemStatus status, string? reason, DateTimeOffset? occurredAt, CancellationToken ct) =>
+        SingleEventAsync(caller, cmdId, listId, itemId, occurredAt,
+            (id, at, cmd) => new ItemStatusChanged(id, status, string.IsNullOrWhiteSpace(reason) ? null : reason.Trim(), at, cmd), ct);
 
     public async Task<OpResult<ItemResponse>> MoveAsync(
         Caller caller, Guid? cmdId, Guid listId, Guid itemId, MoveItemRequest request, CancellationToken ct)

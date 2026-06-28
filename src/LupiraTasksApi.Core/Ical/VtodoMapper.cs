@@ -3,19 +3,20 @@ using Ical.Net;
 using Ical.Net.CalendarComponents;
 using Ical.Net.DataTypes;
 using Ical.Net.Serialization;
+using LupiraTasksApi.Domain;
 using LupiraTasksApi.Domain.Items;
 using LupiraTasksApi.Domain.Lists;
 using IcalCalendar = Ical.Net.Calendar;
 
 namespace LupiraTasksApi.Ical;
 
-/// <summary>The modeled fields lifted out of an inbound VTODO. Everything else (PRIORITY, RRULE, X-*…)
+/// <summary>The modeled fields lifted out of an inbound VTODO. Everything else (RRULE, X-*…)
 /// is preserved opaquely in the raw blob and re-emitted by <see cref="VtodoMapper.ToVtodo"/>.</summary>
 public readonly record struct VtodoFields(
     string Title,
     string? Notes,
     DateTimeOffset? DueAt,
-    bool Completed,
+    ItemStatus Status,
     DateTimeOffset? CompletedAt,
     IReadOnlyList<string> Categories,
     int Priority);
@@ -33,11 +34,13 @@ public readonly record struct VtodoFields(
 public static class VtodoMapper
 {
     // Properties this model owns/sets explicitly; everything else from the source blob is preserved.
+    private const string StatusProp = "X-LUPIRA-STATUS";
+
     private static readonly HashSet<string> ModeledProps = new(StringComparer.OrdinalIgnoreCase)
     {
         "UID", "SUMMARY", "DESCRIPTION", "DUE", "STATUS", "PERCENT-COMPLETE", "COMPLETED",
         "CATEGORIES", "PRIORITY", "DTSTAMP", "CREATED", "LAST-MODIFIED",
-        "X-LUPIRA-ASSIGNEE", "X-LUPIRA-QUANTITY", "X-LUPIRA-UNIT",
+        "X-LUPIRA-ASSIGNEE", "X-LUPIRA-QUANTITY", "X-LUPIRA-UNIT", StatusProp,
     };
 
     public static string ToVtodo(Item item, IReadOnlyList<TagDef> listTags, string? sourceRaw)
@@ -50,17 +53,30 @@ public static class VtodoMapper
         // Standard VTODO PRIORITY (RFC 5545): 1..9 in range; 0 = undefined, so omit it.
         if (item.Priority is >= 1 and <= 9) todo.Priority = item.Priority;
 
-        if (item.Completed)
+        switch (item.Status)
         {
-            todo.Status = "COMPLETED";
-            todo.PercentComplete = 100;
-            todo.Completed = Utc(item.CompletedAt ?? item.UpdatedAt);
+            case ItemStatus.Done:
+                todo.Status = "COMPLETED";
+                todo.PercentComplete = 100;
+                todo.Completed = Utc(item.CompletedAt ?? item.UpdatedAt);
+                break;
+            case ItemStatus.Cancelled:
+                todo.Status = "CANCELLED";
+                todo.PercentComplete = 0;
+                break;
+            case ItemStatus.InProgress:
+                todo.Status = "IN-PROCESS";
+                todo.PercentComplete = 0;
+                break;
+            default: // Open, Blocked, Waiting — no native VTODO status beyond NEEDS-ACTION
+                todo.Status = "NEEDS-ACTION";
+                todo.PercentComplete = 0;
+                break;
         }
-        else
-        {
-            todo.Status = "NEEDS-ACTION";
-            todo.PercentComplete = 0;
-        }
+
+        // Blocked/Waiting have no native VTODO STATUS; carry the precise lifecycle in an X-prop so it round-trips.
+        if (item.Status is ItemStatus.Blocked or ItemStatus.Waiting)
+            todo.Properties.Add(new CalendarProperty(StatusProp, item.Status.ToString()));
 
         todo.Created = Utc(item.CreatedAt);
         todo.LastModified = Utc(item.UpdatedAt);
@@ -98,11 +114,7 @@ public static class VtodoMapper
         if (!TryLoadTodo(raw, out var todo) || todo is null)
             throw new FormatException("No VTODO in payload.");
 
-        var completed =
-            string.Equals(todo.Status, "COMPLETED", StringComparison.OrdinalIgnoreCase)
-            || todo.PercentComplete >= 100
-            || todo.Completed is not null;
-
+        var status = ParseStatus(todo);
         DateTimeOffset? completedAt = todo.Completed is { } c ? new DateTimeOffset(c.AsUtc, TimeSpan.Zero) : null;
         DateTimeOffset? dueAt = todo.Due is { } d ? new DateTimeOffset(d.AsUtc, TimeSpan.Zero) : null;
         var categories = (todo.Categories ?? Enumerable.Empty<string>())
@@ -113,7 +125,32 @@ public static class VtodoMapper
         // PRIORITY is defined 0..9; clamp defensively so a stray client value can't fail the sync.
         var priority = Math.Clamp(todo.Priority, 0, 9);
 
-        return new VtodoFields(todo.Summary ?? "", todo.Description, dueAt, completed, completedAt, categories, priority);
+        return new VtodoFields(todo.Summary ?? "", todo.Description, dueAt, status, completedAt, categories, priority);
+    }
+
+    /// <summary>
+    /// Derives the lifecycle status from an inbound VTODO. Done-detection (STATUS:COMPLETED, PERCENT-COMPLETE&gt;=100,
+    /// or a COMPLETED timestamp) wins first; then the precise <c>X-LUPIRA-STATUS</c> the client preserved (the only
+    /// way Blocked/Waiting survive, as VTODO has no native equivalent); else the standard STATUS maps directly.
+    /// </summary>
+    private static ItemStatus ParseStatus(Todo todo)
+    {
+        var done =
+            string.Equals(todo.Status, "COMPLETED", StringComparison.OrdinalIgnoreCase)
+            || todo.PercentComplete >= 100
+            || todo.Completed is not null;
+        if (done) return ItemStatus.Done;
+
+        var x = todo.Properties.FirstOrDefault(p => string.Equals(p.Name, StatusProp, StringComparison.OrdinalIgnoreCase))?.Value as string;
+        if (!string.IsNullOrWhiteSpace(x) && Enum.TryParse<ItemStatus>(x, ignoreCase: true, out var parsed) && parsed != ItemStatus.Done)
+            return parsed;
+
+        return (todo.Status ?? "").ToUpperInvariant() switch
+        {
+            "CANCELLED" => ItemStatus.Cancelled,
+            "IN-PROCESS" => ItemStatus.InProgress,
+            _ => ItemStatus.Open, // NEEDS-ACTION or unset
+        };
     }
 
     private static CalDateTime Utc(DateTimeOffset value) => new(value.UtcDateTime, "UTC");

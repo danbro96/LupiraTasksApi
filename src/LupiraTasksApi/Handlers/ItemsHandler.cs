@@ -1,5 +1,6 @@
 ﻿using LupiraTasksApi.Application;
 using LupiraTasksApi.Auth;
+using LupiraTasksApi.Domain;
 using LupiraTasksApi.Dtos.Items;
 using LupiraTasksApi.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -30,13 +31,14 @@ public sealed class ItemsHandler
         Guid? tagId,
         Guid? parentItemId,
         string? assignedTo,
+        ItemStatus? status,
         CancellationToken ct)
     {
         var email = _user.Email;
         if (email is null) return TypedResults.Unauthorized();
         var caller = Caller.Member(email, _user.Groups);
         return OpResultMap.OkNotFound(
-            await _items.ListAsync(caller, listId, new ItemFilter(completed, tagId, parentItemId, assignedTo), ct));
+            await _items.ListAsync(caller, listId, new ItemFilter(completed, tagId, parentItemId, assignedTo, status), ct));
     }
 
     public async Task<Results<Ok<ItemResponse>, NotFound, ProblemHttpResult, UnauthorizedHttpResult>> CreateAsync(
@@ -95,6 +97,16 @@ public sealed class ItemsHandler
         var caller = Caller.Member(email, _user.Groups);
         return OpResultMap.OkNotFoundProblem(
             await _items.ReopenAsync(caller, IdempotencyKey.From(ctx), listId, itemId, body?.OccurredAt, ct));
+    }
+
+    public async Task<Results<Ok<ItemResponse>, NotFound, ProblemHttpResult, UnauthorizedHttpResult>> SetStatusAsync(
+        HttpContext ctx, Guid listId, Guid itemId, SetStatusRequest body, CancellationToken ct)
+    {
+        var email = _user.Email;
+        if (email is null) return TypedResults.Unauthorized();
+        var caller = Caller.Member(email, _user.Groups);
+        return OpResultMap.OkNotFoundProblem(
+            await _items.SetStatusAsync(caller, IdempotencyKey.From(ctx), listId, itemId, body.Status, body.Reason, body.OccurredAt, ct));
     }
 
     public async Task<Results<Ok<ItemResponse>, NotFound, ProblemHttpResult, UnauthorizedHttpResult>> MoveAsync(

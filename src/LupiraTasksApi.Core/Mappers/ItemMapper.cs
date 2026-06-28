@@ -14,6 +14,8 @@ internal static class ItemMapper
         ParentItemId = item.ParentItemId,
         Title = item.Title,
         Notes = item.Notes,
+        Status = item.Status,
+        StatusReason = item.StatusReason,
         Completed = item.Completed,
         CompletedAt = item.CompletedAt,
         CompletedBy = item.CompletedBy,

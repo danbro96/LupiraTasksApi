@@ -1,3 +1,5 @@
+using LupiraTasksApi.Domain;
+
 namespace LupiraTasksApi.Domain.Items;
 
 // Item event stream (stream id = ItemId). Positional records; the first field is
@@ -47,6 +49,13 @@ public record ItemCompleted(Guid ItemId, DateTimeOffset OccurredAt, Guid Command
 
 public record ItemReopened(Guid ItemId, DateTimeOffset OccurredAt, Guid CommandId);
 
+/// <summary>
+/// Sets the item's lifecycle <see cref="ItemStatus"/> (and optional reason). The general lifecycle setter:
+/// <see cref="ItemCompleted"/>/<see cref="ItemReopened"/> are intent-revealing shorthands that project onto the
+/// same single status guard, so a status change and a complete/reopen converge as one field by (OccurredAt, CommandId).
+/// </summary>
+public record ItemStatusChanged(Guid ItemId, ItemStatus Status, string? Reason, DateTimeOffset OccurredAt, Guid CommandId);
+
 /// <summary>Reparent and/or reorder. SortOrder is a fractional-index string.</summary>
 public record ItemMoved(Guid ItemId, Guid? ParentItemId, string SortOrder, DateTimeOffset OccurredAt, Guid CommandId);
 
@@ -68,7 +77,7 @@ public record ItemVtodoPut(
     string Title,
     string? Notes,
     DateTimeOffset? DueAt,
-    bool Completed,
+    ItemStatus Status,
     DateTimeOffset? CompletedAt,
     IReadOnlyList<Guid> Tags,
     string SortOrder,

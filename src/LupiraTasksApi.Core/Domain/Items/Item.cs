@@ -1,4 +1,5 @@
 using JasperFx.Events;
+using LupiraTasksApi.Domain;
 
 namespace LupiraTasksApi.Domain.Items;
 
@@ -26,7 +27,10 @@ public sealed class Item
     public Guid? ParentItemId => State.ParentItemId;
     public string Title => State.Title;
     public string? Notes => State.Notes;
-    public bool Completed => State.Completed;
+    public ItemStatus Status => State.Status;
+    public string? StatusReason => State.StatusReason;
+    /// <summary>Derived from the single lifecycle field: an item is completed iff its status is <see cref="ItemStatus.Done"/>.</summary>
+    public bool Completed => State.Status == ItemStatus.Done;
     public DateTimeOffset? CompletedAt => State.CompletedAt;
     public string? CompletedBy => State.CompletedBy;
     public string? AssignedTo => State.AssignedTo;
@@ -54,6 +58,7 @@ public sealed class Item
     public void Apply(IEvent<ItemPrioritySet> e) => ItemLww.ApplyPrioritySet(State, e.Data);
     public void Apply(IEvent<ItemCompleted> e) => ItemLww.ApplyCompleted(State, e.Data, EventActor.Of(e));
     public void Apply(IEvent<ItemReopened> e) => ItemLww.ApplyReopened(State, e.Data);
+    public void Apply(IEvent<ItemStatusChanged> e) => ItemLww.ApplyStatusChanged(State, e.Data, EventActor.Of(e));
     public void Apply(IEvent<ItemMoved> e) => ItemLww.ApplyMoved(State, e.Data);
     public void Apply(IEvent<ItemDeleted> e) => ItemLww.ApplyDeleted(State, e.Data);
     public void Apply(IEvent<ItemVtodoPut> e) => ItemLww.ApplyVtodoPut(State, e.Data, EventActor.Of(e));

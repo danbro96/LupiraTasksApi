@@ -1,3 +1,5 @@
+using LupiraTasksApi.Domain;
+
 namespace LupiraTasksApi.Domain.Items;
 
 /// <summary>
@@ -18,7 +20,17 @@ public sealed class ItemState
     public string Title { get; set; } = "";
     public string? Notes { get; set; }
 
-    public bool Completed { get; set; }
+    /// <summary>The lifecycle position — the single source of truth for done-ness. <c>Completed</c> is derived
+    /// (<c>Status == Done</c>). Guarded by <see cref="StatusTs"/>/<see cref="StatusCmd"/>.</summary>
+    public ItemStatus Status { get; set; } = ItemStatus.Open;
+
+    /// <summary>Derived convenience: an item is completed iff its status is <see cref="ItemStatus.Done"/>.</summary>
+    public bool Completed => Status == ItemStatus.Done;
+
+    /// <summary>Optional free-text reason for the current status (e.g. why Blocked/Waiting). Travels with the status guard.</summary>
+    public string? StatusReason { get; set; }
+
+    /// <summary>When the item entered a completed (Done) state, and by whom — attribution, not a separate guard.</summary>
     public DateTimeOffset? CompletedAt { get; set; }
     public string? CompletedBy { get; set; }
 
@@ -74,8 +86,10 @@ public sealed class ItemState
     public Guid QtyCmd { get; set; }
     public DateTimeOffset PriorityTs { get; set; }
     public Guid PriorityCmd { get; set; }
-    public DateTimeOffset CompletedTs { get; set; }
-    public Guid CompletedCmd { get; set; }
+
+    /// <summary>The one lifecycle guard, shared by complete/reopen/status-change/VTODO so they resolve as a single field.</summary>
+    public DateTimeOffset StatusTs { get; set; }
+    public Guid StatusCmd { get; set; }
     public DateTimeOffset MoveTs { get; set; }
     public Guid MoveCmd { get; set; }
 
