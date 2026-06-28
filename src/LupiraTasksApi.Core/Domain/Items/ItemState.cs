@@ -67,6 +67,11 @@ public sealed class ItemState
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
 
+    /// <summary>Free-form JSON for agent/server bookkeeping (source-alert id, check count, last-result summary).
+    /// Server-side only — never surfaced in VTODO or the public share DTO. Whole-field LWW via
+    /// <see cref="MetadataTs"/>/<see cref="MetadataCmd"/>.</summary>
+    public string? Metadata { get; set; }
+
     public bool Deleted { get; set; }
 
     // --- Per-field LWW guards ---
@@ -96,6 +101,10 @@ public sealed class ItemState
     /// <summary>Guard for the raw <see cref="SourceVtodo"/> blob written by a CalDAV PUT.</summary>
     public DateTimeOffset VtodoTs { get; set; }
     public Guid VtodoCmd { get; set; }
+
+    /// <summary>Guard for the whole-field <see cref="Metadata"/> JSON.</summary>
+    public DateTimeOffset MetadataTs { get; set; }
+    public Guid MetadataCmd { get; set; }
 
     /// <summary>
     /// Per-tag last-touched guard (OccurredAt + tiebreaker CommandId), so a tag add and

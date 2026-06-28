@@ -218,6 +218,11 @@ public sealed class ItemService
         SingleEventAsync(caller, cmdId, listId, itemId, occurredAt,
             (id, at, cmd) => new ItemStatusChanged(id, status, string.IsNullOrWhiteSpace(reason) ? null : reason.Trim(), at, cmd), ct);
 
+    public Task<OpResult<ItemResponse>> SetMetadataAsync(
+        Caller caller, Guid? cmdId, Guid listId, Guid itemId, string? metadata, DateTimeOffset? occurredAt, CancellationToken ct) =>
+        SingleEventAsync(caller, cmdId, listId, itemId, occurredAt,
+            (id, at, cmd) => new ItemMetadataSet(id, metadata, at, cmd), ct);
+
     public async Task<OpResult<ItemResponse>> MoveAsync(
         Caller caller, Guid? cmdId, Guid listId, Guid itemId, MoveItemRequest request, CancellationToken ct)
     {

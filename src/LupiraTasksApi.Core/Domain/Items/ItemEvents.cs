@@ -59,6 +59,9 @@ public record ItemStatusChanged(Guid ItemId, ItemStatus Status, string? Reason, 
 /// <summary>Reparent and/or reorder. SortOrder is a fractional-index string.</summary>
 public record ItemMoved(Guid ItemId, Guid? ParentItemId, string SortOrder, DateTimeOffset OccurredAt, Guid CommandId);
 
+/// <summary>Sets the whole <see cref="ItemState.Metadata"/> JSON blob (server-side bookkeeping). Whole-field LWW.</summary>
+public record ItemMetadataSet(Guid ItemId, string? Metadata, DateTimeOffset OccurredAt, Guid CommandId);
+
 /// <summary>Tombstone (stream retained). Once applied, later field events are ignored.</summary>
 public record ItemDeleted(Guid ItemId, DateTimeOffset OccurredAt, Guid CommandId);
 

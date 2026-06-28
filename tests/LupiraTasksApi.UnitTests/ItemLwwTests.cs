@@ -555,6 +555,36 @@ public class ItemLwwTests
     }
 
     [Fact]
+    public void Metadata_newer_wins_and_older_is_a_no_op()
+    {
+        var s = NewItem();
+        ItemLww.ApplyMetadataSet(s, new ItemMetadataSet(ItemId, """{"checks":1}""", At(20), Cmd));
+        ItemLww.ApplyMetadataSet(s, new ItemMetadataSet(ItemId, """{"checks":2}""", At(30), Cmd));
+        Assert.Equal("""{"checks":2}""", s.Metadata);
+
+        ItemLww.ApplyMetadataSet(s, new ItemMetadataSet(ItemId, """{"checks":0}""", At(10), Cmd));
+        Assert.Equal("""{"checks":2}""", s.Metadata); // older → no-op
+    }
+
+    [Fact]
+    public void Metadata_equal_occurredAt_and_command_is_a_no_op()
+    {
+        var s = NewItem();
+        ItemLww.ApplyMetadataSet(s, new ItemMetadataSet(ItemId, """{"v":1}""", At(20), Cmd));
+        ItemLww.ApplyMetadataSet(s, new ItemMetadataSet(ItemId, """{"v":2}""", At(20), Cmd));
+        Assert.Equal("""{"v":1}""", s.Metadata); // equal (OccurredAt, CommandId) replay loses
+    }
+
+    [Fact]
+    public void Metadata_set_after_delete_is_ignored()
+    {
+        var s = NewItem();
+        ItemLww.ApplyDeleted(s, new ItemDeleted(ItemId, At(20), Cmd));
+        ItemLww.ApplyMetadataSet(s, new ItemMetadataSet(ItemId, """{"v":1}""", At(30), Cmd));
+        Assert.Null(s.Metadata);
+    }
+
+    [Fact]
     public void Completed_set_converges_under_every_permutation()
     {
         // complete/reopen share one guard; equal-instant ties must break by CommandId.

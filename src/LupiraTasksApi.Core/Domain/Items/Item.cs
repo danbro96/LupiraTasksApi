@@ -45,6 +45,7 @@ public sealed class Item
     public string? CreatedBy => State.CreatedBy;
     public DateTimeOffset CreatedAt => State.CreatedAt;
     public DateTimeOffset UpdatedAt => State.UpdatedAt;
+    public string? Metadata => State.Metadata;
     public bool Deleted => State.Deleted;
 
     public void Apply(IEvent<ItemAdded> e) => ItemLww.ApplyAdded(State, e.Data, EventActor.Of(e));
@@ -60,6 +61,7 @@ public sealed class Item
     public void Apply(IEvent<ItemReopened> e) => ItemLww.ApplyReopened(State, e.Data);
     public void Apply(IEvent<ItemStatusChanged> e) => ItemLww.ApplyStatusChanged(State, e.Data, EventActor.Of(e));
     public void Apply(IEvent<ItemMoved> e) => ItemLww.ApplyMoved(State, e.Data);
+    public void Apply(IEvent<ItemMetadataSet> e) => ItemLww.ApplyMetadataSet(State, e.Data);
     public void Apply(IEvent<ItemDeleted> e) => ItemLww.ApplyDeleted(State, e.Data);
     public void Apply(IEvent<ItemVtodoPut> e) => ItemLww.ApplyVtodoPut(State, e.Data, EventActor.Of(e));
 }

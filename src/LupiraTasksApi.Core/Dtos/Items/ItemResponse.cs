@@ -1,3 +1,4 @@
+using System.Text.Json.Nodes;
 using LupiraTasksApi.Domain;
 
 namespace LupiraTasksApi.Dtos.Items;
@@ -27,6 +28,9 @@ public sealed class ItemResponse
     public string? CreatedBy { get; set; }
     public required DateTimeOffset CreatedAt { get; set; }
     public required DateTimeOffset UpdatedAt { get; set; }
+
+    /// <summary>Free-form JSON for agent/server bookkeeping. Server-side only — never in VTODO or the public share DTO.</summary>
+    public JsonNode? Metadata { get; set; }
 }
 
 /// <summary>Envelope for a list's items.</summary>

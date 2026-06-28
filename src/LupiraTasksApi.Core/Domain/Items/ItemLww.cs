@@ -274,6 +274,16 @@ public static class ItemLww
         Touch(s, e.OccurredAt);
     }
 
+    /// <summary>Whole-field LWW for the server-side metadata blob.</summary>
+    public static void ApplyMetadataSet(ItemState s, ItemMetadataSet e)
+    {
+        if (s.Deleted || !Wins(e.OccurredAt, e.CommandId, s.MetadataTs, s.MetadataCmd)) return;
+        s.Metadata = e.Metadata;
+        s.MetadataTs = e.OccurredAt;
+        s.MetadataCmd = e.CommandId;
+        Touch(s, e.OccurredAt);
+    }
+
     /// <summary>Tombstone. Unconditional and permanent — gates all later field events.</summary>
     public static void ApplyDeleted(ItemState s, ItemDeleted e)
     {

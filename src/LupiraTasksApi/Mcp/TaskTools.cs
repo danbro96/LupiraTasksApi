@@ -44,7 +44,7 @@ public sealed class TaskTools
 
     /// <summary>A task as the agent sees it — trimmed, with its owning list named.</summary>
     public sealed record TaskSummary(
-        Guid Id, Guid ListId, string ListName, string Title, ItemStatus Status, bool Completed, DateTimeOffset? DueAt, string? AssignedTo, int Priority);
+        Guid Id, Guid ListId, string ListName, string Title, ItemStatus Status, bool Completed, DateTimeOffset? DueAt, string? AssignedTo, int Priority, JsonNode? Metadata);
 
     /// <summary>A cross-API link as the agent sees it — the edge tuple needed to read or unlink it.</summary>
     public sealed record RelationSummary(Guid Id, string ToKind, string ToRef, string RelationType, JsonNode? Metadata);
@@ -109,7 +109,7 @@ public sealed class TaskTools
             {
                 if (!string.IsNullOrWhiteSpace(query) && !it.Title.Contains(query, StringComparison.OrdinalIgnoreCase))
                     continue;
-                results.Add(new TaskSummary(it.Id, list.Id, list.Name, it.Title, it.Status, it.Completed, it.DueAt, it.AssignedTo, it.Priority));
+                results.Add(new TaskSummary(it.Id, list.Id, list.Name, it.Title, it.Status, it.Completed, it.DueAt, it.AssignedTo, it.Priority, it.Metadata));
             }
         }
         return results;
@@ -168,6 +168,19 @@ public sealed class TaskTools
         CancellationToken ct = default) =>
         MutateAsync(taskId, (caller, listId) =>
             _items.SetStatusAsync(caller, Guid.CreateVersion7(), listId, taskId, status, reason, DateTimeOffset.UtcNow, ct), ct);
+
+    [McpServerTool(Name = "set_task_metadata")]
+    [Description("Set a task's free-form JSON metadata for agent bookkeeping (e.g. source-alert id, check count, " +
+        "last-result summary). Server-side only — never shown to share-link viewers or in CalDAV. Pass null/empty to clear.")]
+    public Task<TaskSummary> SetTaskMetadata(
+        [Description("The task id.")] Guid taskId,
+        [Description("A JSON object string, e.g. {\"alertId\":\"abc\",\"checks\":3}. Null or empty clears it.")] string? metadataJson = null,
+        CancellationToken ct = default)
+    {
+        var metadata = ParseMetadata(metadataJson)?.ToJsonString();
+        return MutateAsync(taskId, (caller, listId) =>
+            _items.SetMetadataAsync(caller, Guid.CreateVersion7(), listId, taskId, metadata, DateTimeOffset.UtcNow, ct), ct);
+    }
 
     [McpServerTool(Name = "update_task")]
     [Description("Update a task's fields. Only the arguments you pass are changed; omitted arguments are left as-is.")]
@@ -351,7 +364,7 @@ public sealed class TaskTools
     private async Task<TaskSummary> ToTaskSummaryAsync(Caller caller, Guid listId, ItemResponse item, CancellationToken ct)
     {
         var listName = (await _lists.GetAsync(caller, listId, ct)).Value?.Name ?? string.Empty;
-        return new TaskSummary(item.Id, listId, listName, item.Title, item.Status, item.Completed, item.DueAt, item.AssignedTo, item.Priority);
+        return new TaskSummary(item.Id, listId, listName, item.Title, item.Status, item.Completed, item.DueAt, item.AssignedTo, item.Priority, item.Metadata);
     }
 
     private static ShareLinkSummary ToShareSummary(ShareResponse s) =>

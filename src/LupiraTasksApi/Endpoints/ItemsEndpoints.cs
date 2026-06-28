@@ -82,6 +82,16 @@ public static class ItemsEndpoints
             .Produces(StatusCodes.Status401Unauthorized)
             .Produces(StatusCodes.Status404NotFound);
 
+        group.MapPost("/{itemId:guid}/metadata", (HttpContext ctx, Guid listId, Guid itemId, SetMetadataRequest body, ItemsHandler h, CancellationToken ct) =>
+                h.SetMetadataAsync(ctx, listId, itemId, body, ct))
+            .WithIdempotencyKey()
+            .WithSummary("Set an item's free-form JSON metadata (Editor+).")
+            .WithDescription("Body `{ metadata (JSON object or null), occurredAt? }`. Server-side bookkeeping; never in VTODO or share links. Whole-field LWW.")
+            .Produces<ItemResponse>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status404NotFound);
+
         group.MapPost("/{itemId:guid}/move", (HttpContext ctx, Guid listId, Guid itemId, MoveItemRequest body, ItemsHandler h, CancellationToken ct) =>
                 h.MoveAsync(ctx, listId, itemId, body, ct))
             .WithIdempotencyKey()

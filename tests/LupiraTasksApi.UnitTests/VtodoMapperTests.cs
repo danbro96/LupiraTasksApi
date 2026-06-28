@@ -150,6 +150,15 @@ public class VtodoMapperTests
     }
 
     [Fact]
+    public void Metadata_is_never_emitted_in_vtodo()
+    {
+        var item = ItemWith(s => s.Metadata = """{"alertId":"alert-123","checks":4}""");
+        var raw = VtodoMapper.ToVtodo(item, [], sourceRaw: null);
+        Assert.DoesNotContain("alert-123", raw);
+        Assert.DoesNotContain("METADATA", raw, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public void Parse_rejects_payload_without_a_vtodo()
     {
         Assert.Throws<FormatException>(() => VtodoMapper.Parse("not an icalendar document"));

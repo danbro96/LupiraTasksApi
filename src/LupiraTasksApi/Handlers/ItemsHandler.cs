@@ -109,6 +109,16 @@ public sealed class ItemsHandler
             await _items.SetStatusAsync(caller, IdempotencyKey.From(ctx), listId, itemId, body.Status, body.Reason, body.OccurredAt, ct));
     }
 
+    public async Task<Results<Ok<ItemResponse>, NotFound, ProblemHttpResult, UnauthorizedHttpResult>> SetMetadataAsync(
+        HttpContext ctx, Guid listId, Guid itemId, SetMetadataRequest body, CancellationToken ct)
+    {
+        var email = _user.Email;
+        if (email is null) return TypedResults.Unauthorized();
+        var caller = Caller.Member(email, _user.Groups);
+        return OpResultMap.OkNotFoundProblem(
+            await _items.SetMetadataAsync(caller, IdempotencyKey.From(ctx), listId, itemId, body.Metadata?.ToJsonString(), body.OccurredAt, ct));
+    }
+
     public async Task<Results<Ok<ItemResponse>, NotFound, ProblemHttpResult, UnauthorizedHttpResult>> MoveAsync(
         HttpContext ctx, Guid listId, Guid itemId, MoveItemRequest request, CancellationToken ct)
     {

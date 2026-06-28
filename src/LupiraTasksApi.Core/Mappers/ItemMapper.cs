@@ -1,3 +1,4 @@
+using System.Text.Json.Nodes;
 using LupiraTasksApi.Domain.Items;
 using LupiraTasksApi.Dtos.Items;
 
@@ -29,5 +30,6 @@ internal static class ItemMapper
         CreatedBy = item.CreatedBy,
         CreatedAt = item.CreatedAt,
         UpdatedAt = item.UpdatedAt,
+        Metadata = string.IsNullOrWhiteSpace(item.Metadata) ? null : JsonNode.Parse(item.Metadata),
     };
 }
