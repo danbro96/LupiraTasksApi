@@ -66,7 +66,7 @@ public sealed class TaskTools
     [Description("Create a new list owned by the current user.")]
     public async Task<ListSummary> CreateList(
         [Description("Display name of the list.")] string name,
-        [Description("List kind: Todo or Shopping (default Todo).")] ListKind kind = ListKind.Todo,
+        [Description("List kind: Todo, Shopping, or Agent (default Todo). Use Agent for the assistant's own backlog or operator/ops lists.")] ListKind kind = ListKind.Todo,
         CancellationToken ct = default)
     {
         var caller = Caller();

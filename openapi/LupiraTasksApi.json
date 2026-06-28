@@ -255,7 +255,7 @@
           "Lists"
         ],
         "summary": "Create a list; the caller becomes Owner.",
-        "description": "Body `{ id (GUIDv7), name, kind, color? }`. Re-sending an existing id is an idempotent success.",
+        "description": "Body `{ id (GUIDv7), name, kind, color? }`. `kind` is `Todo`, `Shopping`, or `Agent` (agent/system-owned lists). Re-sending an existing id is an idempotent success.",
         "parameters": [
           {
             "name": "Idempotency-Key",
@@ -2656,7 +2656,8 @@
       "ListKind": {
         "enum": [
           "Todo",
-          "Shopping"
+          "Shopping",
+          "Agent"
         ]
       },
       "ListResponse": {

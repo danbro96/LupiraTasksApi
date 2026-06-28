@@ -1,4 +1,5 @@
 using System.Net;
+using LupiraTasksApi.Domain;
 using LupiraTasksApi.Dtos.Lists;
 using Xunit;
 
@@ -7,6 +8,20 @@ namespace LupiraTasksApi.IntegrationTests;
 /// <summary>Archive / restore / delete and the soft-delete filtering behind the `?archived=` query — through HTTP.</summary>
 public sealed class ListLifecycleTests(TasksApiTestFactory factory) : IntegrationTest(factory)
 {
+    [Fact]
+    public async Task Agent_kind_is_set_at_creation_and_round_trips()
+    {
+        var agent = Factory.ApiClient("agent@x.test");
+        var list = await CreateListAsync(agent, name: "Assistant backlog", kind: ListKind.Agent);
+        Assert.Equal(ListKind.Agent, list.Kind);
+
+        var byId = await ReadAsync<ListResponse>(await agent.GetAsync($"/lists/{list.Id}"));
+        Assert.Equal(ListKind.Agent, byId.Kind);
+
+        var collection = await ReadAsync<ListCollectionResponse>(await agent.GetAsync("/lists"));
+        Assert.Equal(ListKind.Agent, collection.Lists.Single(l => l.Id == list.Id).Kind);
+    }
+
     private static async Task<bool> ListVisible(HttpClient api, Guid listId, bool archived)
     {
         var resp = await ReadAsync<ListCollectionResponse>(await api.GetAsync($"/lists?archived={archived.ToString().ToLowerInvariant()}"));

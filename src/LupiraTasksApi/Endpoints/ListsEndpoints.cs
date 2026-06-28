@@ -22,7 +22,8 @@ public static class ListsEndpoints
                 h.CreateAsync(ctx, body, ct))
             .WithIdempotencyKey()
             .WithSummary("Create a list; the caller becomes Owner.")
-            .WithDescription("Body `{ id (GUIDv7), name, kind, color? }`. Re-sending an existing id is an idempotent success.")
+            .WithDescription("Body `{ id (GUIDv7), name, kind, color? }`. `kind` is `Todo`, `Shopping`, or `Agent` " +
+                "(agent/system-owned lists). Re-sending an existing id is an idempotent success.")
             .Produces<ListResponse>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status401Unauthorized);
