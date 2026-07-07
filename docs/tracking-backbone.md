@@ -22,7 +22,7 @@ Examples (assistant-driven): an unhealthy API → a **task** (fix it, tracked un
 | **Agent can own lists** | any email owns lists via `OwnerEmail`; no domain blocker — an agent principal owns its own lists and adds humans as members |
 | Items tracked to done | `Item` — `Completed` + `CompletedAt/By`, `Reopened* `, soft `Deleted` (`Domain/Items/Item.cs`, `ItemState.cs`) |
 | Due / assignee / priority / tags / subtasks | `DueAt`, `AssignedTo`, `Priority` (0..9), `Tags`, `ParentItemId` |
-| Agent surface | MCP tools `list_my_lists / find_tasks / add_task / complete_task / reopen_task / update_task` (`Mcp/TaskTools.cs`), bearer JWT on-behalf-of (device-code + refresh) |
+| Agent surface | 16 MCP tools — lists, tasks (incl. `set_task_status`/`set_task_metadata`), relations, sharing (`Mcp/TaskTools.cs`), bearer JWT on-behalf-of (device-code + refresh) |
 | Offline-safe writes | per-field LWW `(OccurredAt, CommandId)` + idempotency ledger, single `SaveChangesAsync` (`Application/Idempotency`, `Domain/Items/ItemLww.cs`) |
 | Event sourcing | Marten inline snapshots, schema `tasks`, Sequence as sync-token (`Data/MartenRegistrations.cs`) |
 
@@ -32,7 +32,7 @@ So "the assistant gets its own lists and drives them" needs **no new model** —
 
 tasks-api must **not** grow due-date firing, reminders, recurrence expansion, a daemon, or an outbox. That is exactly what cal-api's `scheduled_fire` engine is for. Keeping firing out of tasks-api is what makes the substrate split clean: any timed behaviour on a task is a **linked cal-api Prompt**, not a tasks-api feature. The existing `DueAt` stays a passive sort/display field.
 
-## What needs to be implemented
+## The additions (all shipped)
 
 ```mermaid
 classDiagram
@@ -68,7 +68,7 @@ classDiagram
   Relation ..> ExternalRef : source / output
 ```
 
-### P1 — keystone: Relations / cross-links *(absent today)*
+### Keystone: Relations / cross-links *(shipped — `Domain/Relation.cs`, `Application/RelationService.cs`)*
 Mirror cal-api's `Relation` exactly, so the two services share one linking vocabulary:
 ```
 Relation { FromKind="task"; FromId; ToKind; ToRef; RelationType; Metadata? }   // plain Marten doc, indexed by FromId
@@ -81,21 +81,21 @@ This is the keystone because it wires tasks into the assistant graph:
 
 Without this, a task can't point at its heartbeat prompt or its source, and the standing-monitor pattern can't be expressed.
 
-### P1 — agent-owned list designation
-Add `ListKind.Agent` (alongside `Todo`, `Shopping`) **or** a `Managed` flag, so agent/system lists are distinguishable from the user's own lists in queries and UI. Functionally lists already work via `OwnerEmail` + membership; this is just the label. Scoping:
+### Agent-owned list designation *(shipped — `ListKind.Agent`)*
+`ListKind.Agent` (alongside `Todo`, `Shopping`) distinguishes agent/system lists from the user's own in queries and UI. Functionally lists already worked via `OwnerEmail` + membership; this is just the label. Scoping:
 - **Per-user agent work** (research, follow-ups for user X) → a designated agent list in X's account, isolated per the platform's LLM/data-isolation rules.
 - **System/ops work** ("API unhealthy", package upgrades) → an operator-owned list — the tasks counterpart of the **DevOps** calendar; not any end-user's.
 
-### P2 — richer item status *(only `Completed: bool` today)*
-Add an `ItemStatus` enum + reason so the assistant can represent stuck work, not just done/undone:
+### Richer item status *(shipped — `Domain/Enums.cs`)*
+An `ItemStatus` enum + reason so the assistant can represent stuck work, not just done/undone:
 ```
 enum ItemStatus { Open, InProgress, Blocked, Waiting, Done, Cancelled }
 event ItemStatusChanged(Guid ItemId, ItemStatus Status, string? Reason, DateTimeOffset OccurredAt, Guid CommandId)
 ```
-One more LWW-guarded field (`StatusTs`/`StatusCmd`), `Done` staying equivalent to `Completed`. Lets the assistant answer "what's blocked / waiting on me?" — valuable for an autonomous backlog, but not required for the basic track-to-done loop.
+One LWW-guarded field; `Completed` is now derived (`Status == Done`). Lets the assistant answer "what's blocked / waiting on me?".
 
-### P2 — structured metadata on items *(absent; cal-api items have it)*
-Add a JSONB `Metadata` field (whole-field LWW, mirroring cal-api `Item.Metadata`) for agent bookkeeping that doesn't deserve a typed column — source-alert id, check count, last-result summary. Server-side only; never in VTODO.
+### Structured metadata on items *(shipped — `ItemMetadataSet`, whole-field LWW)*
+A JSONB `Metadata` field (mirroring cal-api `Item.Metadata`) for agent bookkeeping that doesn't deserve a typed column — source-alert id, check count, last-result summary. Server-side only; never in VTODO or share links.
 
 ## The standing-monitor pattern (grounded)
 "Keep checking until X" composes the two substrates rather than adding a scheduler here:
@@ -108,8 +108,8 @@ Add a JSONB `Metadata` field (whole-field LWW, mirroring cal-api `Item.Metadata`
 - **Agent self-tracking is internal bookkeeping** — creating its own task/list needs no user approval. The real-world action it leads to (the PR, writing the user's data, notifying) still follows consent-first.
 - **Isolation** follows the platform rule: per-user agent lists are the user's and never cross users in an LLM call; system/ops lists are the operator's.
 
-## Open decisions
-1. Relations as a plain `Relation` doc (mirrors cal-api) vs per-item link collection with LWW — recommend the plain doc for symmetry.
-2. Agent-list designation: a new `ListKind.Agent` vs a `Managed` boolean.
-3. Whether richer `ItemStatus` (P2) is wanted now or deferred until the assistant needs blocked/waiting reasoning.
-4. Should completing a monitor task auto-cancel its linked recurring prompt via the relation, or does the assistant do both explicitly.
+## Decisions
+1. ✅ Relations = a plain `Relation` doc (mirrors cal-api), deterministic tuple-derived id for idempotent link/unlink.
+2. ✅ Agent-list designation = `ListKind.Agent`.
+3. ✅ Richer `ItemStatus` shipped with the rest.
+4. **Open:** completing a monitor task does NOT auto-cancel its linked recurring prompt — the assistant does both explicitly. Revisit if orphaned heartbeats become a problem.
