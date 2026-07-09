@@ -28,6 +28,16 @@ public static class ItemsEndpoints
             .Produces(StatusCodes.Status401Unauthorized)
             .Produces(StatusCodes.Status404NotFound);
 
+        top.MapPost("/{itemId:guid}/metadata", (HttpContext ctx, Guid itemId, SetMetadataRequest body, ItemsHandler h, CancellationToken ct) =>
+                h.SetMetadataByIdAsync(ctx, itemId, body, ct))
+            .WithIdempotencyKey()
+            .WithSummary("Set an item's metadata addressed by id (Editor+); the list is resolved server-side.")
+            .WithDescription("Body `{ metadata (JSON object or null), occurredAt? }`. Whole-field LWW. 404 if no such item or the caller can't edit its list.")
+            .Produces<ItemResponse>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status404NotFound);
+
         var group = app.MapGroup("/lists/{listId:guid}/items")
             .RequireAuthorization()
             .WithTags("Items");

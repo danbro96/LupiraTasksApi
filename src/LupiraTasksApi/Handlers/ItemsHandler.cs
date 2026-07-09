@@ -69,6 +69,22 @@ public sealed class ItemsHandler
             await _items.UpdateAsync(caller, IdempotencyKey.From(ctx), listId, itemId, request, ct));
     }
 
+    /// <summary>Set an item's metadata addressed by id alone; the list is resolved server-side. Membership
+    /// (Editor+) is enforced by the update, so a non-member gets 404.</summary>
+    public async Task<Results<Ok<ItemResponse>, NotFound, ProblemHttpResult, UnauthorizedHttpResult>> SetMetadataByIdAsync(
+        HttpContext ctx,
+        Guid itemId,
+        SetMetadataRequest body,
+        CancellationToken ct)
+    {
+        var email = _user.Email;
+        if (email is null) return TypedResults.Unauthorized();
+        var caller = Caller.Member(email, _user.Groups);
+        if (await _items.FindListIdAsync(itemId, ct) is not { } listId) return TypedResults.NotFound();
+        return OpResultMap.OkNotFoundProblem(
+            await _items.SetMetadataAsync(caller, IdempotencyKey.From(ctx), listId, itemId, body.Metadata?.ToJsonString(), body.OccurredAt, ct));
+    }
+
     public async Task<Results<Ok<ItemResponse>, NotFound, ProblemHttpResult, UnauthorizedHttpResult>> CreateAsync(
         HttpContext ctx,
         Guid listId,

@@ -1,4 +1,5 @@
 using System.Net;
+using System.Text.Json.Nodes;
 using LupiraTasksApi.Dtos.Items;
 using Xunit;
 
@@ -73,4 +74,29 @@ public sealed class CrossListItemsTests(TasksApiTestFactory factory) : Integrati
         Assert.Equal(HttpStatusCode.NotFound,
             (await SendJson(Factory.ApiClient("alice@x.test"), HttpMethod.Patch, $"/items/{Guid.NewGuid()}",
                 new UpdateItemRequest { Title = "x", TitleProvided = true })).StatusCode);
+
+    [Fact]
+    public async Task Set_metadata_by_id_resolves_the_list_and_persists()
+    {
+        var alice = Factory.ApiClient("alice@x.test");
+        var list = await CreateListAsync(alice);
+        var item = await CreateItemAsync(alice, list.Id, "Pay bill");
+
+        var body = new SetMetadataRequest { Metadata = new JsonObject { ["kind"] = "bill", ["invoiceNumber"] = "INV-42" } };
+        var updated = await ReadAsync<ItemResponse>(await SendJson(alice, HttpMethod.Post, $"/items/{item.Id}/metadata", body));
+        Assert.Equal("INV-42", updated.Metadata?["invoiceNumber"]?.GetValue<string>());
+    }
+
+    [Fact]
+    public async Task Set_metadata_by_id_is_404_for_a_non_member()
+    {
+        var alice = Factory.ApiClient("alice@x.test");
+        var bob = Factory.ApiClient("bob@x.test");
+        var list = await CreateListAsync(alice);
+        var item = await CreateItemAsync(alice, list.Id, "Alice's task");
+
+        var resp = await SendJson(bob, HttpMethod.Post, $"/items/{item.Id}/metadata",
+            new SetMetadataRequest { Metadata = new JsonObject { ["x"] = 1 } });
+        Assert.Equal(HttpStatusCode.NotFound, resp.StatusCode);
+    }
 }
