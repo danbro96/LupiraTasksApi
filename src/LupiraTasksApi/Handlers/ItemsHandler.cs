@@ -41,6 +41,34 @@ public sealed class ItemsHandler
             await _items.ListAsync(caller, listId, new ItemFilter(completed, tagId, parentItemId, assignedTo, status), ct));
     }
 
+    public async Task<Results<Ok<ItemCollectionResponse>, UnauthorizedHttpResult>> SearchAsync(
+        string? query,
+        bool? completed,
+        ItemStatus? status,
+        CancellationToken ct)
+    {
+        var email = _user.Email;
+        if (email is null) return TypedResults.Unauthorized();
+        var caller = Caller.Member(email, _user.Groups);
+        return OpResultMap.OkOnly(await _items.SearchAsync(caller, query, completed, status, ct));
+    }
+
+    /// <summary>Edit an item addressed by id alone — the list is resolved server-side (the caller may not
+    /// know it). Membership is still enforced by the subsequent update (Editor+), so a non-member gets 404.</summary>
+    public async Task<Results<Ok<ItemResponse>, NotFound, ProblemHttpResult, UnauthorizedHttpResult>> UpdateByIdAsync(
+        HttpContext ctx,
+        Guid itemId,
+        UpdateItemRequest request,
+        CancellationToken ct)
+    {
+        var email = _user.Email;
+        if (email is null) return TypedResults.Unauthorized();
+        var caller = Caller.Member(email, _user.Groups);
+        if (await _items.FindListIdAsync(itemId, ct) is not { } listId) return TypedResults.NotFound();
+        return OpResultMap.OkNotFoundProblem(
+            await _items.UpdateAsync(caller, IdempotencyKey.From(ctx), listId, itemId, request, ct));
+    }
+
     public async Task<Results<Ok<ItemResponse>, NotFound, ProblemHttpResult, UnauthorizedHttpResult>> CreateAsync(
         HttpContext ctx,
         Guid listId,

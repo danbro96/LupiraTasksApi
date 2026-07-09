@@ -3,6 +3,7 @@ using LupiraTasksApi.Auth;
 using LupiraTasksApi.Data;
 using LupiraTasksApi.Domain;
 using LupiraTasksApi.Domain.Items;
+using LupiraTasksApi.Domain.Lists;
 using LupiraTasksApi.Dtos.Items;
 using LupiraTasksApi.Mappers;
 using Marten;
@@ -59,6 +60,36 @@ public sealed class ItemService
             .Select(i => i.ToResponse())
             .ToList();
 
+        return OpResult<ItemCollectionResponse>.Ok(new ItemCollectionResponse { Items = ordered });
+    }
+
+    /// <summary>Search live items across every list the caller is a member of (archived lists included),
+    /// filtered by an optional case-insensitive title substring + completion/status. The membership predicate
+    /// scopes results to the caller's own + shared lists; no per-list role beyond Viewer is needed. Ordered by
+    /// title for a stable candidate list. Backs the cross-list REST <c>GET /items</c> search.</summary>
+    public async Task<OpResult<ItemCollectionResponse>> SearchAsync(
+        Caller caller, string? query, bool? completed, ItemStatus? status, CancellationToken ct)
+    {
+        var email = caller.Email!;
+        var listIds = await _session.Query<TodoList>()
+            .Where(l => !l.IsDeleted && l.Members.Any(m => m.Email == email))
+            .Select(l => l.Id)
+            .ToListAsync(ct);
+        if (listIds.Count == 0)
+            return OpResult<ItemCollectionResponse>.Ok(new ItemCollectionResponse { Items = [] });
+
+        var items = await _session.Query<Item>()
+            .Where(i => listIds.Contains(i.ListId) && !i.Deleted)
+            .ToListAsync(ct);
+
+        // Completed/Status are computed snapshot members Marten can't translate — filter in memory (family scale).
+        IEnumerable<ItemResponse> results = items.Select(i => i.ToResponse());
+        if (completed is { } c) results = results.Where(r => r.Completed == c);
+        if (status is { } st) results = results.Where(r => r.Status == st);
+        if (!string.IsNullOrWhiteSpace(query))
+            results = results.Where(r => r.Title.Contains(query, StringComparison.OrdinalIgnoreCase));
+
+        var ordered = results.OrderBy(r => r.Title, StringComparer.OrdinalIgnoreCase).ToList();
         return OpResult<ItemCollectionResponse>.Ok(new ItemCollectionResponse { Items = ordered });
     }
 

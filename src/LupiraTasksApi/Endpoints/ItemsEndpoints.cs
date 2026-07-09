@@ -8,6 +8,26 @@ public static class ItemsEndpoints
 {
     public static IEndpointRouteBuilder MapItems(this IEndpointRouteBuilder app)
     {
+        // Cross-list surface (address a task by id alone; the caller need not know its list).
+        var top = app.MapGroup("/items").RequireAuthorization().WithTags("Items");
+
+        top.MapGet("/", (string? query, bool? completed, ItemStatus? status, ItemsHandler h, CancellationToken ct) =>
+                h.SearchAsync(query, completed, status, ct))
+            .WithSummary("Search items across the caller's lists (Viewer+).")
+            .WithDescription("Case-insensitive `query` title substring, optional `completed`/`status`. Spans every list the caller is a member of (archived included).")
+            .Produces<ItemCollectionResponse>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status401Unauthorized);
+
+        top.MapPatch("/{itemId:guid}", (HttpContext ctx, Guid itemId, UpdateItemRequest body, ItemsHandler h, CancellationToken ct) =>
+                h.UpdateByIdAsync(ctx, itemId, body, ct))
+            .WithIdempotencyKey()
+            .WithSummary("Edit item fields addressed by id (Editor+); the list is resolved server-side.")
+            .WithDescription("Same body as the list-scoped PATCH (`*Provided` flags). 404 if no such item or the caller can't edit its list.")
+            .Produces<ItemResponse>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status404NotFound);
+
         var group = app.MapGroup("/lists/{listId:guid}/items")
             .RequireAuthorization()
             .WithTags("Items");
