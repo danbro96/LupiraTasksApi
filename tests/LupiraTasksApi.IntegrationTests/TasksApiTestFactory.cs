@@ -29,6 +29,8 @@ public sealed class TasksApiTestFactory : WebApplicationFactory<Program>
             cfg.AddInMemoryCollection(new Dictionary<string, string?>
             {
                 ["ConnectionStrings:tasks"] = _postgres.GetConnectionString(),
+                // Never contacted (tests auth via X-Dev-User) — feeds the RFC 9728 metadata + JWT challenge.
+                ["Auth:Oidc:Authority"] = "https://auth.test/application/o/lupira-tasks/",
                 // Lift the per-email limiter so a busy serial test run can't trip 429.
                 ["RateLimit:RequestsPerMinute"] = "100000",
             }));
@@ -55,6 +57,9 @@ public sealed class TasksApiTestFactory : WebApplicationFactory<Program>
         if (groups.Length > 0) client.DefaultRequestHeaders.Add("X-Dev-Groups", string.Join(',', groups));
         return client;
     }
+
+    /// <summary>A client with no auth header — for asserting unauthenticated requests are rejected.</summary>
+    public HttpClient AnonymousClient() => CreateClient();
 
     /// <summary>A client authenticated for the <c>/dav</c> surface (HTTP Basic; dev accepts any password).</summary>
     public HttpClient DavClient(string email)

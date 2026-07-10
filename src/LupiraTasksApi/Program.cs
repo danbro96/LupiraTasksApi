@@ -203,6 +203,17 @@ authBuilder.AddJwtBearer(opts =>
         NameClaimType = "email",
         RoleClaimType = "groups",
     };
+    opts.Events = new JwtBearerEvents
+    {
+        // MCP auth spec: a 401 on /mcp advertises the RFC 9728 metadata so clients can discover the issuer.
+        OnChallenge = ctx =>
+        {
+            if (ctx.Request.Path.StartsWithSegments("/mcp"))
+                ctx.Response.Headers.Append("WWW-Authenticate",
+                    $"Bearer resource_metadata=\"{McpResourceMetadata.ResourceMetadataUrl(ctx.Request)}\"");
+            return Task.CompletedTask;
+        },
+    };
 });
 
 // Account-less share-link recipients on /shared/{token}. Always registered (share links work in
@@ -362,6 +373,9 @@ app.Map("/dav/{**path}", DavRouter.Handle)
 // Agent MCP surface (Streamable HTTP). Mapped AFTER UseAuthentication/UseAuthorization so
 // the same JWT bearer validates it; RequireAuthorization rejects anonymous calls with 401.
 // Exposure is LAN/WireGuard-only — the Cloudflare Tunnel must not route /mcp (see deploy docs).
+// RFC 9728 metadata lets MCP clients discover the Authentik issuer from the 401 challenge. Read from
+// app.Configuration (not the eagerly-bound `oidc`) so a test host's config override is honoured.
+app.MapMcpResourceMetadata(app.Configuration[$"{OidcAuthOptions.SectionName}:Authority"]);
 app.MapMcp("/mcp")
    .RequireAuthorization();
 
