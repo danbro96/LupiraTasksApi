@@ -2,7 +2,7 @@
 
 Lupira Tasks API is a single bounded context — shared task and shopping lists — implemented as an
 event-sourced .NET service over PostgreSQL (via [Marten](https://martendb.io/)). One store backs four
-surfaces (REST, MCP, public share links, CalDAV); each is a thin adapter over the same application
+surfaces (REST, MCP, public share links, the DAV-backend seam); each is a thin adapter over the same application
 services, so the surfaces can never diverge.
 
 ## Why event sourcing
@@ -12,7 +12,7 @@ replays them on reconnect — possibly out of order, possibly alongside edits an
 same item. Two mechanisms make that converge:
 
 - **Idempotency** — every mutation carries a command id (the `Idempotency-Key` header on REST, minted
-  server-side for MCP/CalDAV). A redelivered command is recorded once in the `ProcessedCommand` ledger
+  server-side for MCP/DAV). A redelivered command is recorded once in the `ProcessedCommand` ledger
   and replayed as a no-op that returns the prior result.
 - **Per-field last-writer-wins (LWW)** — each mutable field on an item carries a guard of
   `(OccurredAt, CommandId)`. A field update only wins if its guard is newer; `CommandId` is the
@@ -200,11 +200,11 @@ the service (and are treated as idempotency replays).
 | `NotFound` | 404 | Also the surfaced result of an authorization denial |
 | `Forbidden` | 403 ProblemDetails | Carries a message |
 | `Invalid` | 400 ProblemDetails | Validation failure, carries a message |
-| `Conflict` | 412 Precondition Failed | **CalDAV only** (`If-Match`/`If-None-Match` ETag mismatch); REST/MCP mappers never receive it |
+| `Conflict` | 412 Precondition Failed | **DAV seam only** (`If-Match`/`If-None-Match` ETag mismatch); REST/MCP mappers never receive it |
 
-## CalDAV VTODO round-trip
+## DAV-backend VTODO round-trip
 
-The `/dav` surface exposes items as iCalendar VTODO resources for native task apps, mapped by
+The LAN-only `/dav-backend` seam (consumed by the LupiraDavApi gateway — see [dav-backend-contract.md](dav-backend-contract.md)) exposes items as iCalendar VTODO resources, mapped by
 [`VtodoMapper`](../src/LupiraTasksApi.Core/Ical/VtodoMapper.cs):
 
 - **GET regenerates** the VTODO from the live snapshot rather than echoing a stored blob — REST/MCP
@@ -216,7 +216,7 @@ The `/dav` surface exposes items as iCalendar VTODO resources for native task ap
 - **PUT** parses the modeled fields and emits an `ItemVtodoPut` event, which competes per-field against
   the granular REST/MCP events through the same LWW guards. The raw payload is stored in
   `Item.SourceVtodo` for lossless re-emission.
-- **Concurrency** uses the CalDAV `If-Match` ETag, which is the item's stream `Version`; a mismatch is
+- **Concurrency** uses the `If-Match` ETag, which is the item's stream `Version`; a mismatch is
   an `OpStatus.Conflict` → 412.
 - `CATEGORIES` map to the list's `TagDef` labels (case-insensitive); unknown labels are ignored, so a
   client can't create uncontrolled tags. VALARM sub-components are stored but not re-emitted in v1 — a
@@ -226,7 +226,7 @@ The `/dav` surface exposes items as iCalendar VTODO resources for native task ap
 
 **In scope:** lists (create/rename/recolor/archive/restore/delete), items (add/edit/move/complete/
 reopen/delete, nesting one level via `ParentItemId`), tag definitions, membership and roles, share
-links, CalDAV sync, the user-profile cache, idempotency, and per-field LWW conflict resolution.
+links, DAV sync, the user-profile cache, idempotency, and per-field LWW conflict resolution.
 
 **Out of scope:** authentication itself (delegated to the OIDC provider), notifications/webhooks, a
 separate audit log (the event streams are the history), real-time collaboration (eventual consistency,

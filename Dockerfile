@@ -9,10 +9,9 @@ COPY src/LupiraTasksApi/ src/LupiraTasksApi/
 RUN dotnet publish src/LupiraTasksApi/LupiraTasksApi.csproj -c Release -o /out --no-restore
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
-# libldap2: System.DirectoryServices.Protocols (CalDAV /dav Basic auth -> Authentik LDAP bind).
-# (Base image is Ubuntu 24.04 — the package is libldap2, not Debian's libldap-2.5-0.)
+# curl: compose healthcheck.
 RUN apt-get update \
- && apt-get install -y --no-install-recommends ca-certificates curl libldap2 \
+ && apt-get install -y --no-install-recommends ca-certificates curl \
  && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 COPY --from=build /out /app

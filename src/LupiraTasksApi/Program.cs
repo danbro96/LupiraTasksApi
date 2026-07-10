@@ -76,6 +76,7 @@ builder.Services.AddScoped<RelationsHandler>();
 builder.Services.AddScoped<SyncHandler>();
 builder.Services.AddScoped<SharesHandler>();
 builder.Services.AddScoped<SharedHandler>();
+builder.Services.AddScoped<DavBackendHandler>();
 
 // MCP agent surface. The [McpServerToolType] tools in this assembly call the same
 // Application services as the REST handlers (no second source of truth). Mounted at /mcp
@@ -220,10 +221,6 @@ authBuilder.AddJwtBearer(opts =>
 // prod); used only by the "ShareToken" policy below, so it never affects the default scheme.
 authBuilder.AddScheme<AuthenticationSchemeOptions, ShareTokenAuthHandler>(ShareTokenAuthHandler.SchemeName, _ => { });
 
-// CalDAV (/dav) clients (DAVx5) authenticate via HTTP Basic → Authentik LDAP bind — they can't use
-// the OIDC JWT. Used only by the "dav" policy below, so it never affects the default (JWT) scheme.
-authBuilder.AddScheme<AuthenticationSchemeOptions, DavBasicAuthHandler>(DavConstants.Scheme, _ => { });
-
 if (builder.Environment.IsDevelopment())
 {
     // Development-only: allow X-Dev-User header auth so the API can be exercised without Authentik.
@@ -237,6 +234,7 @@ if (builder.Environment.IsDevelopment())
     });
 }
 
+var davGatewayClientId = builder.Configuration["DavGateway:ClientId"];
 builder.Services.AddAuthorization(o =>
 {
     // The /shared/{token} group authenticates specifically with the ShareToken scheme, regardless of
@@ -245,10 +243,13 @@ builder.Services.AddAuthorization(o =>
         .AddAuthenticationSchemes(ShareTokenAuthHandler.SchemeName)
         .RequireAuthenticatedUser());
 
-    // The /dav surface authenticates specifically with the DAV Basic scheme.
-    o.AddPolicy(DavConstants.Scheme, p => p
-        .AddAuthenticationSchemes(DavConstants.Scheme)
-        .RequireAuthenticatedUser());
+    // The /dav-backend seam: a valid token for this API (aud) minted by the DAV gateway's client (azp).
+    // Dev-header auth passes in Development so tests can drive the seam directly.
+    o.AddPolicy("DavBackendPolicy", p => p
+        .RequireAuthenticatedUser()
+        .RequireAssertion(ctx =>
+            ctx.User.Identity?.AuthenticationType == DevAuthHandler.SchemeName
+            || (davGatewayClientId is not null && ctx.User.HasClaim("azp", davGatewayClientId))));
 });
 
 builder.Services.AddRateLimiter(o =>
@@ -359,16 +360,8 @@ app.MapSync();
 app.MapShares();
 app.MapShared();
 
-// CalDAV (VTODO) surface for DAVx5 → Android task apps, discovered via /.well-known/caldav.
-// Authenticated by the DAV Basic→LDAP scheme (DAVx5 can't use the OIDC JWT). Rate-limiting is
-// disabled here: DAVx5 fans out many requests during a single sync and would trip the per-email
-// limiter; ETag/sync-token make those reads cheap.
-app.MapMethods("/.well-known/caldav", ["GET", "PROPFIND", "OPTIONS"],
-        () => Results.Redirect("/dav/", permanent: true))
-   .AllowAnonymous();
-app.Map("/dav/{**path}", DavRouter.Handle)
-   .RequireAuthorization(DavConstants.Scheme)
-   .DisableRateLimiting();
+// The internal DAV-backend (VTODO) seam the LupiraDavApi gateway consumes (LAN-only, gateway-authed).
+app.MapDavBackend();
 
 // Agent MCP surface (Streamable HTTP). Mapped AFTER UseAuthentication/UseAuthorization so
 // the same JWT bearer validates it; RequireAuthorization rejects anonymous calls with 401.

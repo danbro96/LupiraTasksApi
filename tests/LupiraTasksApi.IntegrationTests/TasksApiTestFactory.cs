@@ -1,5 +1,3 @@
-using System.Net.Http.Headers;
-using System.Text;
 using Marten;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -11,8 +9,8 @@ namespace LupiraTasksApi.IntegrationTests;
 
 /// <summary>
 /// Hosts the real app against an ephemeral Postgres (Testcontainers). Runs in <c>Development</c> so the dev auth
-/// handlers are wired: <c>X-Dev-User</c> for the JSON API and any-password HTTP Basic for <c>/dav</c> — no Authentik
-/// needed. Marten data is reset per test via <see cref="ResetAsync"/> so listings and the global event sequence
+/// handler is wired (<c>X-Dev-User</c>, which also satisfies the /dav-backend policy) — no Authentik needed.
+/// Marten data is reset per test via <see cref="ResetAsync"/> so listings and the global event sequence
 /// (the sync-token / cursor) are deterministic. Mirrors LupiraCalApi's <c>CalApiTestFactory</c>.
 /// </summary>
 public sealed class TasksApiTestFactory : WebApplicationFactory<Program>
@@ -60,15 +58,6 @@ public sealed class TasksApiTestFactory : WebApplicationFactory<Program>
 
     /// <summary>A client with no auth header — for asserting unauthenticated requests are rejected.</summary>
     public HttpClient AnonymousClient() => CreateClient();
-
-    /// <summary>A client authenticated for the <c>/dav</c> surface (HTTP Basic; dev accepts any password).</summary>
-    public HttpClient DavClient(string email)
-    {
-        var client = CreateClient();
-        var creds = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{email}:x"));
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", creds);
-        return client;
-    }
 
     protected override void Dispose(bool disposing)
     {

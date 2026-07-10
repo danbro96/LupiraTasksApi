@@ -103,6 +103,49 @@ public sealed class TaskDavService
         return OpResult.Ok();
     }
 
+    /// <summary>Viewer-level read gate for the DAV surface (deny reads as "not found" upstream).</summary>
+    public async Task<bool> CanReadAsync(Caller caller, Guid listId, CancellationToken ct) =>
+        (await _access.AuthorizeAsync(caller, listId, ListRole.Viewer, ct)).Allowed;
+
+    /// <summary>The current sync token = the store's latest global event sequence.</summary>
+    public async Task<long> CurrentTokenAsync(CancellationToken ct)
+    {
+        var last = await _session.Events.QueryAllRawEvents().OrderByDescending(e => e.Sequence).Take(1).ToListAsync(ct);
+        return last.Count > 0 ? last[0].Sequence : 0L;
+    }
+
+    /// <summary>Changes in a list since <paramref name="since"/>; a null token yields the full live listing
+    /// (self-healing resync). Deletions surface as tombstones only on incremental diffs; an item that was
+    /// never in this list is skipped. 404-on-deny like the rest of the DAV surface.</summary>
+    public async Task<OpResult<DavChangesResult>> ChangesSinceAsync(Caller caller, Guid listId, long? since, CancellationToken ct)
+    {
+        var acc = await _access.AuthorizeAsync(caller, listId, ListRole.Viewer, ct);
+        if (!acc.Allowed) return OpResult<DavChangesResult>.NotFound();
+
+        var newToken = await CurrentTokenAsync(ct);
+
+        if (since is null)
+        {
+            var live = await ItemsAsync(listId, ct);
+            return OpResult<DavChangesResult>.Ok(new DavChangesResult(
+                newToken, [.. live.Select(i => new DavChange(i.Uid, Etag(i), Deleted: false))]));
+        }
+
+        var changedIds = (await _session.Events.QueryAllRawEvents().Where(e => e.Sequence > since).ToListAsync(ct))
+            .Select(e => e.StreamId).Distinct().ToList();
+        var items = await _session.Query<Item>().Where(i => changedIds.Contains(i.Id)).ToListAsync(ct);
+
+        var changes = new List<DavChange>();
+        foreach (var i in items)
+        {
+            if (i.ListId != listId) continue;   // never been in this list
+            changes.Add(i.Deleted
+                ? new DavChange(i.Uid, null, Deleted: true)
+                : new DavChange(i.Uid, Etag(i), Deleted: false));
+        }
+        return OpResult<DavChangesResult>.Ok(new DavChangesResult(newToken, changes));
+    }
+
     /// <summary>VTODO CATEGORIES → existing list tag ids (case-insensitive label match). Unknown labels
     /// are ignored in v1 to avoid uncontrolled tag creation from a phone.</summary>
     private static List<Guid> MapCategoriesToTags(TodoList list, IReadOnlyList<string> categories) =>

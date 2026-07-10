@@ -124,28 +124,6 @@
         ]
       }
     },
-    "/.well-known/caldav": {
-      "get": {
-        "tags": [
-          "LupiraTasksApi"
-        ],
-        "responses": {
-          "200": {
-            "description": "OK"
-          }
-        }
-      },
-      "options": {
-        "tags": [
-          "LupiraTasksApi"
-        ],
-        "responses": {
-          "200": {
-            "description": "OK"
-          }
-        }
-      }
-    },
     "/me": {
       "get": {
         "tags": [
@@ -3767,9 +3745,6 @@
     },
     {
       "name": "Shares"
-    },
-    {
-      "name": "LupiraTasksApi"
     },
     {
       "name": "Me"

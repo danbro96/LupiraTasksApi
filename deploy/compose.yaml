@@ -16,15 +16,20 @@ services:
       # Public base of the share web client; returned share links are {base}/s/{token}.
       Share__LinkBaseUrl: ${SHARE_LINK_BASE_URL:-https://tasks.lupira.com}
 
+      # /dav-backend auth — a valid token for this API additionally minted by the DAV gateway's
+      # client-credentials identity (azp). LAN-only surface; not routed through the tunnel.
+      DavGateway__ClientId: ${DAV_GATEWAY_CLIENT_ID:-lupira-dav-svc}
+
       OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
       OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL:-http/protobuf}
       OTEL_EXPORTER_OTLP_HEADERS: ${OTEL_EXPORTER_OTLP_HEADERS:-}
       OTEL_METRIC_EXPORT_INTERVAL: ${OTEL_METRIC_EXPORT_INTERVAL:-300000}
       OTEL_RESOURCE_ATTRIBUTES: ${OTEL_RESOURCE_ATTRIBUTES:-deployment.environment=prod}
     ports:
-      # The agent MCP surface is served at /mcp on this same port — the most powerful surface.
-      # Keep it off the public internet: do NOT route /mcp* through your public ingress (the app
-      # also rejects any /mcp request bearing CDN edge headers as a backstop). REST stays public.
+      # The agent MCP surface (/mcp) and the DAV-backend seam (/dav-backend) are served on this
+      # same port. Keep them off the public internet: do NOT route /mcp* or /dav-backend* through
+      # your public ingress (the app also rejects requests bearing CDN edge headers as a backstop).
+      # REST stays public.
       - "${HOST_PORT:-40980}:8080"
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS http://localhost:8080/readyz || exit 1"]
