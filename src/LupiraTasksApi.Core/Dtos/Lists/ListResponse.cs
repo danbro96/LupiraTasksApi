@@ -32,6 +32,9 @@ public sealed class ListResponse
     public string? Color { get; set; }
     public required bool SimplePriority { get; set; }
     public required PersonRef Owner { get; set; }
+    /// <summary>The caller's own role on this list — server-authoritative, so clients gate owner/editor
+    /// UI on this instead of matching themselves against <see cref="Members"/>.</summary>
+    public required ListRole Access { get; set; }
     public required bool IsArchived { get; set; }
     public required DateTimeOffset CreatedAt { get; set; }
     public required DateTimeOffset UpdatedAt { get; set; }

@@ -3060,6 +3060,7 @@
           "kind",
           "simplePriority",
           "owner",
+          "access",
           "isArchived",
           "createdAt",
           "updatedAt",
@@ -3097,6 +3098,9 @@
           },
           "owner": {
             "$ref": "#/components/schemas/PersonRef"
+          },
+          "access": {
+            "$ref": "#/components/schemas/ListRole"
           },
           "isArchived": {
             "type": "boolean"

@@ -51,7 +51,7 @@ public sealed class SyncService
 
         return OpResult<SyncResponse>.Ok(new SyncResponse
         {
-            List = access.List!.ToResponse(lookup),
+            List = access.List!.ToResponse(lookup, caller.PrincipalId!.Value),
             Items = ordered,
             NextCursor = nextCursor,
         });

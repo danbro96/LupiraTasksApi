@@ -1,3 +1,4 @@
+using LupiraTasksApi.Domain;
 using LupiraTasksApi.Domain.Identity;
 using LupiraTasksApi.Domain.Lists;
 using LupiraTasksApi.Dtos;
@@ -6,10 +7,11 @@ using LupiraTasksApi.Dtos.Lists;
 namespace LupiraTasksApi.Mappers;
 
 /// <summary>Maps the <see cref="TodoList"/> snapshot to its response DTO, resolving owner + member
-/// principal ids to <see cref="PersonRef"/> via a lookup built by the calling service.</summary>
+/// principal ids to <see cref="PersonRef"/> via a lookup built by the calling service.
+/// <paramref name="callerPrincipalId"/> selects the caller's own membership role for <c>Access</c>.</summary>
 internal static class ListMapper
 {
-    public static ListResponse ToResponse(this TodoList list, IReadOnlyDictionary<Guid, Principal> principals) => new()
+    public static ListResponse ToResponse(this TodoList list, IReadOnlyDictionary<Guid, Principal> principals, Guid callerPrincipalId) => new()
     {
         Id = list.Id,
         Version = list.Version,
@@ -19,6 +21,7 @@ internal static class ListMapper
         SimplePriority = list.SimplePriority,
         Owner = PersonRef.From(list.OwnerPrincipalId, principals)
             ?? new PersonRef { PrincipalId = list.OwnerPrincipalId, Email = "" },
+        Access = list.Members.Find(m => m.PrincipalId == callerPrincipalId)?.Role ?? ListRole.Viewer,
         IsArchived = list.IsArchived,
         CreatedAt = list.CreatedAt,
         UpdatedAt = list.UpdatedAt,
