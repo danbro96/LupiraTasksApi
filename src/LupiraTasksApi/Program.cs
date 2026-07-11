@@ -22,6 +22,7 @@ using OpenTelemetry.Trace;
 using Scalar.AspNetCore;
 using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
+using Weasel.Core;
 
 // The build-time OpenAPI emitter (Microsoft.Extensions.ApiDescription.Server's GetDocument.Insider)
 // loads this assembly to walk the document provider but never serves a request — so skip startup
@@ -46,7 +47,9 @@ builder.Services
         var opts = new StoreOptions();
         opts.Connection(connectionString);
         opts.DatabaseSchemaName = "tasks";
-        opts.UseSystemTextJsonForSerialization();
+        // Store enums as strings in the event/document JSON (not integers), so reordering or inserting
+        // an enum value never reinterprets history — the append-only-safe encoding (matches cal-api).
+        opts.UseSystemTextJsonForSerialization(EnumStorage.AsString);
         opts.AutoCreateSchemaObjects = env.IsDevelopment()
             ? AutoCreate.CreateOrUpdate
             : AutoCreate.None;

@@ -13,11 +13,13 @@ public static class MartenRegistrations
     public static void Configure(StoreOptions opts)
     {
         // Provenance is unbackfillable, so capture it on every event:
-        //  * headers   — the "actor" header (caller email / share:{label}) → attribution fields.
+        //  * headers   — "actor" (principal id / share:{label}) + "actor.email" + "source" (api/dav).
+        //  * username  — the acting principal id (Marten LastModifiedBy).
         //  * causation — the originating command id.
         //  * correlation — the OTel trace id of the request that produced the event.
         // Stamped in EventActor.Stamp before each single commit.
         opts.Events.MetadataConfig.HeadersEnabled = true;
+        opts.Events.MetadataConfig.UserNameEnabled = true;
         opts.Events.MetadataConfig.CausationIdEnabled = true;
         opts.Events.MetadataConfig.CorrelationIdEnabled = true;
 

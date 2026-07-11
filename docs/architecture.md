@@ -190,12 +190,16 @@ Every mutation stamps four provenance facts onto its events via
 [`EventActor.Stamp`](../src/LupiraTasksApi.Core/Domain/EventActor.cs) before the single commit
 (they are unbackfillable, so they are never optional):
 
-- **actor** header — a member's `PrincipalId`, or `share:{label}` for a share-link write. Aggregates
-  read it into `CreatedBy`, `CompletedBy`, `Member.AddedBy`, and `RevokedBy`; the read layer resolves
-  a Guid-shaped actor to a `PersonRef` (a `share:*` actor resolves to `null`).
+- **actor** header (+ Marten `LastModifiedBy`) — a member's `PrincipalId`, or `share:{label}` for a
+  share-link write. Aggregates read the header into `CreatedBy`, `CompletedBy`, `Member.AddedBy`, and
+  `RevokedBy`; the read layer resolves a Guid-shaped actor to a `PersonRef` (a `share:*` actor resolves
+  to `null`).
 - **actor.email** header — the member's email at the time, a human-audit convenience (absent for a
   share write; a future erasure routine can scrub it).
-- **causation id** — the originating command id (the direct cause of the events).
+- **source** header — the writing surface, `api` or `dav`.
+- **causation id** — the originating command id (the direct cause). This intentionally differs from
+  cal-api, which uses the OTel span id; tasks-api keys causation on the command id because that is the
+  unit its offline idempotency ledger dedupes.
 - **correlation id** — the current OpenTelemetry trace id, so every event links back to the request
   that produced it (absent only when no trace is active).
 

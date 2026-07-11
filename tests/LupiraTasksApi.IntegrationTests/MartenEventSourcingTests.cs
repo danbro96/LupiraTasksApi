@@ -43,6 +43,36 @@ public sealed class MartenEventSourcingTests(TasksApiTestFactory factory) : Inte
     }
 
     [Fact]
+    public async Task Enums_are_stored_as_strings_in_the_event_store()
+    {
+        var itemId = Guid.CreateVersion7();
+        var listId = Guid.CreateVersion7();
+        var t = DateTimeOffset.UtcNow;
+
+        await using (var s = Store.LightweightSession())
+        {
+            s.Events.StartStream<Item>(
+                itemId,
+                new ItemAdded(itemId, listId, null, "T", "a", t, Guid.CreateVersion7()),
+                new ItemStatusChanged(itemId, ItemStatus.Blocked, "waiting", t.AddSeconds(1), Guid.CreateVersion7()));
+            await s.SaveChangesAsync();
+        }
+
+        // Read the raw persisted payload — the enum must be the NAME, not the ordinal, so reordering
+        // or inserting an enum value can never silently reinterpret history (append-only-safe encoding).
+        await using var q = Store.QuerySession();
+        var conn = q.Connection;
+        if (conn.State != System.Data.ConnectionState.Open) await conn.OpenAsync();
+        await using var cmd = conn.CreateCommand();
+        cmd.CommandText = "select data::text from tasks.mt_events where stream_id = @id and type = 'item_status_changed'";
+        cmd.Parameters.AddWithValue("id", itemId);
+        var json = (string?)await cmd.ExecuteScalarAsync();
+
+        Assert.NotNull(json);
+        Assert.Contains("\"Blocked\"", json);   // string name; an int-stored enum would never contain this
+    }
+
+    [Fact]
     public async Task Duplicate_command_id_insert_fails_fast_and_keeps_one_row()
     {
         var cmd = Guid.CreateVersion7();
