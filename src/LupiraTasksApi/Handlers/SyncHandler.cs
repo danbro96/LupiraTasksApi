@@ -12,12 +12,12 @@ namespace LupiraTasksApi.Handlers;
 /// </summary>
 public sealed class SyncHandler
 {
-    private readonly CurrentUser _user;
+    private readonly CallerFactory _callers;
     private readonly SyncService _sync;
 
-    public SyncHandler(CurrentUser user, SyncService sync)
+    public SyncHandler(CallerFactory callers, SyncService sync)
     {
-        _user = user;
+        _callers = callers;
         _sync = sync;
     }
 
@@ -26,9 +26,8 @@ public sealed class SyncHandler
         long? since,
         CancellationToken ct)
     {
-        var email = _user.Email;
-        if (email is null) return TypedResults.Unauthorized();
-        var caller = Caller.Member(email, _user.Groups);
+        var caller = await _callers.MemberAsync(ct);
+        if (caller is null) return TypedResults.Unauthorized();
         return OpResultMap.OkNotFound(await _sync.GetAsync(caller, listId, since, ct));
     }
 }

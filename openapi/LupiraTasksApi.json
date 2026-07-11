@@ -549,7 +549,7 @@
           "Lists"
         ],
         "summary": "Add a member by email (any member; defaults to Editor).",
-        "description": "Body `{ email, role? }`. Direct-add, no invite/accept. A wrong email is inert.",
+        "description": "Body `{ email, role? }`. Direct-add, no invite/accept. An unseen email provisions a placeholder principal (its `sub` is upgraded when the person first logs in). Members are returned with their `principalId`; use that for role change / removal.",
         "parameters": [
           {
             "name": "listId",
@@ -615,12 +615,12 @@
         ]
       }
     },
-    "/lists/{listId}/members/{memberEmail}": {
+    "/lists/{listId}/members/{principalId}": {
       "patch": {
         "tags": [
           "Lists"
         ],
-        "summary": "Change a member's role (Owner only).",
+        "summary": "Change a member's role by principal id (Owner only).",
         "parameters": [
           {
             "name": "listId",
@@ -632,11 +632,12 @@
             }
           },
           {
-            "name": "memberEmail",
+            "name": "principalId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           },
           {
@@ -707,7 +708,7 @@
         "tags": [
           "Lists"
         ],
-        "summary": "Remove a member, or leave (self). Last owner leaving deletes the list for everyone.",
+        "summary": "Remove a member by principal id, or leave (self). Last owner leaving deletes the list for everyone.",
         "parameters": [
           {
             "name": "listId",
@@ -719,11 +720,12 @@
             }
           },
           {
-            "name": "memberEmail",
+            "name": "principalId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           },
           {
@@ -2801,10 +2803,15 @@
       },
       "DirectoryPerson": {
         "required": [
+          "principalId",
           "email"
         ],
         "type": "object",
         "properties": {
+          "principalId": {
+            "type": "string",
+            "format": "uuid"
+          },
           "email": {
             "type": "string"
           },
@@ -2912,15 +2919,23 @@
             "format": "date-time"
           },
           "completedBy": {
-            "type": [
-              "null",
-              "string"
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/PersonRef"
+              }
             ]
           },
-          "assignedTo": {
-            "type": [
-              "null",
-              "string"
+          "assignee": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/PersonRef"
+              }
             ]
           },
           "dueAt": {
@@ -2964,9 +2979,13 @@
             "type": "string"
           },
           "createdBy": {
-            "type": [
-              "null",
-              "string"
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/PersonRef"
+              }
             ]
           },
           "createdAt": {
@@ -3040,7 +3059,7 @@
           "name",
           "kind",
           "simplePriority",
-          "ownerEmail",
+          "owner",
           "isArchived",
           "createdAt",
           "updatedAt",
@@ -3076,8 +3095,8 @@
           "simplePriority": {
             "type": "boolean"
           },
-          "ownerEmail": {
-            "type": "string"
+          "owner": {
+            "$ref": "#/components/schemas/PersonRef"
           },
           "isArchived": {
             "type": "boolean"
@@ -3113,14 +3132,25 @@
       },
       "MemberResponse": {
         "required": [
+          "principalId",
           "email",
           "role",
           "addedAt"
         ],
         "type": "object",
         "properties": {
+          "principalId": {
+            "type": "string",
+            "format": "uuid"
+          },
           "email": {
             "type": "string"
+          },
+          "displayName": {
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "role": {
             "$ref": "#/components/schemas/ListRole"
@@ -3130,20 +3160,29 @@
             "format": "date-time"
           },
           "addedBy": {
-            "type": [
-              "null",
-              "string"
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/PersonRef"
+              }
             ]
           }
         }
       },
       "MeResponse": {
         "required": [
+          "principalId",
           "email",
           "isAdmin"
         ],
         "type": "object",
         "properties": {
+          "principalId": {
+            "type": "string",
+            "format": "uuid"
+          },
           "email": {
             "type": "string"
           },
@@ -3180,6 +3219,28 @@
               "string"
             ],
             "format": "date-time"
+          }
+        }
+      },
+      "PersonRef": {
+        "required": [
+          "principalId",
+          "email"
+        ],
+        "type": "object",
+        "properties": {
+          "principalId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "email": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },

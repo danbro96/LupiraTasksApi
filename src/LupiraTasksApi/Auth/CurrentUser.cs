@@ -43,6 +43,17 @@ public sealed class CurrentUser
         }
     }
 
+    /// <summary>The immutable OIDC subject (<c>sub</c>), the durable identity anchor resolved to a
+    /// principal. <c>null</c> when unauthenticated or absent.</summary>
+    public string? Sub
+    {
+        get
+        {
+            var raw = Principal?.FindFirstValue("sub");
+            return string.IsNullOrWhiteSpace(raw) ? null : raw.Trim();
+        }
+    }
+
     /// <summary>The OIDC-supplied display name, if any.</summary>
     public string? DisplayName
     {

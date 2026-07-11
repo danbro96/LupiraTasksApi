@@ -1,4 +1,5 @@
 using LupiraTasksApi.Application;
+using LupiraTasksApi.Domain.Identity;
 using LupiraTasksApi.Domain.Items;
 using LupiraTasksApi.Domain.Lists;
 using LupiraTasksApi.Ical;
@@ -9,14 +10,22 @@ namespace LupiraTasksApi.Dav;
 /// <summary>
 /// The task-list (VTODO) half of the internal /dav-backend contract consumed by the LupiraDavApi gateway.
 /// Acts on behalf of the principal named by the path {email} (the gateway verified the human credential via
-/// LDAP Basic auth) with an empty group set — parity with the old DAV Basic path. VTODOs are regenerated
-/// from the snapshot with unmodeled properties spliced back from the last PUT's raw blob.
+/// LDAP Basic auth): the email is resolved (and JIT-provisioned) to an internal principal, with an empty
+/// group set. VTODOs are regenerated from the snapshot with unmodeled properties spliced back from the last
+/// PUT's raw blob; the assignee X-prop is resolved from the assignee principal id.
 /// </summary>
-public sealed class DavBackendHandler(IQuerySession session, TaskDavService dav, ListService lists)
+public sealed class DavBackendHandler(IQuerySession session, TaskDavService dav, ListService lists, PrincipalDirectory principals)
 {
+    /// <summary>Resolve the acting DAV email (from the gateway-trusted path) to a member caller.</summary>
+    private async Task<Caller> CallerFor(string email, CancellationToken ct)
+    {
+        var principal = await principals.ResolveOrProvisionAsync(sub: null, email, name: null, ct);
+        return Caller.Member(principal.Id, principal.Email, []);
+    }
+
     public async Task<IResult> CollectionsAsync(string email, CancellationToken ct)
     {
-        var caller = Caller.Member(email, []);
+        var caller = await CallerFor(email, ct);
         var accessible = await lists.ListAsync(caller, archived: false, ct);
         if (accessible.Status != OpStatus.Ok) return TypedResults.Ok(Empty(email));
 
@@ -37,7 +46,7 @@ public sealed class DavBackendHandler(IQuerySession session, TaskDavService dav,
 
     public async Task<IResult> QueryAsync(string email, Guid collectionId, DavQueryRequest body, CancellationToken ct)
     {
-        var caller = Caller.Member(email, []);
+        var caller = await CallerFor(email, ct);
         if (!await dav.CanReadAsync(caller, collectionId, ct)) return TypedResults.NotFound();
 
         var list = await session.LoadAsync<TodoList>(collectionId, ct);
@@ -50,33 +59,42 @@ public sealed class DavBackendHandler(IQuerySession session, TaskDavService dav,
         }
         // Start/End: DAVx5 doesn't time-range VTODOs — the window is ignored in v1 (full listing).
 
+        var selectedList = selected.ToList();
+        var assignees = await principals.LookupAsync(
+            selectedList.Where(i => i.AssignedToPrincipalId is not null).Select(i => i.AssignedToPrincipalId!.Value), ct);
+
         return TypedResults.Ok(new DavResourcesDto
         {
-            Resources = [.. selected.Select(i => new DavResourceDto
+            Resources = [.. selectedList.Select(i => new DavResourceDto
             {
                 Uid = i.Uid,
                 Etag = TaskDavService.Etag(i),
-                Content = body.IncludeContent ? VtodoMapper.ToVtodo(i, list!.Tags, i.SourceVtodo) : null,
+                Content = body.IncludeContent ? VtodoMapper.ToVtodo(i, list!.Tags, i.SourceVtodo, AssigneeEmail(i, assignees)) : null,
             })],
         });
     }
 
     public async Task<IResult> GetResourceAsync(string email, Guid collectionId, string uid, HttpContext ctx, CancellationToken ct)
     {
-        var caller = Caller.Member(email, []);
+        var caller = await CallerFor(email, ct);
         if (!await dav.CanReadAsync(caller, collectionId, ct)) return TypedResults.NotFound();
 
         var item = await dav.FindAsync(collectionId, uid, ct);
         if (item is null) return TypedResults.NotFound();
 
         var list = await session.LoadAsync<TodoList>(collectionId, ct);
+        var assignees = item.AssignedToPrincipalId is { } a
+            ? await principals.LookupAsync([a], ct)
+            : null;
         ctx.Response.Headers.ETag = $"\"{TaskDavService.Etag(item)}\"";
-        return TypedResults.Text(VtodoMapper.ToVtodo(item, list!.Tags, item.SourceVtodo), "text/calendar; charset=utf-8");
+        return TypedResults.Text(
+            VtodoMapper.ToVtodo(item, list!.Tags, item.SourceVtodo, AssigneeEmail(item, assignees)),
+            "text/calendar; charset=utf-8");
     }
 
     public async Task<IResult> PutResourceAsync(string email, Guid collectionId, string uid, HttpContext ctx, CancellationToken ct)
     {
-        var caller = Caller.Member(email, []);
+        var caller = await CallerFor(email, ct);
         using var reader = new StreamReader(ctx.Request.Body);
         var raw = await reader.ReadToEndAsync(ct);
         var (ifMatch, ifNoneMatchStar) = ParsePreconditions(ctx.Request.Headers.IfMatch, ctx.Request.Headers.IfNoneMatch);
@@ -92,7 +110,7 @@ public sealed class DavBackendHandler(IQuerySession session, TaskDavService dav,
 
     public async Task<IResult> DeleteResourceAsync(string email, Guid collectionId, string uid, HttpContext ctx, CancellationToken ct)
     {
-        var caller = Caller.Member(email, []);
+        var caller = await CallerFor(email, ct);
         var (ifMatch, _) = ParsePreconditions(ctx.Request.Headers.IfMatch, ctx.Request.Headers.IfNoneMatch);
         var result = await dav.DeleteByUidAsync(caller, collectionId, uid, ifMatch, ct);
         return TypedResults.StatusCode(DavStatus(result.Status));
@@ -100,7 +118,7 @@ public sealed class DavBackendHandler(IQuerySession session, TaskDavService dav,
 
     public async Task<IResult> ChangesAsync(string email, Guid collectionId, string? since, CancellationToken ct)
     {
-        var caller = Caller.Member(email, []);
+        var caller = await CallerFor(email, ct);
         // An unparsable/absent token degrades to the full live listing — self-healing resync.
         long? parsed = long.TryParse(since, out var t) ? t : null;
         var result = await dav.ChangesSinceAsync(caller, collectionId, parsed, ct);
@@ -114,6 +132,12 @@ public sealed class DavBackendHandler(IQuerySession session, TaskDavService dav,
             Deleted = [.. changes.Where(c => c.Deleted).Select(c => c.Uid)],
         });
     }
+
+    /// <summary>The assignee's email for the VTODO X-prop, resolved from the item's assignee principal id.</summary>
+    private static string? AssigneeEmail(Item item, IReadOnlyDictionary<Guid, Principal>? assignees) =>
+        item.AssignedToPrincipalId is { } a && assignees is not null && assignees.TryGetValue(a, out var p)
+            ? p.Email
+            : null;
 
     private static DavCollectionsDto Empty(string email) => new()
     {

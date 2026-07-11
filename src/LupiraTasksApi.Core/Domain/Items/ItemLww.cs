@@ -160,7 +160,7 @@ public static class ItemLww
     public static void ApplyAssigned(ItemState s, ItemAssigned e)
     {
         if (s.Deleted || !Wins(e.OccurredAt, e.CommandId, s.AssigneeTs, s.AssigneeCmd)) return;
-        s.AssignedTo = e.AssigneeEmail;
+        s.AssignedToPrincipalId = e.AssigneePrincipalId;
         s.AssigneeTs = e.OccurredAt;
         s.AssigneeCmd = e.CommandId;
         Touch(s, e.OccurredAt);

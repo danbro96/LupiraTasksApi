@@ -65,6 +65,7 @@ builder.Services.Configure<ShareLinkOptions>(builder.Configuration.GetSection(Sh
 // validated JWT via IHttpContextAccessor and never writes to the DB.
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<CurrentUser>();
+builder.Services.AddScoped<CallerFactory>();
 
 // The bounded context (Application + Data services from LupiraTasksApi.Core) in one call —
 // the single source of truth shared by REST handlers and MCP tools, reused as-is by any future

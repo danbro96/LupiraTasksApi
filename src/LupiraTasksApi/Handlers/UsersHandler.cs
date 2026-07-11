@@ -1,5 +1,5 @@
+using LupiraTasksApi.Application;
 using LupiraTasksApi.Auth;
-using LupiraTasksApi.Domain.Identity;
 using LupiraTasksApi.Domain.Lists;
 using LupiraTasksApi.Dtos.Users;
 using Marten;
@@ -8,18 +8,20 @@ using Microsoft.AspNetCore.Http.HttpResults;
 namespace LupiraTasksApi.Handlers;
 
 /// <summary>
-/// People discovery for member-add: the distinct members the caller has seen across their own
-/// shared lists, resolved to <c>UserProfile</c> display names. Optionally filtered by a query.
+/// People discovery for member-add: the distinct principals the caller has seen across their own shared
+/// lists, resolved to email/display name. Optionally filtered by a query over email or display name.
 /// </summary>
 public sealed class UsersHandler
 {
-    private readonly IDocumentSession _session;
+    private readonly IQuerySession _session;
     private readonly CurrentUser _user;
+    private readonly PrincipalDirectory _directory;
 
-    public UsersHandler(IDocumentSession session, CurrentUser user)
+    public UsersHandler(IQuerySession session, CurrentUser user, PrincipalDirectory directory)
     {
         _session = session;
         _user = user;
+        _directory = directory;
     }
 
     public async Task<Results<Ok<DirectoryResponse>, UnauthorizedHttpResult>> DirectoryAsync(
@@ -32,30 +34,26 @@ public sealed class UsersHandler
             return TypedResults.Unauthorized();
         }
 
+        var me = await _directory.ResolveOrProvisionAsync(_user.Sub, email, _user.DisplayName, ct);
+
         var lists = await _session.Query<TodoList>()
-            .Where(l => !l.IsDeleted && l.Members.Any(m => m.Email == email))
+            .Where(l => !l.IsDeleted && l.Members.Any(m => m.PrincipalId == me.Id))
             .ToListAsync(ct);
 
-        var emails = lists
-            .SelectMany(l => l.Members.Select(m => m.Email))
-            .Where(e => !string.Equals(e, email, StringComparison.OrdinalIgnoreCase))
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToList();
+        var ids = lists
+            .SelectMany(l => l.Members.Select(m => m.PrincipalId))
+            .Where(id => id != me.Id)
+            .Distinct();
+
+        var principals = await _directory.LookupAsync(ids, ct);
 
         var needle = q?.Trim();
-        if (!string.IsNullOrEmpty(needle))
-        {
-            emails = emails.Where(e => e.Contains(needle, StringComparison.OrdinalIgnoreCase)).ToList();
-        }
-
-        var names = emails.Count == 0
-            ? new Dictionary<string, string?>()
-            : (await _session.Query<UserProfile>().Where(p => emails.Contains(p.Id)).ToListAsync(ct))
-                .ToDictionary(p => p.Id, p => p.DisplayName, StringComparer.OrdinalIgnoreCase);
-
-        var people = emails
-            .OrderBy(e => e, StringComparer.OrdinalIgnoreCase)
-            .Select(e => new DirectoryPerson { Email = e, DisplayName = names.GetValueOrDefault(e) })
+        var people = principals.Values
+            .Where(p => string.IsNullOrEmpty(needle)
+                || p.Email.Contains(needle, StringComparison.OrdinalIgnoreCase)
+                || (p.DisplayName?.Contains(needle, StringComparison.OrdinalIgnoreCase) ?? false))
+            .OrderBy(p => p.Email, StringComparer.OrdinalIgnoreCase)
+            .Select(p => new DirectoryPerson { PrincipalId = p.Id, Email = p.Email, DisplayName = p.DisplayName })
             .ToList();
 
         return TypedResults.Ok(new DirectoryResponse { People = people });

@@ -34,7 +34,8 @@ public sealed class ItemState
     public DateTimeOffset? CompletedAt { get; set; }
     public string? CompletedBy { get; set; }
 
-    public string? AssignedTo { get; set; }
+    /// <summary>The assignee's internal principal id (null = unassigned). Resolved to a person on read.</summary>
+    public Guid? AssignedToPrincipalId { get; set; }
     public DateTimeOffset? DueAt { get; set; }
 
     public decimal? Quantity { get; set; }

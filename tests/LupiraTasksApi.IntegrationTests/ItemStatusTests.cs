@@ -17,6 +17,9 @@ namespace LupiraTasksApi.IntegrationTests;
 public sealed class ItemStatusTests(TasksApiTestFactory factory) : IntegrationTest(factory)
 {
     private const string Email = "alice@x.test";
+    // Store-level DAV tests build the Caller + ListCreated directly, so they need a fixed principal id
+    // (the HTTP tests go through dev-auth, which resolves the same email to its own provisioned principal).
+    private static readonly Guid PrincipalId = Guid.Parse("aaaaaaaa-0000-0000-0000-0000000000d5");
     private static readonly DateTimeOffset T0 = new(2026, 6, 6, 12, 0, 0, TimeSpan.Zero);
     private static DateTimeOffset At(int seconds) => T0.AddSeconds(seconds);
 
@@ -54,7 +57,7 @@ public sealed class ItemStatusTests(TasksApiTestFactory factory) : IntegrationTe
             (await SendJson(api, HttpMethod.Post, $"/lists/{list.Id}/items/{item.Id}/complete")).EnsureSuccessStatusCode());
         Assert.Equal(ItemStatus.Done, done.Status);
         Assert.True(done.Completed);
-        Assert.Equal(Email, done.CompletedBy);
+        Assert.Equal(Email, done.CompletedBy?.Email);
 
         var reopened = await ReadAsync<ItemResponse>(
             (await SendJson(api, HttpMethod.Post, $"/lists/{list.Id}/items/{item.Id}/reopen")).EnsureSuccessStatusCode());
@@ -113,7 +116,7 @@ public sealed class ItemStatusTests(TasksApiTestFactory factory) : IntegrationTe
 
         await using var s = Store.LightweightSession();
         var dav = new TaskDavService(s, new AccessResolver(s));
-        var put = await dav.PutVtodoAsync(Caller.Member(Email, []), listId, "dav-status", raw, null, false, CancellationToken.None);
+        var put = await dav.PutVtodoAsync(Caller.Member(PrincipalId, Email, []), listId, "dav-status", raw, null, false, CancellationToken.None);
         Assert.Equal(OpStatus.Ok, put.Status);
 
         await using var q = Store.QuerySession();
@@ -126,7 +129,7 @@ public sealed class ItemStatusTests(TasksApiTestFactory factory) : IntegrationTe
     {
         var listId = Guid.CreateVersion7();
         await using var s = Store.LightweightSession();
-        s.Events.StartStream<TodoList>(listId, new ListCreated(listId, "Groceries", ListKind.Todo, null, Email));
+        s.Events.StartStream<TodoList>(listId, new ListCreated(listId, "Groceries", ListKind.Todo, null, PrincipalId));
         await s.SaveChangesAsync();
         return listId;
     }

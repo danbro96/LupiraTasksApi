@@ -30,7 +30,7 @@ public record ItemRenamed(Guid ItemId, string Title, DateTimeOffset OccurredAt, 
 
 public record ItemNotesEdited(Guid ItemId, string? Notes, DateTimeOffset OccurredAt, Guid CommandId);
 
-public record ItemAssigned(Guid ItemId, string? AssigneeEmail, DateTimeOffset OccurredAt, Guid CommandId);
+public record ItemAssigned(Guid ItemId, Guid? AssigneePrincipalId, DateTimeOffset OccurredAt, Guid CommandId);
 
 public record ItemDueDateSet(Guid ItemId, DateTimeOffset? DueAt, DateTimeOffset OccurredAt, Guid CommandId);
 

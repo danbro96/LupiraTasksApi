@@ -73,26 +73,28 @@ public static class ListsEndpoints
                 h.AddMemberAsync(ctx, listId, body, ct))
             .WithIdempotencyKey()
             .WithSummary("Add a member by email (any member; defaults to Editor).")
-            .WithDescription("Body `{ email, role? }`. Direct-add, no invite/accept. A wrong email is inert.")
+            .WithDescription("Body `{ email, role? }`. Direct-add, no invite/accept. An unseen email provisions a " +
+                "placeholder principal (its `sub` is upgraded when the person first logs in). Members are returned " +
+                "with their `principalId`; use that for role change / removal.")
             .Produces<ListResponse>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status401Unauthorized)
             .Produces(StatusCodes.Status404NotFound);
 
-        group.MapPatch("/{listId:guid}/members/{memberEmail}", (HttpContext ctx, Guid listId, string memberEmail, UpdateMemberRoleRequest body, ListsHandler h, CancellationToken ct) =>
-                h.ChangeMemberRoleAsync(ctx, listId, memberEmail, body, ct))
+        group.MapPatch("/{listId:guid}/members/{principalId:guid}", (HttpContext ctx, Guid listId, Guid principalId, UpdateMemberRoleRequest body, ListsHandler h, CancellationToken ct) =>
+                h.ChangeMemberRoleAsync(ctx, listId, principalId, body, ct))
             .WithIdempotencyKey()
-            .WithSummary("Change a member's role (Owner only).")
+            .WithSummary("Change a member's role by principal id (Owner only).")
             .Produces<ListResponse>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status403Forbidden)
             .Produces(StatusCodes.Status401Unauthorized)
             .Produces(StatusCodes.Status404NotFound);
 
-        group.MapDelete("/{listId:guid}/members/{memberEmail}", (HttpContext ctx, Guid listId, string memberEmail, ListsHandler h, CancellationToken ct) =>
-                h.RemoveMemberAsync(ctx, listId, memberEmail, ct))
+        group.MapDelete("/{listId:guid}/members/{principalId:guid}", (HttpContext ctx, Guid listId, Guid principalId, ListsHandler h, CancellationToken ct) =>
+                h.RemoveMemberAsync(ctx, listId, principalId, ct))
             .WithIdempotencyKey()
-            .WithSummary("Remove a member, or leave (self). Last owner leaving deletes the list for everyone.")
+            .WithSummary("Remove a member by principal id, or leave (self). Last owner leaving deletes the list for everyone.")
             .Produces(StatusCodes.Status204NoContent)
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status403Forbidden)

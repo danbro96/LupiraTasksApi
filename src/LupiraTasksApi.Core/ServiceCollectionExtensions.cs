@@ -22,6 +22,7 @@ public static class TasksCoreServiceCollectionExtensions
     public static IServiceCollection AddTasksCore(this IServiceCollection services) =>
         services
             .AddScoped<AccessResolver>()
+            .AddScoped<PrincipalDirectory>()
             .AddScoped<Idempotency>()
             .AddScoped<ListService>()
             .AddScoped<ItemService>()

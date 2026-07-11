@@ -16,12 +16,12 @@ namespace LupiraTasksApi.Handlers;
 /// </summary>
 public sealed class ItemsHandler
 {
-    private readonly CurrentUser _user;
+    private readonly CallerFactory _callers;
     private readonly ItemService _items;
 
-    public ItemsHandler(CurrentUser user, ItemService items)
+    public ItemsHandler(CallerFactory callers, ItemService items)
     {
-        _user = user;
+        _callers = callers;
         _items = items;
     }
 
@@ -34,9 +34,8 @@ public sealed class ItemsHandler
         ItemStatus? status,
         CancellationToken ct)
     {
-        var email = _user.Email;
-        if (email is null) return TypedResults.Unauthorized();
-        var caller = Caller.Member(email, _user.Groups);
+        var caller = await _callers.MemberAsync(ct);
+        if (caller is null) return TypedResults.Unauthorized();
         return OpResultMap.OkNotFound(
             await _items.ListAsync(caller, listId, new ItemFilter(completed, tagId, parentItemId, assignedTo, status), ct));
     }
@@ -47,9 +46,8 @@ public sealed class ItemsHandler
         ItemStatus? status,
         CancellationToken ct)
     {
-        var email = _user.Email;
-        if (email is null) return TypedResults.Unauthorized();
-        var caller = Caller.Member(email, _user.Groups);
+        var caller = await _callers.MemberAsync(ct);
+        if (caller is null) return TypedResults.Unauthorized();
         return OpResultMap.OkOnly(await _items.SearchAsync(caller, query, completed, status, ct));
     }
 
@@ -61,9 +59,8 @@ public sealed class ItemsHandler
         UpdateItemRequest request,
         CancellationToken ct)
     {
-        var email = _user.Email;
-        if (email is null) return TypedResults.Unauthorized();
-        var caller = Caller.Member(email, _user.Groups);
+        var caller = await _callers.MemberAsync(ct);
+        if (caller is null) return TypedResults.Unauthorized();
         if (await _items.FindListIdAsync(itemId, ct) is not { } listId) return TypedResults.NotFound();
         return OpResultMap.OkNotFoundProblem(
             await _items.UpdateAsync(caller, IdempotencyKey.From(ctx), listId, itemId, request, ct));
@@ -77,9 +74,8 @@ public sealed class ItemsHandler
         SetMetadataRequest body,
         CancellationToken ct)
     {
-        var email = _user.Email;
-        if (email is null) return TypedResults.Unauthorized();
-        var caller = Caller.Member(email, _user.Groups);
+        var caller = await _callers.MemberAsync(ct);
+        if (caller is null) return TypedResults.Unauthorized();
         if (await _items.FindListIdAsync(itemId, ct) is not { } listId) return TypedResults.NotFound();
         return OpResultMap.OkNotFoundProblem(
             await _items.SetMetadataAsync(caller, IdempotencyKey.From(ctx), listId, itemId, body.Metadata?.ToJsonString(), body.OccurredAt, ct));
@@ -91,9 +87,8 @@ public sealed class ItemsHandler
         CreateItemRequest request,
         CancellationToken ct)
     {
-        var email = _user.Email;
-        if (email is null) return TypedResults.Unauthorized();
-        var caller = Caller.Member(email, _user.Groups);
+        var caller = await _callers.MemberAsync(ct);
+        if (caller is null) return TypedResults.Unauthorized();
         return OpResultMap.OkNotFoundProblem(
             await _items.CreateAsync(caller, IdempotencyKey.From(ctx), listId, request, ct));
     }
@@ -103,9 +98,8 @@ public sealed class ItemsHandler
         Guid itemId,
         CancellationToken ct)
     {
-        var email = _user.Email;
-        if (email is null) return TypedResults.Unauthorized();
-        var caller = Caller.Member(email, _user.Groups);
+        var caller = await _callers.MemberAsync(ct);
+        if (caller is null) return TypedResults.Unauthorized();
         return OpResultMap.OkNotFound(await _items.GetAsync(caller, listId, itemId, ct));
     }
 
@@ -116,9 +110,8 @@ public sealed class ItemsHandler
         UpdateItemRequest request,
         CancellationToken ct)
     {
-        var email = _user.Email;
-        if (email is null) return TypedResults.Unauthorized();
-        var caller = Caller.Member(email, _user.Groups);
+        var caller = await _callers.MemberAsync(ct);
+        if (caller is null) return TypedResults.Unauthorized();
         return OpResultMap.OkNotFoundProblem(
             await _items.UpdateAsync(caller, IdempotencyKey.From(ctx), listId, itemId, request, ct));
     }
@@ -126,9 +119,8 @@ public sealed class ItemsHandler
     public async Task<Results<Ok<ItemResponse>, NotFound, ProblemHttpResult, UnauthorizedHttpResult>> CompleteAsync(
         HttpContext ctx, Guid listId, Guid itemId, ItemTimestampRequest? body, CancellationToken ct)
     {
-        var email = _user.Email;
-        if (email is null) return TypedResults.Unauthorized();
-        var caller = Caller.Member(email, _user.Groups);
+        var caller = await _callers.MemberAsync(ct);
+        if (caller is null) return TypedResults.Unauthorized();
         return OpResultMap.OkNotFoundProblem(
             await _items.CompleteAsync(caller, IdempotencyKey.From(ctx), listId, itemId, body?.OccurredAt, ct));
     }
@@ -136,9 +128,8 @@ public sealed class ItemsHandler
     public async Task<Results<Ok<ItemResponse>, NotFound, ProblemHttpResult, UnauthorizedHttpResult>> ReopenAsync(
         HttpContext ctx, Guid listId, Guid itemId, ItemTimestampRequest? body, CancellationToken ct)
     {
-        var email = _user.Email;
-        if (email is null) return TypedResults.Unauthorized();
-        var caller = Caller.Member(email, _user.Groups);
+        var caller = await _callers.MemberAsync(ct);
+        if (caller is null) return TypedResults.Unauthorized();
         return OpResultMap.OkNotFoundProblem(
             await _items.ReopenAsync(caller, IdempotencyKey.From(ctx), listId, itemId, body?.OccurredAt, ct));
     }
@@ -146,9 +137,8 @@ public sealed class ItemsHandler
     public async Task<Results<Ok<ItemResponse>, NotFound, ProblemHttpResult, UnauthorizedHttpResult>> SetStatusAsync(
         HttpContext ctx, Guid listId, Guid itemId, SetStatusRequest body, CancellationToken ct)
     {
-        var email = _user.Email;
-        if (email is null) return TypedResults.Unauthorized();
-        var caller = Caller.Member(email, _user.Groups);
+        var caller = await _callers.MemberAsync(ct);
+        if (caller is null) return TypedResults.Unauthorized();
         return OpResultMap.OkNotFoundProblem(
             await _items.SetStatusAsync(caller, IdempotencyKey.From(ctx), listId, itemId, body.Status, body.Reason, body.OccurredAt, ct));
     }
@@ -156,9 +146,8 @@ public sealed class ItemsHandler
     public async Task<Results<Ok<ItemResponse>, NotFound, ProblemHttpResult, UnauthorizedHttpResult>> SetMetadataAsync(
         HttpContext ctx, Guid listId, Guid itemId, SetMetadataRequest body, CancellationToken ct)
     {
-        var email = _user.Email;
-        if (email is null) return TypedResults.Unauthorized();
-        var caller = Caller.Member(email, _user.Groups);
+        var caller = await _callers.MemberAsync(ct);
+        if (caller is null) return TypedResults.Unauthorized();
         return OpResultMap.OkNotFoundProblem(
             await _items.SetMetadataAsync(caller, IdempotencyKey.From(ctx), listId, itemId, body.Metadata?.ToJsonString(), body.OccurredAt, ct));
     }
@@ -166,9 +155,8 @@ public sealed class ItemsHandler
     public async Task<Results<Ok<ItemResponse>, NotFound, ProblemHttpResult, UnauthorizedHttpResult>> MoveAsync(
         HttpContext ctx, Guid listId, Guid itemId, MoveItemRequest request, CancellationToken ct)
     {
-        var email = _user.Email;
-        if (email is null) return TypedResults.Unauthorized();
-        var caller = Caller.Member(email, _user.Groups);
+        var caller = await _callers.MemberAsync(ct);
+        if (caller is null) return TypedResults.Unauthorized();
         return OpResultMap.OkNotFoundProblem(
             await _items.MoveAsync(caller, IdempotencyKey.From(ctx), listId, itemId, request, ct));
     }
@@ -176,9 +164,8 @@ public sealed class ItemsHandler
     public async Task<Results<NoContent, NotFound, UnauthorizedHttpResult>> DeleteAsync(
         HttpContext ctx, Guid listId, Guid itemId, DateTimeOffset? occurredAt, CancellationToken ct)
     {
-        var email = _user.Email;
-        if (email is null) return TypedResults.Unauthorized();
-        var caller = Caller.Member(email, _user.Groups);
+        var caller = await _callers.MemberAsync(ct);
+        if (caller is null) return TypedResults.Unauthorized();
         return OpResultMap.NoContentNotFound(
             await _items.DeleteAsync(caller, IdempotencyKey.From(ctx), listId, itemId, occurredAt, ct));
     }

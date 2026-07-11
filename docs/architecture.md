@@ -46,7 +46,7 @@ classDiagram
         +ListKind Kind
         +string Color
         +bool SimplePriority
-        +string OwnerEmail
+        +Guid OwnerPrincipalId
         +bool IsArchived
         +bool IsDeleted
         +DateTimeOffset CreatedAt
@@ -60,7 +60,7 @@ classDiagram
     }
 
     class Member {
-        +string Email
+        +Guid PrincipalId
         +ListRole Role
         +DateTimeOffset AddedAt
         +string AddedBy
@@ -76,7 +76,7 @@ classDiagram
         +ItemStatus Status
         +string StatusReason
         +bool Completed
-        +string AssignedTo
+        +Guid AssignedToPrincipalId
         +DateTimeOffset DueAt
         +decimal Quantity
         +string Unit
@@ -100,10 +100,11 @@ classDiagram
         +IsActive(now) bool
     }
 
-    class UserProfile {
-        +string Id
+    class Principal {
+        +Guid Id
+        +string AuthentikSub
+        +string Email
         +string DisplayName
-        +bool IsAdmin
         +DateTimeOffset LastSeenAt
     }
 
@@ -120,9 +121,12 @@ classDiagram
     Item "0..*" --> "0..1" Item : parentItemId
     Item --> TagDef : tag ids
     ShareLink "0..*" --> "1" TodoList : listId
+    TodoList "0..*" --> "1" Principal : ownerPrincipalId
+    Member "0..*" --> "1" Principal : principalId
+    Item "0..*" --> "0..1" Principal : assignee
 ```
 
-> Nullable fields (`Color`, `Notes`, `AssignedTo`, `DueAt`, `Quantity`, `Unit`, `SourceVtodo`,
+> Nullable fields (`Color`, `Notes`, `AssignedToPrincipalId`, `DueAt`, `Quantity`, `Unit`, `SourceVtodo`,
 > `ParentItemId`, `ExpiresAt`, `AddedBy`, `DisplayName`) are shown without the `?` for diagram
 > compatibility; see the source for exact nullability. `Completed` is derived (`Status == Done`), not a
 > stored field. `Item` also carries per-field LWW guards (`(OccurredAt, CommandId)` for name, notes,
@@ -145,7 +149,7 @@ identity outside their list.
 
 | Document | Identity | Role |
 | --- | --- | --- |
-| `UserProfile` | email | Identity cache, upserted on `/me`; resolves display names for the directory and attribution |
+| `Principal` | principal id (Guid) | Identity anchor, JIT-provisioned via `PrincipalDirectory`; indexed by `AuthentikSub` (durable) + `Email` (mutable). Resolves logins → principal id (writes) and ids → `PersonRef` (reads) |
 | `ProcessedCommand` | command id | Idempotency ledger; marks a command processed so redelivery is a no-op |
 
 ### Enums
@@ -162,33 +166,40 @@ control — a checkbox vs. the full 0..9 scale — and is **not** UI rendering i
 
 ## Ownership and identity
 
-Identity is the **email** claim of the OIDC bearer token (the service holds no password store and no
-API keys). The application layer reduces every authenticated request to a
-[`Caller`](../src/LupiraTasksApi.Core/Application/Caller.cs), which is one of two shapes:
+Identity is anchored on an internal **principal id** (a Guid). A login (OIDC `sub` + email, or a DAV
+email) is resolved — and JIT-provisioned — to a [`Principal`](../src/LupiraTasksApi.Core/Domain/Identity/Principal.cs)
+by [`PrincipalDirectory`](../src/LupiraTasksApi.Core/Application/PrincipalDirectory.cs): it matches on
+the immutable `AuthentikSub` first, then email, so the durable key is the `sub` and an email change
+never strands access. Emails live only on the `Principal` document (plus an `actor.email` audit
+header) — no email is baked into an event payload. The host funnels every login to a
+[`Caller`](../src/LupiraTasksApi.Core/Application/Caller.cs) via `CallerFactory`; a `Caller` is one of:
 
-- **Member** — a real user with an `Email` and `Groups`, built from the JWT by each surface adapter.
+- **Member** — a real user carrying their resolved `PrincipalId` (+ email/groups), built from the JWT.
 - **Share** — an account-less share-link recipient (`ShareGrant`: scoped to one list at one
-  `ShareAccess`), with no email.
+  `ShareAccess`), with no principal.
 
-Every mutation stamps three provenance facts onto its events via
+**Edge contract:** the API stays email-facing. Identity *inputs* take an email (invite a member,
+assign) — the service resolves/provisions the principal; identity *outputs* are a
+[`PersonRef`](../src/LupiraTasksApi.Core/Dtos/PersonRef.cs) `{ principalId, email, displayName }`
+resolved at the read boundary. Member manage-routes and client self-matching use the stable
+`principalId` (`PATCH/DELETE /lists/{listId}/members/{principalId}`); `/me` returns the caller's
+`principalId`. The DAV seam keeps the email in its path (`/dav-backend/u/{email}`) — the gateway does
+the LDAP bind and only knows email — and resolves it server-side.
+
+Every mutation stamps four provenance facts onto its events via
 [`EventActor.Stamp`](../src/LupiraTasksApi.Core/Domain/EventActor.cs) before the single commit
 (they are unbackfillable, so they are never optional):
 
-- **actor** header — a member's email, or `share:{label}` for a share-link write. Aggregates read it
-  back to populate `CreatedBy`, `CompletedBy`, `Member.AddedBy`, and `RevokedBy`.
+- **actor** header — a member's `PrincipalId`, or `share:{label}` for a share-link write. Aggregates
+  read it into `CreatedBy`, `CompletedBy`, `Member.AddedBy`, and `RevokedBy`; the read layer resolves
+  a Guid-shaped actor to a `PersonRef` (a `share:*` actor resolves to `null`).
+- **actor.email** header — the member's email at the time, a human-audit convenience (absent for a
+  share write; a future erasure routine can scrub it).
 - **causation id** — the originating command id (the direct cause of the events).
 - **correlation id** — the current OpenTelemetry trace id, so every event links back to the request
   that produced it (absent only when no trace is active).
 
 Admin rights come from membership in a configured admin group; a share-link caller is never admin.
-
-> **Identity anchor (known limitation).** Identity is the *email* claim, and email is the durable key
-> everywhere (`UserProfile.Id`, `Member.Email`, the `actor` header, the DAV LDAP bind). Email is
-> mutable, so this couples identity to a value that can change. The platform-consistent target
-> (mirroring cal-api's `Principal`, which anchors on the immutable Authentik `sub` with email as a
-> secondary key) is to anchor tasks-api identity on `sub` too. Deferred: it ripples through
-> membership, sharing, and the DAV bind, so it is a separate migration, not part of the greenfield
-> hardening.
 
 ### Authorization and the 404-not-403 rule
 
@@ -277,7 +288,7 @@ the rest are deliberately tolerated at read time.
 | `Relation.FromId` → `Item` | item tombstoned | **Cascade**: relations deleted (`ItemService.DeleteAsync`, `TaskDavService.DeleteByUidAsync`) — they'd otherwise accrete and point into the assistant graph |
 | `ShareLink.ListId` → `TodoList` | list tombstoned | **Cascade**: active links revoked (`ListService`, both the owner-delete and last-owner-leaves paths) so a deleted list leaves no usable token |
 | `Item.Tags` → `TagDef` | tag removed from list | **Read-time tolerant**: an unknown tag id renders as nothing (same as the VTODO CATEGORIES path); harmless, no cleanup |
-| `Item.AssignedTo` → `Member` | member removed | **Read-time tolerant**: assignment to a former member is meaningful history |
+| `Item.AssignedToPrincipalId` → `Principal` | member removed | **Read-time tolerant**: assignment to a former member is meaningful history |
 | `Item.ParentItemId` → `Item` | parent tombstoned | **Read-time tolerant**: children keep the ref; the client resolves/orphans them |
 | `Item.ListId` → `TodoList` | list tombstoned | **Read-time tolerant**: items stay live but are invisible (membership filter) |
 | `Relation.ToRef` → cal-item / url | cross-API | **By convention**: the other service owns its side; no cleanup possible from here |
@@ -295,11 +306,12 @@ references. The one purely-local structural guard that *is* enforced (it needs n
   sharing model. This matches the platform (cal-api is also single-tenant).
 - **Retention — full history, no limit.** Family scale; event volume is negligible for years. No
   archiving policy.
-- **GDPR / erasure.** Event stores don't delete, and events carry PII (emails in `actor` /
-  membership; free text in `Notes` / `Metadata`). At personal/household scale the pragmatic stance is
-  documented stream archival on an erasure request, **not** crypto-shredding. Crypto-shredding would
-  require the `sub`-anchored identity above (PII behind a deletable key) and should be revisited only
-  if non-household user data ever lands here.
+- **GDPR / erasure.** Identity is anchored on the internal principal id, so events reference people by
+  Guid, not email — the one identity document (`Principal`) holds the email↔id mapping. Deleting it
+  (crypto-shred-lite) removes the personal identifier while the guid-keyed streams stay intact and
+  replayable. Residual free text (`Notes` / `Metadata`) and the `actor.email` audit header are the
+  only PII left in events; scrub the header and redact those fields per stream if a full erasure is
+  ever required.
 
 ## Operations
 

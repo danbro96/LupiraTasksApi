@@ -17,15 +17,18 @@ public sealed class ItemResponse
     public string? StatusReason { get; set; }
     public required bool Completed { get; set; }
     public DateTimeOffset? CompletedAt { get; set; }
-    public string? CompletedBy { get; set; }
-    public string? AssignedTo { get; set; }
+    /// <summary>Who completed it; <c>null</c> if open, or a share-link/unresolved actor.</summary>
+    public PersonRef? CompletedBy { get; set; }
+    /// <summary>The assignee; <c>null</c> if unassigned.</summary>
+    public PersonRef? Assignee { get; set; }
     public DateTimeOffset? DueAt { get; set; }
     public decimal? Quantity { get; set; }
     public string? Unit { get; set; }
     public required int Priority { get; set; }
     public required IReadOnlyList<Guid> Tags { get; set; }
     public required string SortOrder { get; set; }
-    public string? CreatedBy { get; set; }
+    /// <summary>Who created it; <c>null</c> for a share-link/unresolved actor.</summary>
+    public PersonRef? CreatedBy { get; set; }
     public required DateTimeOffset CreatedAt { get; set; }
     public required DateTimeOffset UpdatedAt { get; set; }
 

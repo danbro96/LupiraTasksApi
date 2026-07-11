@@ -62,7 +62,7 @@ public sealed class ShareService
         var shareId = Guid.CreateVersion7();
         var token = NewToken();
 
-        EventActor.Stamp(_session, caller.Actor, commandId);
+        EventActor.Stamp(_session, caller.Actor, caller.ActorEmail, commandId);
         try
         {
             _session.Events.StartStream<ShareLink>(
@@ -116,7 +116,7 @@ public sealed class ShareService
         var seen = await _idempotency.SeenAsync(commandId, ct);
         if (seen is not null) return OpResult.Ok();
 
-        EventActor.Stamp(_session, caller.Actor, commandId);
+        EventActor.Stamp(_session, caller.Actor, caller.ActorEmail, commandId);
         await _idempotency.AppendDedupAsync(
             commandId, shareId, new object[] { new ShareLinkRevoked(shareId, "Revoked by owner") }, ct);
 
@@ -132,7 +132,7 @@ public sealed class ShareService
     /// </summary>
     public async Task<OpResult<RedeemShareResponse>> RedeemAsync(Caller caller, Guid? cmdId, string token, CancellationToken ct)
     {
-        var email = caller.Email!; // member-only surface: redeem is reached only by a JWT caller
+        var principalId = caller.PrincipalId!.Value; // member-only surface: redeem is reached only by a JWT caller
         if (string.IsNullOrWhiteSpace(token))
             return OpResult<RedeemShareResponse>.Invalid("A share token is required.");
 
@@ -149,7 +149,7 @@ public sealed class ShareService
         var role = link.Access == ShareAccess.ReadWrite ? ListRole.Editor : ListRole.Viewer;
 
         // Already a member: idempotent no-op — return their current role (don't downgrade).
-        var existing = list.Members.Find(m => string.Equals(m.Email, email, StringComparison.OrdinalIgnoreCase));
+        var existing = list.Members.Find(m => m.PrincipalId == principalId);
         if (existing is not null)
             return OpResult<RedeemShareResponse>.Ok(new RedeemShareResponse { ListId = list.Id, Role = existing.Role });
 
@@ -157,9 +157,9 @@ public sealed class ShareService
         var seen = await _idempotency.SeenAsync(commandId, ct);
         if (seen is null)
         {
-            EventActor.Stamp(_session, email, commandId); // the joiner adds themselves
+            EventActor.Stamp(_session, caller.Actor, caller.ActorEmail, commandId); // the joiner adds themselves
             await _idempotency.AppendDedupAsync(
-                commandId, link.ListId, new object[] { new MemberAdded(link.ListId, email, role) }, ct);
+                commandId, link.ListId, new object[] { new MemberAdded(link.ListId, principalId, role) }, ct);
         }
 
         return OpResult<RedeemShareResponse>.Ok(new RedeemShareResponse { ListId = link.ListId, Role = role });

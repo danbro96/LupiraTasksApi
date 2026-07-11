@@ -33,7 +33,7 @@ public sealed class Item
     public bool Completed => State.Status == ItemStatus.Done;
     public DateTimeOffset? CompletedAt => State.CompletedAt;
     public string? CompletedBy => State.CompletedBy;
-    public string? AssignedTo => State.AssignedTo;
+    public Guid? AssignedToPrincipalId => State.AssignedToPrincipalId;
     public DateTimeOffset? DueAt => State.DueAt;
     public decimal? Quantity => State.Quantity;
     public string? Unit => State.Unit;

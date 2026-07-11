@@ -20,14 +20,16 @@ public sealed class TaskDavServiceTests(TasksApiTestFactory factory) : Integrati
         "BEGIN:VTODO\nUID:dav-uid-1\nSUMMARY:Buy milk\nDESCRIPTION:2 litres\n" +
         "END:VTODO\nEND:VCALENDAR\n";
 
-    private static Caller Alice => Caller.Member("alice@x.test", []);
-    private static Caller Stranger => Caller.Member("mallory@x.test", []);
+    private static readonly Guid AliceId = Guid.Parse("aaaaaaaa-0000-0000-0000-000000000001");
+    private static readonly Guid MalloryId = Guid.Parse("bbbbbbbb-0000-0000-0000-000000000002");
+    private static Caller Alice => Caller.Member(AliceId, "alice@x.test", []);
+    private static Caller Stranger => Caller.Member(MalloryId, "mallory@x.test", []);
 
     private async Task<Guid> SeedListAsync()
     {
         var listId = Guid.CreateVersion7();
         await using var s = Store.LightweightSession();
-        s.Events.StartStream<TodoList>(listId, new ListCreated(listId, "Groceries", ListKind.Todo, null, "alice@x.test"));
+        s.Events.StartStream<TodoList>(listId, new ListCreated(listId, "Groceries", ListKind.Todo, null, AliceId));
         await s.SaveChangesAsync();
         return listId;
     }
@@ -55,7 +57,7 @@ public sealed class TaskDavServiceTests(TasksApiTestFactory factory) : Integrati
         Assert.Equal("dav-uid-1", item.Uid);
         Assert.Equal("Buy milk", item.Title);
         Assert.Equal("2 litres", item.Notes);
-        Assert.Equal("alice@x.test", item.CreatedBy);
+        Assert.Equal(AliceId.ToString(), item.CreatedBy);
         Assert.False(item.Completed);
     }
 

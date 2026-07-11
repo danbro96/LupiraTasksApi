@@ -23,8 +23,9 @@ public sealed class ListMembershipTests(TasksApiTestFactory factory) : Integrati
         await SendJson(alice, HttpMethod.Post, $"/lists/{list.Id}/members", new AddMemberRequest { Email = "bob@x.test" });
         var afterAdd = await Get(alice, list.Id);
         Assert.Contains(afterAdd.Members, m => m.Email == "bob@x.test" && m.Role == ListRole.Editor);
+        var bobId = afterAdd.Members.First(m => m.Email == "bob@x.test").PrincipalId;
 
-        await SendJson(alice, HttpMethod.Patch, $"/lists/{list.Id}/members/bob@x.test", new UpdateMemberRoleRequest { Role = ListRole.Owner });
+        await SendJson(alice, HttpMethod.Patch, $"/lists/{list.Id}/members/{bobId}", new UpdateMemberRoleRequest { Role = ListRole.Owner });
         var afterPromote = await Get(alice, list.Id);
         Assert.Contains(afterPromote.Members, m => m.Email == "bob@x.test" && m.Role == ListRole.Owner);
     }
@@ -36,7 +37,8 @@ public sealed class ListMembershipTests(TasksApiTestFactory factory) : Integrati
         var list = await CreateListAsync(alice);
         await SendJson(alice, HttpMethod.Post, $"/lists/{list.Id}/members", new AddMemberRequest { Email = "bob@x.test", Role = ListRole.Editor });
 
-        var leave = await SendJson(alice, HttpMethod.Delete, $"/lists/{list.Id}/members/alice@x.test");
+        var aliceId = (await Get(alice, list.Id)).Members.First(m => m.Email == "alice@x.test").PrincipalId;
+        var leave = await SendJson(alice, HttpMethod.Delete, $"/lists/{list.Id}/members/{aliceId}");
         Assert.Equal(HttpStatusCode.NoContent, leave.StatusCode);
 
         var bob = Factory.ApiClient("bob@x.test");
@@ -50,7 +52,8 @@ public sealed class ListMembershipTests(TasksApiTestFactory factory) : Integrati
         var list = await CreateListAsync(alice);
         await SendJson(alice, HttpMethod.Post, $"/lists/{list.Id}/members", new AddMemberRequest { Email = "bob@x.test", Role = ListRole.Editor });
 
-        var resp = await SendJson(alice, HttpMethod.Patch, $"/lists/{list.Id}/members/alice@x.test", new UpdateMemberRoleRequest { Role = ListRole.Editor });
+        var aliceId = (await Get(alice, list.Id)).Members.First(m => m.Email == "alice@x.test").PrincipalId;
+        var resp = await SendJson(alice, HttpMethod.Patch, $"/lists/{list.Id}/members/{aliceId}", new UpdateMemberRoleRequest { Role = ListRole.Editor });
         Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
         Assert.Contains((await Get(alice, list.Id)).Members, m => m.Email == "alice@x.test" && m.Role == ListRole.Owner);
     }

@@ -24,15 +24,15 @@ namespace LupiraTasksApi.Mcp;
 [McpServerToolType]
 public sealed class TaskTools
 {
-    private readonly CurrentUser _user;
+    private readonly CallerFactory _callers;
     private readonly ListService _lists;
     private readonly ItemService _items;
     private readonly RelationService _relations;
     private readonly ShareService _shares;
 
-    public TaskTools(CurrentUser user, ListService lists, ItemService items, RelationService relations, ShareService shares)
+    public TaskTools(CallerFactory callers, ListService lists, ItemService items, RelationService relations, ShareService shares)
     {
-        _user = user;
+        _callers = callers;
         _lists = lists;
         _items = items;
         _relations = relations;
@@ -55,7 +55,7 @@ public sealed class TaskTools
         [Description("Include archived lists as well (default false).")] bool includeArchived = false,
         CancellationToken ct = default)
     {
-        var caller = Caller();
+        var caller = await CallerAsync(ct);
         var lists = (await _lists.ListAsync(caller, archived: false, ct)).Value!.Lists.ToList();
         if (includeArchived)
             lists.AddRange((await _lists.ListAsync(caller, archived: true, ct)).Value!.Lists);
@@ -69,7 +69,7 @@ public sealed class TaskTools
         [Description("List kind: Todo, Shopping, or Agent (default Todo). Use Agent for the assistant's own backlog or operator/ops lists.")] ListKind kind = ListKind.Todo,
         CancellationToken ct = default)
     {
-        var caller = Caller();
+        var caller = await CallerAsync(ct);
         var request = new CreateListRequest { Id = Guid.CreateVersion7(), Name = name, Kind = kind };
         var created = Require(await _lists.CreateAsync(caller, Guid.CreateVersion7(), request, ct));
         return Summarize(caller, created);
@@ -86,7 +86,7 @@ public sealed class TaskTools
         [Description("Filter by lifecycle status: Open, InProgress, Blocked, Waiting, Done, Cancelled (optional).")] ItemStatus? status = null,
         CancellationToken ct = default)
     {
-        var caller = Caller();
+        var caller = await CallerAsync(ct);
 
         var lists = new List<ListResponse>();
         if (listId is { } id)
@@ -109,7 +109,7 @@ public sealed class TaskTools
             {
                 if (!string.IsNullOrWhiteSpace(query) && !it.Title.Contains(query, StringComparison.OrdinalIgnoreCase))
                     continue;
-                results.Add(new TaskSummary(it.Id, list.Id, list.Name, it.Title, it.Status, it.Completed, it.DueAt, it.AssignedTo, it.Priority, it.Metadata));
+                results.Add(new TaskSummary(it.Id, list.Id, list.Name, it.Title, it.Status, it.Completed, it.DueAt, it.Assignee?.Email, it.Priority, it.Metadata));
             }
         }
         return results;
@@ -127,7 +127,7 @@ public sealed class TaskTools
         [Description("Optional priority 0..9 (0 = none, the default).")] int priority = 0,
         CancellationToken ct = default)
     {
-        var caller = Caller();
+        var caller = await CallerAsync(ct);
         var request = new CreateItemRequest
         {
             Id = Guid.CreateVersion7(),
@@ -193,7 +193,7 @@ public sealed class TaskTools
         [Description("New priority 0..9, 0 = none (optional; omitted leaves it unchanged).")] int? priority = null,
         CancellationToken ct = default)
     {
-        var caller = Caller();
+        var caller = await CallerAsync(ct);
         var listId = await _items.FindListIdAsync(taskId, ct)
             ?? throw new McpException($"No task found with id {taskId}.");
         var request = new UpdateItemRequest
@@ -226,7 +226,7 @@ public sealed class TaskTools
         [Description("Optional JSON object string for extra context (e.g. {\"note\":\"release watch\"}).")] string? metadata = null,
         CancellationToken ct = default)
     {
-        var caller = Caller();
+        var caller = await CallerAsync(ct);
         var listId = await _items.FindListIdAsync(taskId, ct)
             ?? throw new McpException($"No task found with id {taskId}.");
         var request = new CreateRelationRequest
@@ -245,7 +245,7 @@ public sealed class TaskTools
     public async Task<IReadOnlyList<RelationSummary>> ListTaskRelations(
         [Description("The task id.")] Guid taskId, CancellationToken ct = default)
     {
-        var caller = Caller();
+        var caller = await CallerAsync(ct);
         var listId = await _items.FindListIdAsync(taskId, ct)
             ?? throw new McpException($"No task found with id {taskId}.");
         var rels = Require(await _relations.ListAsync(caller, listId, taskId, ct));
@@ -261,7 +261,7 @@ public sealed class TaskTools
         [Description("The link's relationType.")] string relationType,
         CancellationToken ct = default)
     {
-        var caller = Caller();
+        var caller = await CallerAsync(ct);
         var listId = await _items.FindListIdAsync(taskId, ct)
             ?? throw new McpException($"No task found with id {taskId}.");
         var result = await _relations.UnlinkAsync(caller, listId, taskId, toKind, toRef, relationType, ct);
@@ -278,7 +278,7 @@ public sealed class TaskTools
         [Description("Role to grant: Owner, Editor, or Viewer (default Editor).")] ListRole role = ListRole.Editor,
         CancellationToken ct = default)
     {
-        var caller = Caller();
+        var caller = await CallerAsync(ct);
         var request = new AddMemberRequest { Email = memberEmail, Role = role };
         var updated = Require(await _lists.AddMemberAsync(caller, Guid.CreateVersion7(), listId, request, ct));
         return Summarize(caller, updated);
@@ -297,7 +297,7 @@ public sealed class TaskTools
         [Description("Optional number of days until the link auto-expires.")] int? expiresInDays = null,
         CancellationToken ct = default)
     {
-        var caller = Caller();
+        var caller = await CallerAsync(ct);
         DateTimeOffset? expiresAt = expiresInDays is { } d and > 0 ? DateTimeOffset.UtcNow.AddDays(d) : null;
         var request = new CreateShareRequest { Access = access, Label = label, ExpiresAt = expiresAt };
         return ToShareSummary(Require(await _shares.CreateAsync(caller, Guid.CreateVersion7(), listId, request, ct)));
@@ -308,7 +308,7 @@ public sealed class TaskTools
     public async Task<IReadOnlyList<ShareLinkSummary>> ListShareLinks(
         [Description("The list.")] Guid listId, CancellationToken ct = default)
     {
-        var caller = Caller();
+        var caller = await CallerAsync(ct);
         var result = Require(await _shares.ListAsync(caller, listId, ct));
         return result.Shares.Select(ToShareSummary).ToList();
     }
@@ -320,7 +320,7 @@ public sealed class TaskTools
         [Description("The share id (from create_share_link / list_share_links).")] Guid shareId,
         CancellationToken ct = default)
     {
-        var caller = Caller();
+        var caller = await CallerAsync(ct);
         var result = await _shares.RevokeAsync(caller, Guid.CreateVersion7(), listId, shareId, ct);
         if (result.Status != OpStatus.Ok)
             throw new McpException(result.Error ?? "Not found, or you don't have access to it.");
@@ -329,7 +329,8 @@ public sealed class TaskTools
 
     // ── helpers ───────────────────────────────────────────────────────────────────────────
 
-    private Caller Caller() => Application.Caller.Member(_user.RequireEmail(), _user.Groups);
+    private async Task<Caller> CallerAsync(CancellationToken ct) =>
+        await _callers.MemberAsync(ct) ?? throw new McpException("Unauthenticated.");
 
     /// <summary>Parse an optional JSON string for a relation's free-form metadata, surfacing bad JSON as a tool error.</summary>
     private static JsonNode? ParseMetadata(string? json)
@@ -343,7 +344,7 @@ public sealed class TaskTools
     private async Task<TaskSummary> MutateAsync(
         Guid taskId, Func<Caller, Guid, Task<OpResult<ItemResponse>>> op, CancellationToken ct)
     {
-        var caller = Caller();
+        var caller = await CallerAsync(ct);
         var listId = await _items.FindListIdAsync(taskId, ct)
             ?? throw new McpException($"No task found with id {taskId}.");
         var item = Require(await op(caller, listId));
@@ -364,7 +365,7 @@ public sealed class TaskTools
     private async Task<TaskSummary> ToTaskSummaryAsync(Caller caller, Guid listId, ItemResponse item, CancellationToken ct)
     {
         var listName = (await _lists.GetAsync(caller, listId, ct)).Value?.Name ?? string.Empty;
-        return new TaskSummary(item.Id, listId, listName, item.Title, item.Status, item.Completed, item.DueAt, item.AssignedTo, item.Priority, item.Metadata);
+        return new TaskSummary(item.Id, listId, listName, item.Title, item.Status, item.Completed, item.DueAt, item.Assignee?.Email, item.Priority, item.Metadata);
     }
 
     private static ShareLinkSummary ToShareSummary(ShareResponse s) =>
@@ -374,7 +375,7 @@ public sealed class TaskTools
         new(list.Id, list.Name, list.Kind, RoleOf(caller, list), list.IsArchived, list.SimplePriority);
 
     private static ListRole? RoleOf(Caller caller, ListResponse list) =>
-        list.Members.FirstOrDefault(m => string.Equals(m.Email, caller.Email, StringComparison.OrdinalIgnoreCase))?.Role;
+        list.Members.FirstOrDefault(m => m.PrincipalId == caller.PrincipalId)?.Role;
 
     /// <summary>Unwrap a successful result or surface the failure to the agent as a tool error.</summary>
     private static T Require<T>(OpResult<T> result) => result.Status switch

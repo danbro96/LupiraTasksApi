@@ -1,26 +1,26 @@
+using LupiraTasksApi.Application;
 using LupiraTasksApi.Auth;
-using LupiraTasksApi.Domain.Identity;
 using LupiraTasksApi.Dtos.Me;
-using Marten;
 using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace LupiraTasksApi.Handlers;
 
 /// <summary>
-/// Identity provisioning. <c>GET /me</c> upserts the caller's <see cref="UserProfile"/>
-/// from the bearer token (create on first login, else bump <c>LastSeenAt</c>) and always
-/// refreshes <c>DisplayName</c>/<c>IsAdmin</c> from the SSO claims. The display name is
-/// owned by the identity provider (Authentik) and is never client-editable.
+/// Identity provisioning. <c>GET /me</c> resolves the caller's <see cref="LupiraTasksApi.Domain.Identity.Principal"/>
+/// from the bearer token via <see cref="PrincipalDirectory"/> (create on first login, else refresh
+/// email/displayName/last-seen), and returns the stable principal id plus display fields. The display
+/// name is owned by the identity provider (Authentik) and is never client-editable; <c>IsAdmin</c> is
+/// derived live from the token groups.
 /// </summary>
 public sealed class MeHandler
 {
-    private readonly IDocumentSession _session;
     private readonly CurrentUser _user;
+    private readonly PrincipalDirectory _directory;
 
-    public MeHandler(IDocumentSession session, CurrentUser user)
+    public MeHandler(CurrentUser user, PrincipalDirectory directory)
     {
-        _session = session;
         _user = user;
+        _directory = directory;
     }
 
     public async Task<Results<Ok<MeResponse>, UnauthorizedHttpResult>> GetAsync(CancellationToken ct)
@@ -31,25 +31,14 @@ public sealed class MeHandler
             return TypedResults.Unauthorized();
         }
 
-        var now = DateTimeOffset.UtcNow;
-        var profile = await _session.LoadAsync<UserProfile>(email, ct)
-            ?? new UserProfile { Id = email, CreatedAt = now };
+        var principal = await _directory.ResolveOrProvisionAsync(_user.Sub, email, _user.DisplayName, ct);
 
-        // Name and admin flag are always sourced from the SSO token, never custom-set.
-        profile.DisplayName = _user.DisplayName;
-        profile.IsAdmin = _user.IsAdmin;
-        profile.LastSeenAt = now;
-
-        _session.Store(profile);
-        await _session.SaveChangesAsync(ct);
-
-        return TypedResults.Ok(ToResponse(profile));
+        return TypedResults.Ok(new MeResponse
+        {
+            PrincipalId = principal.Id,
+            Email = principal.Email,
+            DisplayName = principal.DisplayName,
+            IsAdmin = _user.IsAdmin,
+        });
     }
-
-    private static MeResponse ToResponse(UserProfile p) => new()
-    {
-        Email = p.Id,
-        DisplayName = p.DisplayName,
-        IsAdmin = p.IsAdmin,
-    };
 }

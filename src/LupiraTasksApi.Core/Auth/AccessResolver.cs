@@ -61,16 +61,16 @@ public sealed class AccessResolver
             return Satisfies(effective, minRole) ? AccessResult.Granted(list, effective) : AccessResult.Denied;
         }
 
-        return await RequireMembershipAsync(listId, caller.Email!, minRole, ct);
+        return await RequireMembershipAsync(listId, caller.PrincipalId!.Value, minRole, ct);
     }
 
     /// <summary>
-    /// Requires the caller to be a member of the list with at least <paramref name="minRole"/>.
-    /// Loads and returns the list snapshot on success.
+    /// Requires the caller (by principal id) to be a member of the list with at least
+    /// <paramref name="minRole"/>. Loads and returns the list snapshot on success.
     /// </summary>
     public async Task<AccessResult> RequireMembershipAsync(
         Guid listId,
-        string email,
+        Guid principalId,
         ListRole minRole,
         CancellationToken ct)
     {
@@ -80,7 +80,7 @@ public sealed class AccessResolver
             return AccessResult.Denied;
         }
 
-        var member = list.Members.Find(m => string.Equals(m.Email, email, StringComparison.OrdinalIgnoreCase));
+        var member = list.Members.Find(m => m.PrincipalId == principalId);
         if (member is null || !Satisfies(member.Role, minRole))
         {
             return AccessResult.Denied;

@@ -10,12 +10,13 @@ public sealed class TagDef
     public string Color { get; set; } = "";
 }
 
-/// <summary>A user's membership of a list.</summary>
+/// <summary>A user's membership of a list, keyed by the internal principal id.</summary>
 public sealed class Member
 {
-    public string Email { get; set; } = "";
+    public Guid PrincipalId { get; set; }
     public ListRole Role { get; set; }
     public DateTimeOffset AddedAt { get; set; }
+    /// <summary>The actor who added them (a principal id, or <c>share:{label}</c>).</summary>
     public string? AddedBy { get; set; }
 }
 
@@ -39,7 +40,7 @@ public sealed class TodoList
     /// default for both new lists and pre-existing snapshots (a snapshot missing the field keeps it).</summary>
     public bool SimplePriority { get; set; } = true;
 
-    public string OwnerEmail { get; set; } = "";
+    public Guid OwnerPrincipalId { get; set; }
 
     public bool IsArchived { get; set; }
     public bool IsDeleted { get; set; }
@@ -57,17 +58,17 @@ public sealed class TodoList
         Name = data.Name;
         Kind = data.Kind;
         Color = data.Color;
-        OwnerEmail = data.OwnerEmail;
+        OwnerPrincipalId = data.OwnerPrincipalId;
         CreatedAt = e.Timestamp;
         UpdatedAt = e.Timestamp;
 
         // The creator is the first member, as Owner.
         Members.Add(new Member
         {
-            Email = data.OwnerEmail,
+            PrincipalId = data.OwnerPrincipalId,
             Role = ListRole.Owner,
             AddedAt = e.Timestamp,
-            AddedBy = data.OwnerEmail,
+            AddedBy = data.OwnerPrincipalId.ToString(),
         });
     }
 
@@ -140,12 +141,12 @@ public sealed class TodoList
     public void Apply(IEvent<MemberAdded> e)
     {
         var data = e.Data;
-        var existing = Members.Find(m => m.Email == data.Email);
+        var existing = Members.Find(m => m.PrincipalId == data.PrincipalId);
         if (existing is null)
         {
             Members.Add(new Member
             {
-                Email = data.Email,
+                PrincipalId = data.PrincipalId,
                 Role = data.Role,
                 AddedAt = e.Timestamp,
                 AddedBy = EventActor.Of(e),
@@ -161,14 +162,14 @@ public sealed class TodoList
 
     public void Apply(IEvent<MemberRoleChanged> e)
     {
-        var member = Members.Find(m => m.Email == e.Data.Email);
+        var member = Members.Find(m => m.PrincipalId == e.Data.PrincipalId);
         if (member is not null) member.Role = e.Data.Role;
         UpdatedAt = e.Timestamp;
     }
 
     public void Apply(IEvent<MemberRemoved> e)
     {
-        Members.RemoveAll(m => m.Email == e.Data.Email);
+        Members.RemoveAll(m => m.PrincipalId == e.Data.PrincipalId);
         UpdatedAt = e.Timestamp;
     }
 }

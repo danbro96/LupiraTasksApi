@@ -39,7 +39,9 @@ public sealed class AuthAndStatusMappingTests(TasksApiTestFactory factory) : Int
             new AddMemberRequest { Email = "bob@x.test", Role = ListRole.Editor });
 
         var bob = Factory.ApiClient("bob@x.test");
-        var resp = await SendJson(bob, HttpMethod.Patch, $"/lists/{list.Id}/members/alice@x.test",
+        var listAsBob = await ReadAsync<ListResponse>(await bob.GetAsync($"/lists/{list.Id}"));
+        var aliceId = listAsBob.Members.First(m => m.Email == "alice@x.test").PrincipalId;
+        var resp = await SendJson(bob, HttpMethod.Patch, $"/lists/{list.Id}/members/{aliceId}",
             new UpdateMemberRoleRequest { Role = ListRole.Viewer });
         Assert.Equal(HttpStatusCode.Forbidden, resp.StatusCode);
     }

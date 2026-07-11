@@ -125,12 +125,13 @@ public class ItemLwwTests
         var s = NewItem();
 
         // Two offline clients edited different fields; replay in arbitrary order.
-        ItemLww.ApplyAssigned(s, new ItemAssigned(ItemId, "carol@x.test", At(40), Cmd));
+        var carol = Guid.NewGuid();
+        ItemLww.ApplyAssigned(s, new ItemAssigned(ItemId, carol, At(40), Cmd));
         ItemLww.ApplyRenamed(s, new ItemRenamed(ItemId, "Oat milk", At(30), Cmd));
         ItemLww.ApplyDueDateSet(s, new ItemDueDateSet(ItemId, At(100), At(35), Cmd));
 
         Assert.Equal("Oat milk", s.Title);
-        Assert.Equal("carol@x.test", s.AssignedTo);
+        Assert.Equal(carol, s.AssignedToPrincipalId);
         Assert.Equal(At(100), s.DueAt);
     }
 
@@ -138,23 +139,24 @@ public class ItemLwwTests
     public void Different_field_guards_are_independent()
     {
         var s = NewItem();
-        ItemLww.ApplyAssigned(s, new ItemAssigned(ItemId, "carol@x.test", At(50), Cmd));
+        var carol = Guid.NewGuid();
+        ItemLww.ApplyAssigned(s, new ItemAssigned(ItemId, carol, At(50), Cmd));
 
         // A rename older than the assign still applies — name has its own guard.
         ItemLww.ApplyRenamed(s, new ItemRenamed(ItemId, "Renamed", At(20), Cmd));
 
         Assert.Equal("Renamed", s.Title);
-        Assert.Equal("carol@x.test", s.AssignedTo);
+        Assert.Equal(carol, s.AssignedToPrincipalId);
     }
 
     [Fact]
     public void Assign_to_null_unassigns_when_newer()
     {
         var s = NewItem();
-        ItemLww.ApplyAssigned(s, new ItemAssigned(ItemId, "carol@x.test", At(10), Cmd));
-        ItemLww.ApplyAssigned(s, new ItemAssigned(ItemId, AssigneeEmail: null, At(20), Cmd));
+        ItemLww.ApplyAssigned(s, new ItemAssigned(ItemId, Guid.NewGuid(), At(10), Cmd));
+        ItemLww.ApplyAssigned(s, new ItemAssigned(ItemId, AssigneePrincipalId: null, At(20), Cmd));
 
-        Assert.Null(s.AssignedTo);
+        Assert.Null(s.AssignedToPrincipalId);
     }
 
     [Fact]

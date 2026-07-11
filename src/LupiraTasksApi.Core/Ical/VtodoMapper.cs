@@ -43,7 +43,9 @@ public static class VtodoMapper
         "X-LUPIRA-ASSIGNEE", "X-LUPIRA-QUANTITY", "X-LUPIRA-UNIT", StatusProp,
     };
 
-    public static string ToVtodo(Item item, IReadOnlyList<TagDef> listTags, string? sourceRaw)
+    /// <param name="assigneeEmail">The assignee's email, resolved from <see cref="Item.AssignedToPrincipalId"/>
+    /// by the caller (this mapper is pure/DB-free); emitted as <c>X-LUPIRA-ASSIGNEE</c>. <c>null</c> = unassigned.</param>
+    public static string ToVtodo(Item item, IReadOnlyList<TagDef> listTags, string? sourceRaw, string? assigneeEmail = null)
     {
         var todo = new Todo { Uid = item.Uid };
 
@@ -89,8 +91,8 @@ public static class VtodoMapper
         }
 
         // Non-standard fields ride as X-props (round-tripped from the snapshot, not the blob).
-        if (!string.IsNullOrWhiteSpace(item.AssignedTo))
-            todo.Properties.Add(new CalendarProperty("X-LUPIRA-ASSIGNEE", item.AssignedTo));
+        if (!string.IsNullOrWhiteSpace(assigneeEmail))
+            todo.Properties.Add(new CalendarProperty("X-LUPIRA-ASSIGNEE", assigneeEmail));
         if (item.Quantity is { } q)
             todo.Properties.Add(new CalendarProperty("X-LUPIRA-QUANTITY", q.ToString(CultureInfo.InvariantCulture)));
         if (!string.IsNullOrWhiteSpace(item.Unit))

@@ -43,8 +43,9 @@ public static class MartenRegistrations
         // those per-resource GET/PUT/DELETE lookups don't table-scan the items.
         opts.Schema.For<Item>().Index(x => x.Uid);
 
-        // Plain identity cache, keyed by email.
-        opts.Schema.For<UserProfile>().Identity(x => x.Id);
+        // Identity document, keyed by the internal principal id. Indexed by the durable Authentik
+        // sub (the resolution anchor) and by the mutable login email (the OIDC/DAV/invite join key).
+        opts.Schema.For<Principal>().Identity(x => x.Id).Index(x => x.AuthentikSub).Index(x => x.Email);
 
         // Idempotency ledger keyed by command id.
         opts.Schema.For<ProcessedCommand>().Identity(c => c.CommandId);

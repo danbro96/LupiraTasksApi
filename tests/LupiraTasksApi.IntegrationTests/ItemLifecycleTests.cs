@@ -19,7 +19,7 @@ public sealed class ItemLifecycleTests(TasksApiTestFactory factory) : Integratio
 
         var completed = await ReadAsync<ItemResponse>(await SendJson(alice, HttpMethod.Post, $"/lists/{list.Id}/items/{item.Id}/complete"));
         Assert.True(completed.Completed);
-        Assert.Equal("alice@x.test", completed.CompletedBy);
+        Assert.Equal("alice@x.test", completed.CompletedBy?.Email);
 
         var reopened = await ReadAsync<ItemResponse>(await SendJson(alice, HttpMethod.Post, $"/lists/{list.Id}/items/{item.Id}/reopen"));
         Assert.False(reopened.Completed);

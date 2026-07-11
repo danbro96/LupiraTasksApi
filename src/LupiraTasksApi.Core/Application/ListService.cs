@@ -1,10 +1,11 @@
-﻿using JasperFx;
+using JasperFx;
 using LupiraTasksApi.Auth;
 using LupiraTasksApi.Data;
 using LupiraTasksApi.Domain;
+using LupiraTasksApi.Domain.Identity;
 using LupiraTasksApi.Domain.Lists;
-using LupiraTasksApi.Domain.Shares;
 using LupiraTasksApi.Dtos.Lists;
+using LupiraTasksApi.Domain.Shares;
 using LupiraTasksApi.Mappers;
 using Marten;
 using Marten.Exceptions;
@@ -13,12 +14,12 @@ namespace LupiraTasksApi.Application;
 
 /// <summary>
 /// Transport-neutral list operations over the <c>TodoList</c> event stream — the single
-/// source of truth shared by the REST <c>ListsHandler</c> and the MCP tools. Every mutation
-/// stamps the <c>actor</c> event-metadata header (the caller's email) before the single
-/// <c>SaveChangesAsync</c>, so attribution (e.g. <c>Member.AddedBy</c>) is recorded.
-/// Membership is enforced via <see cref="AccessResolver"/>: non-members get
-/// <see cref="OpStatus.NotFound"/> (not 403), a member lacking the required role gets
-/// <see cref="OpStatus.Forbidden"/>.
+/// source of truth shared by the REST <c>ListsHandler</c> and the MCP tools. Membership and
+/// ownership are keyed by the internal <c>PrincipalId</c>; an invite takes an email, resolved to a
+/// principal (provisioning a placeholder if unseen). Every mutation stamps the <c>actor</c> header
+/// (the caller's principal id) before the single <c>SaveChangesAsync</c>. Reads resolve principal ids
+/// back to <see cref="PersonRef"/>. Non-members get <see cref="OpStatus.NotFound"/> (not 403); a member
+/// lacking the required role gets <see cref="OpStatus.Forbidden"/>.
 /// </summary>
 public sealed class ListService
 {
@@ -28,34 +29,35 @@ public sealed class ListService
     private readonly IDocumentSession _session;
     private readonly AccessResolver _access;
     private readonly Idempotency _idempotency;
+    private readonly PrincipalDirectory _principals;
 
-    public ListService(IDocumentSession session, AccessResolver access, Idempotency idempotency)
+    public ListService(IDocumentSession session, AccessResolver access, Idempotency idempotency, PrincipalDirectory principals)
     {
         _session = session;
         _access = access;
         _idempotency = idempotency;
+        _principals = principals;
     }
 
     public async Task<OpResult<ListCollectionResponse>> ListAsync(Caller caller, bool archived, CancellationToken ct)
     {
-        var email = caller.Email!; // member-only surface: list management is never reached by a share-link caller
+        var principalId = caller.PrincipalId!.Value; // member-only surface
 
         // "My lists" = not deleted, archived-flag matches the filter, caller is a member.
         var docs = await _session.Query<TodoList>()
-            .Where(l => !l.IsDeleted && l.IsArchived == archived && l.Members.Any(m => m.Email == email))
+            .Where(l => !l.IsDeleted && l.IsArchived == archived && l.Members.Any(m => m.PrincipalId == principalId))
             .ToListAsync(ct);
 
-        var lists = docs
-            .OrderBy(l => l.Name, StringComparer.OrdinalIgnoreCase)
-            .Select(l => l.ToResponse())
-            .ToList();
+        var ordered = docs.OrderBy(l => l.Name, StringComparer.OrdinalIgnoreCase).ToList();
+        var lookup = await _principals.LookupAsync(ordered.SelectMany(PrincipalIdsOf), ct);
+        var lists = ordered.Select(l => l.ToResponse(lookup)).ToList();
 
         return OpResult<ListCollectionResponse>.Ok(new ListCollectionResponse { Lists = lists });
     }
 
     public async Task<OpResult<ListResponse>> CreateAsync(Caller caller, Guid? cmdId, CreateListRequest request, CancellationToken ct)
     {
-        var email = caller.Email!; // member-only surface: list management is never reached by a share-link caller
+        var ownerPrincipalId = caller.PrincipalId!.Value; // member-only surface
 
         var name = request.Name?.Trim();
         if (string.IsNullOrEmpty(name) || name.Length > MaxNameLength)
@@ -71,10 +73,10 @@ public sealed class ListService
             // AggregateId), ignoring the body id so a retried create with the same key but a
             // different body id can't spawn a second stream.
             var prior = await _session.LoadAsync<TodoList>(seen.AggregateId, ct);
-            if (prior is not null) return OpResult<ListResponse>.Ok(prior.ToResponse());
+            if (prior is not null) return OpResult<ListResponse>.Ok(await ToResponseAsync(prior, ct));
         }
 
-        EventActor.Stamp(_session, email, commandId);
+        EventActor.Stamp(_session, caller.Actor, caller.ActorEmail, commandId);
         try
         {
             // StartStream + the dedup-ledger Insert commit together: a stream-id collision OR
@@ -82,7 +84,7 @@ public sealed class ListService
             // double-create yields neither two streams nor two ledger rows.
             _session.Events.StartStream<TodoList>(
                 request.Id,
-                new ListCreated(request.Id, name, request.Kind, request.Color, email));
+                new ListCreated(request.Id, name, request.Kind, request.Color, ownerPrincipalId));
             _idempotency.Record(commandId, request.Id, version: 1);
             await _session.SaveChangesAsync(ct);
         }
@@ -94,32 +96,31 @@ public sealed class ListService
         {
             // Lost the dedup race on the command id — return the original aggregate.
             var prior = await ReResolveCreatedAsync(commandId, request.Id, ct);
-            if (prior is not null) return OpResult<ListResponse>.Ok(prior.ToResponse());
+            if (prior is not null) return OpResult<ListResponse>.Ok(await ToResponseAsync(prior, ct));
         }
 
         var list = await _session.LoadAsync<TodoList>(request.Id, ct);
         return list is null
             ? OpResult<ListResponse>.Invalid("List could not be created.")
-            : OpResult<ListResponse>.Ok(list.ToResponse());
+            : OpResult<ListResponse>.Ok(await ToResponseAsync(list, ct));
     }
 
     public async Task<OpResult<ListResponse>> GetAsync(Caller caller, Guid listId, CancellationToken ct)
     {
-        var access = await _access.RequireMembershipAsync(listId, caller.Email!, ListRole.Viewer, ct);
+        var access = await _access.RequireMembershipAsync(listId, caller.PrincipalId!.Value, ListRole.Viewer, ct);
         return access.Allowed
-            ? OpResult<ListResponse>.Ok(access.List!.ToResponse())
+            ? OpResult<ListResponse>.Ok(await ToResponseAsync(access.List!, ct))
             : OpResult<ListResponse>.NotFound();
     }
 
     public async Task<OpResult<ListResponse>> UpdateAsync(Caller caller, Guid? cmdId, Guid listId, UpdateListRequest request, CancellationToken ct)
     {
-        var email = caller.Email!; // member-only surface: list management is never reached by a share-link caller
-        var access = await _access.RequireMembershipAsync(listId, email, ListRole.Editor, ct);
+        var access = await _access.RequireMembershipAsync(listId, caller.PrincipalId!.Value, ListRole.Editor, ct);
         if (!access.Allowed) return OpResult<ListResponse>.NotFound();
 
         var commandId = cmdId ?? Guid.CreateVersion7();
         var seen = await _idempotency.SeenAsync(commandId, ct);
-        if (seen is not null) return OpResult<ListResponse>.Ok(access.List!.ToResponse());
+        if (seen is not null) return OpResult<ListResponse>.Ok(await ToResponseAsync(access.List!, ct));
 
         var events = new List<object>();
         var name = request.Name?.Trim();
@@ -134,13 +135,13 @@ public sealed class ListService
         if (request.SimplePriority is { } simplePriority)
             events.Add(new ListSimplePrioritySet(listId, simplePriority));
 
-        if (events.Count == 0) return OpResult<ListResponse>.Ok(access.List!.ToResponse());
+        if (events.Count == 0) return OpResult<ListResponse>.Ok(await ToResponseAsync(access.List!, ct));
 
-        EventActor.Stamp(_session, email, commandId);
+        EventActor.Stamp(_session, caller.Actor, caller.ActorEmail, commandId);
         await _idempotency.AppendDedupAsync(commandId, listId, events, ct);
 
         var updated = await _session.LoadAsync<TodoList>(listId, ct);
-        return OpResult<ListResponse>.Ok(updated!.ToResponse());
+        return OpResult<ListResponse>.Ok(await ToResponseAsync(updated!, ct));
     }
 
     public Task<OpResult<ListResponse>> ArchiveAsync(Caller caller, Guid? cmdId, Guid listId, CancellationToken ct) =>
@@ -151,15 +152,14 @@ public sealed class ListService
 
     public async Task<OpResult> DeleteAsync(Caller caller, Guid? cmdId, Guid listId, CancellationToken ct)
     {
-        var email = caller.Email!; // member-only surface: list management is never reached by a share-link caller
-        var access = await _access.RequireMembershipAsync(listId, email, ListRole.Owner, ct);
+        var access = await _access.RequireMembershipAsync(listId, caller.PrincipalId!.Value, ListRole.Owner, ct);
         if (!access.Allowed) return OpResult.NotFound();
 
         var commandId = cmdId ?? Guid.CreateVersion7();
         var seen = await _idempotency.SeenAsync(commandId, ct);
         if (seen is not null) return OpResult.Ok();
 
-        EventActor.Stamp(_session, email, commandId);
+        EventActor.Stamp(_session, caller.Actor, caller.ActorEmail, commandId);
         await StageShareRevokesAsync(listId, ct);
         await _idempotency.AppendDedupAsync(
             commandId, listId, new object[] { new ListDeleted(listId, "Deleted by owner") }, ct);
@@ -169,94 +169,83 @@ public sealed class ListService
 
     public async Task<OpResult<ListResponse>> AddMemberAsync(Caller caller, Guid? cmdId, Guid listId, AddMemberRequest request, CancellationToken ct)
     {
-        var email = caller.Email!; // member-only surface: list management is never reached by a share-link caller
         var target = NormalizeEmail(request.Email);
         if (target is null) return OpResult<ListResponse>.Invalid("A member email is required.");
 
         // Any member may add another user (direct-add, no invite/accept).
-        var access = await _access.RequireMembershipAsync(listId, email, ListRole.Viewer, ct);
+        var access = await _access.RequireMembershipAsync(listId, caller.PrincipalId!.Value, ListRole.Viewer, ct);
         if (!access.Allowed) return OpResult<ListResponse>.NotFound();
 
         var commandId = cmdId ?? Guid.CreateVersion7();
         var seen = await _idempotency.SeenAsync(commandId, ct);
-        if (seen is not null) return OpResult<ListResponse>.Ok(access.List!.ToResponse());
+        if (seen is not null) return OpResult<ListResponse>.Ok(await ToResponseAsync(access.List!, ct));
 
-        // Reuse an existing member's stored casing so a re-add (different case) updates the
-        // role rather than spawning a duplicate (the snapshot Apply matches case-sensitively).
-        var existing = access.List!.Members
-            .Find(m => string.Equals(m.Email, target, StringComparison.OrdinalIgnoreCase));
-        var memberEmail = existing?.Email ?? target;
+        // Resolve the invite email to a principal (provisioning a placeholder if the person hasn't
+        // been seen yet); membership is keyed by that id, so a case variant re-adds the same member.
+        var principal = await _principals.ResolveOrProvisionAsync(sub: null, target, name: null, ct);
         var role = request.Role ?? ListRole.Editor;
 
-        EventActor.Stamp(_session, email, commandId);
+        EventActor.Stamp(_session, caller.Actor, caller.ActorEmail, commandId);
         await _idempotency.AppendDedupAsync(
-            commandId, listId, new object[] { new MemberAdded(listId, memberEmail, role) }, ct);
+            commandId, listId, new object[] { new MemberAdded(listId, principal.Id, role) }, ct);
 
         var updated = await _session.LoadAsync<TodoList>(listId, ct);
-        return OpResult<ListResponse>.Ok(updated!.ToResponse());
+        return OpResult<ListResponse>.Ok(await ToResponseAsync(updated!, ct));
     }
 
-    public async Task<OpResult<ListResponse>> ChangeMemberRoleAsync(Caller caller, Guid? cmdId, Guid listId, string memberEmail, UpdateMemberRoleRequest request, CancellationToken ct)
+    public async Task<OpResult<ListResponse>> ChangeMemberRoleAsync(Caller caller, Guid? cmdId, Guid listId, Guid targetPrincipalId, UpdateMemberRoleRequest request, CancellationToken ct)
     {
-        var email = caller.Email!; // member-only surface: list management is never reached by a share-link caller
-        var target = NormalizeEmail(memberEmail);
-        if (target is null) return OpResult<ListResponse>.Invalid("A member email is required.");
-
         // Member-but-not-owner → 403; non-member → 404 (don't leak the list).
-        var membership = await _access.RequireMembershipAsync(listId, email, ListRole.Viewer, ct);
+        var membership = await _access.RequireMembershipAsync(listId, caller.PrincipalId!.Value, ListRole.Viewer, ct);
         if (!membership.Allowed) return OpResult<ListResponse>.NotFound();
         if (!AccessResolver.Satisfies(membership.Role, ListRole.Owner))
             return OpResult<ListResponse>.Forbidden("Only an owner can change member roles.");
 
         var members = membership.List!.Members;
-        var targetMember = members.Find(m => string.Equals(m.Email, target, StringComparison.OrdinalIgnoreCase));
+        var targetMember = members.Find(m => m.PrincipalId == targetPrincipalId);
         if (targetMember is null) return OpResult<ListResponse>.NotFound();
 
         // Never strand the list without an owner.
-        if (request.Role != ListRole.Owner && targetMember.Role == ListRole.Owner && !OtherOwnerExists(members, target))
+        if (request.Role != ListRole.Owner && targetMember.Role == ListRole.Owner && !OtherOwnerExists(members, targetPrincipalId))
             return OpResult<ListResponse>.Invalid("The list must keep at least one owner.");
 
         var commandId = cmdId ?? Guid.CreateVersion7();
         var seen = await _idempotency.SeenAsync(commandId, ct);
-        if (seen is not null) return OpResult<ListResponse>.Ok(membership.List!.ToResponse());
+        if (seen is not null) return OpResult<ListResponse>.Ok(await ToResponseAsync(membership.List!, ct));
 
-        EventActor.Stamp(_session, email, commandId);
+        EventActor.Stamp(_session, caller.Actor, caller.ActorEmail, commandId);
         await _idempotency.AppendDedupAsync(
-            commandId, listId, new object[] { new MemberRoleChanged(listId, targetMember.Email, request.Role) }, ct);
+            commandId, listId, new object[] { new MemberRoleChanged(listId, targetPrincipalId, request.Role) }, ct);
 
         var updated = await _session.LoadAsync<TodoList>(listId, ct);
-        return OpResult<ListResponse>.Ok(updated!.ToResponse());
+        return OpResult<ListResponse>.Ok(await ToResponseAsync(updated!, ct));
     }
 
-    public async Task<OpResult> RemoveMemberAsync(Caller caller, Guid? cmdId, Guid listId, string memberEmail, CancellationToken ct)
+    public async Task<OpResult> RemoveMemberAsync(Caller caller, Guid? cmdId, Guid listId, Guid targetPrincipalId, CancellationToken ct)
     {
-        var email = caller.Email!; // member-only surface: list management is never reached by a share-link caller
-        var target = NormalizeEmail(memberEmail);
-        if (target is null) return OpResult.Invalid("A member email is required.");
-
-        var isSelf = string.Equals(target, email, StringComparison.OrdinalIgnoreCase);
+        var isSelf = targetPrincipalId == caller.PrincipalId!.Value;
 
         // Must be a member (404 otherwise). Removing OTHERS needs Owner (403); leaving is always allowed.
-        var membership = await _access.RequireMembershipAsync(listId, email, ListRole.Viewer, ct);
+        var membership = await _access.RequireMembershipAsync(listId, caller.PrincipalId!.Value, ListRole.Viewer, ct);
         if (!membership.Allowed) return OpResult.NotFound();
         if (!isSelf && !AccessResolver.Satisfies(membership.Role, ListRole.Owner))
             return OpResult.Forbidden("Only an owner can remove other members.");
 
         var members = membership.List!.Members;
-        var targetMember = members.Find(m => string.Equals(m.Email, target, StringComparison.OrdinalIgnoreCase));
+        var targetMember = members.Find(m => m.PrincipalId == targetPrincipalId);
         if (targetMember is null) return OpResult.Ok(); // already not a member — idempotent no-op
 
         var commandId = cmdId ?? Guid.CreateVersion7();
         var seen = await _idempotency.SeenAsync(commandId, ct);
         if (seen is not null) return OpResult.Ok();
 
-        var events = new List<object> { new MemberRemoved(listId, targetMember.Email) };
+        var events = new List<object> { new MemberRemoved(listId, targetPrincipalId) };
         // The last owner leaving/being removed auto-deletes the list (tombstone) for everyone.
-        var listDeleted = targetMember.Role == ListRole.Owner && !OtherOwnerExists(members, target);
+        var listDeleted = targetMember.Role == ListRole.Owner && !OtherOwnerExists(members, targetPrincipalId);
         if (listDeleted)
             events.Add(new ListDeleted(listId, "last owner left"));
 
-        EventActor.Stamp(_session, email, commandId);
+        EventActor.Stamp(_session, caller.Actor, caller.ActorEmail, commandId);
         if (listDeleted) await StageShareRevokesAsync(listId, ct);
         await _idempotency.AppendDedupAsync(commandId, listId, events, ct);
 
@@ -266,19 +255,36 @@ public sealed class ListService
     private async Task<OpResult<ListResponse>> OwnerLifecycleAsync(
         Caller caller, Guid? cmdId, Guid listId, Func<TodoList, object> makeEvent, CancellationToken ct)
     {
-        var email = caller.Email!; // member-only surface: list management is never reached by a share-link caller
-        var access = await _access.RequireMembershipAsync(listId, email, ListRole.Owner, ct);
+        var access = await _access.RequireMembershipAsync(listId, caller.PrincipalId!.Value, ListRole.Owner, ct);
         if (!access.Allowed) return OpResult<ListResponse>.NotFound();
 
         var commandId = cmdId ?? Guid.CreateVersion7();
         var seen = await _idempotency.SeenAsync(commandId, ct);
-        if (seen is not null) return OpResult<ListResponse>.Ok(access.List!.ToResponse());
+        if (seen is not null) return OpResult<ListResponse>.Ok(await ToResponseAsync(access.List!, ct));
 
-        EventActor.Stamp(_session, email, commandId);
+        EventActor.Stamp(_session, caller.Actor, caller.ActorEmail, commandId);
         await _idempotency.AppendDedupAsync(commandId, listId, new[] { makeEvent(access.List!) }, ct);
 
         var updated = await _session.LoadAsync<TodoList>(listId, ct);
-        return OpResult<ListResponse>.Ok(updated!.ToResponse());
+        return OpResult<ListResponse>.Ok(await ToResponseAsync(updated!, ct));
+    }
+
+    /// <summary>Map a list to its response, resolving owner + member principal ids to <see cref="PersonRef"/>.</summary>
+    private async Task<ListResponse> ToResponseAsync(TodoList list, CancellationToken ct)
+    {
+        var lookup = await _principals.LookupAsync(PrincipalIdsOf(list), ct);
+        return list.ToResponse(lookup);
+    }
+
+    /// <summary>Every principal id referenced by a list snapshot: owner, members, and Guid-shaped AddedBy actors.</summary>
+    private static IEnumerable<Guid> PrincipalIdsOf(TodoList list)
+    {
+        yield return list.OwnerPrincipalId;
+        foreach (var m in list.Members)
+        {
+            yield return m.PrincipalId;
+            if (Guid.TryParse(m.AddedBy, out var addedBy)) yield return addedBy;
+        }
     }
 
     /// <summary>
@@ -296,18 +302,16 @@ public sealed class ListService
             _session.Events.Append(link.Id, new ShareLinkRevoked(link.Id, "list deleted"));
     }
 
-    /// <summary>Trim + length-check a member email; <c>null</c> if empty/too long. Casing is preserved
-    /// (the snapshot Apply matches case-sensitively, and the owner email keeps its token casing).</summary>
+    /// <summary>Trim + length-check an invite email; <c>null</c> if empty/too long.</summary>
     private static string? NormalizeEmail(string? raw)
     {
         var e = raw?.Trim();
         return string.IsNullOrEmpty(e) || e.Length > MaxEmailLength ? null : e;
     }
 
-    /// <summary>True if some member other than <paramref name="exceptEmail"/> is still an Owner.</summary>
-    private static bool OtherOwnerExists(IEnumerable<Member> members, string exceptEmail) =>
-        members.Any(m => m.Role == ListRole.Owner
-            && !string.Equals(m.Email, exceptEmail, StringComparison.OrdinalIgnoreCase));
+    /// <summary>True if some member other than <paramref name="exceptPrincipalId"/> is still an Owner.</summary>
+    private static bool OtherOwnerExists(IEnumerable<Member> members, Guid exceptPrincipalId) =>
+        members.Any(m => m.Role == ListRole.Owner && m.PrincipalId != exceptPrincipalId);
 
     /// <summary>
     /// Re-resolve the aggregate after losing the create dedup race: prefer the stored

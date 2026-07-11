@@ -19,7 +19,11 @@ public sealed record Caller
     /// <summary>Authentik groups that grant admin rights — the single source for member admin checks.</summary>
     public static readonly string[] AdminGroups = ["tasks-admins", "platform-admins"];
 
-    /// <summary>Member identity (OIDC subject). <c>null</c> for a share-link caller.</summary>
+    /// <summary>Internal principal id (the durable identity key). <c>null</c> for a share-link caller.</summary>
+    public Guid? PrincipalId { get; private init; }
+
+    /// <summary>The member's current login email — carried for the <c>actor.email</c> audit header and
+    /// logging, not for access decisions. <c>null</c> for a share-link caller.</summary>
     public string? Email { get; private init; }
 
     public IReadOnlyList<string> Groups { get; private init; } = [];
@@ -29,21 +33,25 @@ public sealed record Caller
 
     private Caller() { }
 
-    public static Caller Member(string email, IReadOnlyList<string> groups) =>
-        new() { Email = email, Groups = groups };
+    public static Caller Member(Guid principalId, string email, IReadOnlyList<string> groups) =>
+        new() { PrincipalId = principalId, Email = email, Groups = groups };
 
     public static Caller ForShare(ShareGrant share) =>
         new() { Share = share };
 
     /// <summary>
-    /// The value stamped into the event <c>actor</c> header: a member's email, or
-    /// <c>share:{label}</c> for a share-link write (see <see cref="EventActor"/>).
+    /// The value stamped into the event <c>actor</c> header: a member's <see cref="PrincipalId"/>, or
+    /// <c>share:{label}</c> for a share-link write (see <see cref="EventActor"/>). Attribution fields
+    /// hold this string; the read layer resolves a Guid-shaped value back to a person.
     /// </summary>
-    public string Actor => Share is { } s ? $"share:{s.Label}" : Email!;
+    public string Actor => Share is { } s ? $"share:{s.Label}" : PrincipalId!.Value.ToString();
+
+    /// <summary>The member email for the <c>actor.email</c> audit header; <c>null</c> for a share write.</summary>
+    public string? ActorEmail => Share is not null ? null : Email;
 
     /// <summary>True only for a member in an admin group; a share-link caller is never admin.</summary>
     public bool IsAdmin =>
-        Email is not null && Groups.Any(g => AdminGroups.Contains(g, StringComparer.OrdinalIgnoreCase));
+        PrincipalId is not null && Groups.Any(g => AdminGroups.Contains(g, StringComparer.OrdinalIgnoreCase));
 }
 
 /// <summary>A validated share-link grant: scoped to exactly one list at one access level.</summary>

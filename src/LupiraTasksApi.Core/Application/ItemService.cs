@@ -1,7 +1,8 @@
-﻿using JasperFx;
+using JasperFx;
 using LupiraTasksApi.Auth;
 using LupiraTasksApi.Data;
 using LupiraTasksApi.Domain;
+using LupiraTasksApi.Domain.Identity;
 using LupiraTasksApi.Domain.Items;
 using LupiraTasksApi.Domain.Lists;
 using LupiraTasksApi.Dtos.Items;
@@ -16,9 +17,8 @@ namespace LupiraTasksApi.Application;
 /// The single source of truth shared by the REST <c>ItemsHandler</c> and the MCP tools.
 /// Every operation resolves list membership first (denied → <see cref="OpStatus.NotFound"/>,
 /// never 403, so a non-member can't probe existence) and confirms the item belongs to the
-/// route's list before mutating. Mutations stamp the <c>actor</c> header and carry an
-/// <c>OccurredAt</c> for per-field LWW; the atomic event-append + idempotency-ledger commit
-/// (single <c>SaveChangesAsync</c>) lives in <see cref="Idempotency"/> and is unchanged.
+/// route's list before mutating. The assignee is stored as a principal id (resolved from the
+/// request email); reads resolve assignee + attribution ids back to <see cref="PersonRef"/>.
 /// </summary>
 public sealed class ItemService
 {
@@ -27,12 +27,14 @@ public sealed class ItemService
     private readonly IDocumentSession _session;
     private readonly AccessResolver _access;
     private readonly Idempotency _idempotency;
+    private readonly PrincipalDirectory _principals;
 
-    public ItemService(IDocumentSession session, AccessResolver access, Idempotency idempotency)
+    public ItemService(IDocumentSession session, AccessResolver access, Idempotency idempotency, PrincipalDirectory principals)
     {
         _session = session;
         _access = access;
         _idempotency = idempotency;
+        _principals = principals;
     }
 
     public async Task<OpResult<ItemCollectionResponse>> ListAsync(
@@ -53,14 +55,15 @@ public sealed class ItemService
         if (filter.TagId is { } t) filtered = filtered.Where(i => i.Tags.Contains(t));
         if (filter.ParentItemId is { } p) filtered = filtered.Where(i => i.ParentItemId == p);
         if (!string.IsNullOrWhiteSpace(filter.AssignedTo))
-            filtered = filtered.Where(i => string.Equals(i.AssignedTo, filter.AssignedTo, StringComparison.OrdinalIgnoreCase));
+        {
+            // Filter by assignee email → resolve to a principal id; an unknown email matches nothing.
+            var assignee = await _principals.FindByEmailAsync(filter.AssignedTo, ct);
+            filtered = assignee is null ? [] : filtered.Where(i => i.AssignedToPrincipalId == assignee.Id);
+        }
 
-        var ordered = filtered
-            .OrderBy(i => i.SortOrder, StringComparer.Ordinal)
-            .Select(i => i.ToResponse())
-            .ToList();
-
-        return OpResult<ItemCollectionResponse>.Ok(new ItemCollectionResponse { Items = ordered });
+        var ordered = filtered.OrderBy(i => i.SortOrder, StringComparer.Ordinal).ToList();
+        return OpResult<ItemCollectionResponse>.Ok(
+            new ItemCollectionResponse { Items = await ToResponsesAsync(ordered, ct) });
     }
 
     /// <summary>Search live items across every list the caller is a member of (archived lists included),
@@ -70,9 +73,9 @@ public sealed class ItemService
     public async Task<OpResult<ItemCollectionResponse>> SearchAsync(
         Caller caller, string? query, bool? completed, ItemStatus? status, CancellationToken ct)
     {
-        var email = caller.Email!;
+        var principalId = caller.PrincipalId!.Value;
         var listIds = await _session.Query<TodoList>()
-            .Where(l => !l.IsDeleted && l.Members.Any(m => m.Email == email))
+            .Where(l => !l.IsDeleted && l.Members.Any(m => m.PrincipalId == principalId))
             .Select(l => l.Id)
             .ToListAsync(ct);
         if (listIds.Count == 0)
@@ -83,14 +86,15 @@ public sealed class ItemService
             .ToListAsync(ct);
 
         // Completed/Status are computed snapshot members Marten can't translate — filter in memory (family scale).
-        IEnumerable<ItemResponse> results = items.Select(i => i.ToResponse());
-        if (completed is { } c) results = results.Where(r => r.Completed == c);
-        if (status is { } st) results = results.Where(r => r.Status == st);
+        IEnumerable<Item> filtered = items;
+        if (completed is { } c) filtered = filtered.Where(i => i.Completed == c);
+        if (status is { } st) filtered = filtered.Where(i => i.Status == st);
         if (!string.IsNullOrWhiteSpace(query))
-            results = results.Where(r => r.Title.Contains(query, StringComparison.OrdinalIgnoreCase));
+            filtered = filtered.Where(i => i.Title.Contains(query, StringComparison.OrdinalIgnoreCase));
 
-        var ordered = results.OrderBy(r => r.Title, StringComparer.OrdinalIgnoreCase).ToList();
-        return OpResult<ItemCollectionResponse>.Ok(new ItemCollectionResponse { Items = ordered });
+        var ordered = filtered.OrderBy(i => i.Title, StringComparer.OrdinalIgnoreCase).ToList();
+        return OpResult<ItemCollectionResponse>.Ok(
+            new ItemCollectionResponse { Items = await ToResponsesAsync(ordered, ct) });
     }
 
     public async Task<OpResult<ItemResponse>> CreateAsync(
@@ -121,12 +125,13 @@ public sealed class ItemService
             // AggregateId), ignoring the body id — a retried create with the same key but a
             // different body id must NOT spawn a second stream.
             var prior = await _session.LoadAsync<Item>(seen.AggregateId, ct);
-            if (prior is not null) return OpResult<ItemResponse>.Ok(prior.ToResponse());
+            if (prior is not null) return OpResult<ItemResponse>.Ok(await ToResponseAsync(prior, ct));
         }
 
         var occurredAt = request.OccurredAt ?? DateTimeOffset.UtcNow;
+        var assigneePrincipalId = await ResolveAssigneeAsync(request.AssigneeEmail, ct);
 
-        EventActor.Stamp(_session, caller.Actor, commandId);
+        EventActor.Stamp(_session, caller.Actor, caller.ActorEmail, commandId);
         try
         {
             var seed = new List<object>
@@ -135,8 +140,8 @@ public sealed class ItemService
             };
             if (request.DueAt is not null)
                 seed.Add(new ItemDueDateSet(request.Id, request.DueAt, occurredAt, commandId));
-            if (!string.IsNullOrWhiteSpace(request.AssigneeEmail))
-                seed.Add(new ItemAssigned(request.Id, request.AssigneeEmail.Trim(), occurredAt, commandId));
+            if (assigneePrincipalId is not null)
+                seed.Add(new ItemAssigned(request.Id, assigneePrincipalId, occurredAt, commandId));
             if (request.Quantity is not null || !string.IsNullOrWhiteSpace(request.Unit))
                 seed.Add(new ItemQuantitySet(request.Id, request.Quantity, request.Unit, occurredAt, commandId));
             if (request.Priority != 0)
@@ -160,13 +165,13 @@ public sealed class ItemService
         {
             // Lost the dedup race on the command id — another create with this key committed.
             var prior = await ReResolveCreatedAsync(commandId, request.Id, ct);
-            if (prior is not null) return OpResult<ItemResponse>.Ok(prior.ToResponse());
+            if (prior is not null) return OpResult<ItemResponse>.Ok(await ToResponseAsync(prior, ct));
         }
 
         var item = await _session.LoadAsync<Item>(request.Id, ct);
         return item is null
             ? OpResult<ItemResponse>.Invalid("Item could not be created.")
-            : OpResult<ItemResponse>.Ok(item.ToResponse());
+            : OpResult<ItemResponse>.Ok(await ToResponseAsync(item, ct));
     }
 
     public async Task<OpResult<ItemResponse>> GetAsync(Caller caller, Guid listId, Guid itemId, CancellationToken ct)
@@ -175,7 +180,7 @@ public sealed class ItemService
         if (!access.Allowed) return OpResult<ItemResponse>.NotFound();
 
         var item = await LoadInListAsync(itemId, listId, ct);
-        return item is null ? OpResult<ItemResponse>.NotFound() : OpResult<ItemResponse>.Ok(item.ToResponse());
+        return item is null ? OpResult<ItemResponse>.NotFound() : OpResult<ItemResponse>.Ok(await ToResponseAsync(item, ct));
     }
 
     public async Task<OpResult<ItemResponse>> UpdateAsync(
@@ -189,7 +194,7 @@ public sealed class ItemService
 
         var commandId = cmdId ?? Guid.CreateVersion7();
         var seen = await _idempotency.SeenAsync(commandId, ct);
-        if (seen is not null) return OpResult<ItemResponse>.Ok(item.ToResponse());
+        if (seen is not null) return OpResult<ItemResponse>.Ok(await ToResponseAsync(item, ct));
 
         var occurredAt = request.OccurredAt ?? DateTimeOffset.UtcNow;
         var events = new List<object>();
@@ -207,8 +212,9 @@ public sealed class ItemService
             events.Add(new ItemDueDateSet(itemId, request.DueAt, occurredAt, commandId));
         if (request.AssigneeEmailProvided)
         {
-            var assignee = string.IsNullOrWhiteSpace(request.AssigneeEmail) ? null : request.AssigneeEmail.Trim();
-            events.Add(new ItemAssigned(itemId, assignee, occurredAt, commandId));
+            // Empty email clears the assignee; otherwise resolve/provision the assignee principal.
+            var assigneePrincipalId = await ResolveAssigneeAsync(request.AssigneeEmail, ct);
+            events.Add(new ItemAssigned(itemId, assigneePrincipalId, occurredAt, commandId));
         }
         if (request.QuantityProvided)
         {
@@ -229,13 +235,13 @@ public sealed class ItemService
             foreach (var tagId in request.RemoveTagIds.Distinct())
                 events.Add(new ItemTagRemoved(itemId, tagId, occurredAt, commandId));
 
-        if (events.Count == 0) return OpResult<ItemResponse>.Ok(item.ToResponse());
+        if (events.Count == 0) return OpResult<ItemResponse>.Ok(await ToResponseAsync(item, ct));
 
-        EventActor.Stamp(_session, caller.Actor, commandId);
+        EventActor.Stamp(_session, caller.Actor, caller.ActorEmail, commandId);
         await _idempotency.AppendDedupAsync(commandId, itemId, events, ct);
 
         var updated = await _session.LoadAsync<Item>(itemId, ct);
-        return OpResult<ItemResponse>.Ok(updated!.ToResponse());
+        return OpResult<ItemResponse>.Ok(await ToResponseAsync(updated!, ct));
     }
 
     public Task<OpResult<ItemResponse>> CompleteAsync(
@@ -281,7 +287,7 @@ public sealed class ItemService
         if (seen is not null) return OpResult.Ok();
 
         var occurredAtValue = occurredAt ?? DateTimeOffset.UtcNow;
-        EventActor.Stamp(_session, caller.Actor, commandId);
+        EventActor.Stamp(_session, caller.Actor, caller.ActorEmail, commandId);
         // Cascade: the item's cross-API relations are orphaned by the tombstone — drop them in the
         // same commit (rolled back with the append if the dedup race is lost) so dangling edges don't accrete.
         _session.DeleteWhere<Relation>(r => r.FromId == itemId);
@@ -308,15 +314,46 @@ public sealed class ItemService
 
         var commandId = cmdId ?? Guid.CreateVersion7();
         var seen = await _idempotency.SeenAsync(commandId, ct);
-        if (seen is not null) return OpResult<ItemResponse>.Ok(item.ToResponse());
+        if (seen is not null) return OpResult<ItemResponse>.Ok(await ToResponseAsync(item, ct));
 
         var occurredAt = occurredAtRaw ?? DateTimeOffset.UtcNow;
-        EventActor.Stamp(_session, caller.Actor, commandId);
+        EventActor.Stamp(_session, caller.Actor, caller.ActorEmail, commandId);
         await _idempotency.AppendDedupAsync(
             commandId, itemId, new[] { makeEvent(itemId, occurredAt, commandId) }, ct);
 
         var updated = await _session.LoadAsync<Item>(itemId, ct);
-        return OpResult<ItemResponse>.Ok(updated!.ToResponse());
+        return OpResult<ItemResponse>.Ok(await ToResponseAsync(updated!, ct));
+    }
+
+    /// <summary>Resolve an assignee email to a principal id (provisioning a placeholder if unseen);
+    /// <c>null</c> when the email is blank (unassign).</summary>
+    private async Task<Guid?> ResolveAssigneeAsync(string? email, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(email)) return null;
+        var principal = await _principals.ResolveOrProvisionAsync(sub: null, email.Trim(), name: null, ct);
+        return principal.Id;
+    }
+
+    /// <summary>Map an item to its response, resolving assignee + attribution ids to <see cref="PersonRef"/>.</summary>
+    private async Task<ItemResponse> ToResponseAsync(Item item, CancellationToken ct)
+    {
+        var lookup = await _principals.LookupAsync(PrincipalIdsOf(item), ct);
+        return item.ToResponse(lookup);
+    }
+
+    private async Task<IReadOnlyList<ItemResponse>> ToResponsesAsync(IReadOnlyList<Item> items, CancellationToken ct)
+    {
+        var lookup = await _principals.LookupAsync(items.SelectMany(PrincipalIdsOf), ct);
+        return items.Select(i => i.ToResponse(lookup)).ToList();
+    }
+
+    /// <summary>Every principal id referenced by an item snapshot: assignee, plus Guid-shaped
+    /// createdBy/completedBy actors (a <c>share:{label}</c> actor is not a principal and is skipped).</summary>
+    private static IEnumerable<Guid> PrincipalIdsOf(Item item)
+    {
+        if (item.AssignedToPrincipalId is { } a) yield return a;
+        if (Guid.TryParse(item.CreatedBy, out var c)) yield return c;
+        if (Guid.TryParse(item.CompletedBy, out var d)) yield return d;
     }
 
     /// <summary>

@@ -51,7 +51,9 @@ public sealed class DevAuthHandler : AuthenticationHandler<AuthenticationSchemeO
             return Task.FromResult(AuthenticateResult.Fail($"'{HeaderName}' header is present but empty."));
         }
 
-        var claims = new List<Claim> { new("email", email) };
+        // Synthesize a stable `sub` from the email (mirrors Authentik's real subject) so the dev/test
+        // caller resolves to a stable Principal across requests, just like a production token.
+        var claims = new List<Claim> { new("email", email), new("sub", "dev|" + email) };
         if (Request.Headers.TryGetValue(GroupsHeaderName, out var groupsRaw))
         {
             foreach (var group in groupsRaw.ToString()

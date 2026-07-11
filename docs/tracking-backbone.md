@@ -20,8 +20,8 @@ Examples (assistant-driven): an unhealthy API → a **task** (fix it, tracked un
 
 | Need | Already in the code |
 |---|---|
-| Lists with roles | `TodoList` + `Member` (Owner/Editor/Viewer), `OwnerEmail` (`Domain/Lists/TodoList.cs`) |
-| **Agent can own lists** | any email owns lists via `OwnerEmail`; no domain blocker — an agent principal owns its own lists and adds humans as members |
+| Lists with roles | `TodoList` + `Member` (Owner/Editor/Viewer), `OwnerPrincipalId` (`Domain/Lists/TodoList.cs`) |
+| **Agent can own lists** | any principal owns lists via `OwnerPrincipalId`; no domain blocker — an agent principal owns its own lists and adds humans as members |
 | Items tracked to done | `Item` — `Status`-derived `Completed` + `CompletedAt/By`, reopen via `ItemReopened` (clears completion), soft `Deleted` (`Domain/Items/Item.cs`, `ItemState.cs`) |
 | Due / assignee / priority / tags / subtasks | `DueAt`, `AssignedTo`, `Priority` (0..9, validated), `Tags`, `ParentItemId` — plus `Notes`, `Quantity`/`Unit` (shopping), `SortOrder`, `StatusReason` |
 | Agent surface | 16 MCP tools — lists, tasks (incl. `set_task_status`/`set_task_metadata`), relations, sharing (`Mcp/TaskTools.cs`); OIDC bearer JWT, `/mcp` LAN/WireGuard-only |
@@ -40,7 +40,7 @@ tasks-api must **not** grow due-date firing, reminders, recurrence expansion, a 
 classDiagram
   class TodoList {
     ListKind Kind
-    string OwnerEmail
+    Guid OwnerPrincipalId
     Member[] Members
   }
   class Item {
@@ -85,7 +85,7 @@ This is the keystone because it wires tasks into the assistant graph:
 Without this, a task can't point at its heartbeat prompt or its source, and the standing-monitor pattern can't be expressed.
 
 ### Agent-owned list designation — `ListKind.Agent`
-`ListKind.Agent` (alongside `Todo`, `Shopping`) distinguishes agent/system lists from the user's own in queries and UI. Functionally lists already worked via `OwnerEmail` + membership; this is just the label. Scoping:
+`ListKind.Agent` (alongside `Todo`, `Shopping`) distinguishes agent/system lists from the user's own in queries and UI. Functionally lists already worked via `OwnerPrincipalId` + membership; this is just the label. Scoping:
 - **Per-user agent work** (research, follow-ups for user X) → a designated agent list in X's account, isolated per the platform's LLM/data-isolation rules.
 - **System/ops work** ("API unhealthy", package upgrades) → an operator-owned list — the tasks counterpart of the **DevOps** calendar; not any end-user's.
 

@@ -6,7 +6,7 @@ namespace LupiraTasksApi.Domain.Lists;
 
 // --- Lifecycle ---
 
-public record ListCreated(Guid ListId, string Name, ListKind Kind, string? Color, string OwnerEmail);
+public record ListCreated(Guid ListId, string Name, ListKind Kind, string? Color, Guid OwnerPrincipalId);
 
 public record ListRenamed(Guid ListId, string Name);
 
@@ -32,8 +32,8 @@ public record TagRemoved(Guid ListId, Guid TagId);
 
 // --- Membership ---
 
-public record MemberAdded(Guid ListId, string Email, ListRole Role);
+public record MemberAdded(Guid ListId, Guid PrincipalId, ListRole Role);
 
-public record MemberRoleChanged(Guid ListId, string Email, ListRole Role);
+public record MemberRoleChanged(Guid ListId, Guid PrincipalId, ListRole Role);
 
-public record MemberRemoved(Guid ListId, string Email);
+public record MemberRemoved(Guid ListId, Guid PrincipalId);
