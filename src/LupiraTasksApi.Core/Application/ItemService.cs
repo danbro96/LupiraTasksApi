@@ -110,6 +110,8 @@ public sealed class ItemService
             return OpResult<ItemResponse>.Invalid("`quantity` must be non-negative.");
         if (request.Priority is < 0 or > 9)
             return OpResult<ItemResponse>.Invalid("`priority` must be 0..9.");
+        if (request.ParentItemId == request.Id)
+            return OpResult<ItemResponse>.Invalid("An item cannot be its own parent.");
 
         var commandId = cmdId ?? Guid.CreateVersion7();
         var seen = await _idempotency.SeenAsync(commandId, ct);
@@ -124,7 +126,7 @@ public sealed class ItemService
 
         var occurredAt = request.OccurredAt ?? DateTimeOffset.UtcNow;
 
-        _session.SetHeader(EventActor.HeaderKey, caller.Actor);
+        EventActor.Stamp(_session, caller.Actor, commandId);
         try
         {
             var seed = new List<object>
@@ -229,7 +231,7 @@ public sealed class ItemService
 
         if (events.Count == 0) return OpResult<ItemResponse>.Ok(item.ToResponse());
 
-        _session.SetHeader(EventActor.HeaderKey, caller.Actor);
+        EventActor.Stamp(_session, caller.Actor, commandId);
         await _idempotency.AppendDedupAsync(commandId, itemId, events, ct);
 
         var updated = await _session.LoadAsync<Item>(itemId, ct);
@@ -259,6 +261,8 @@ public sealed class ItemService
     {
         if (string.IsNullOrEmpty(request.SortOrder))
             return OpResult<ItemResponse>.Invalid("`sortOrder` is required.");
+        if (request.ParentItemId == itemId)
+            return OpResult<ItemResponse>.Invalid("An item cannot be its own parent.");
         return await SingleEventAsync(caller, cmdId, listId, itemId, request.OccurredAt,
             (id, at, cmd) => new ItemMoved(id, request.ParentItemId, request.SortOrder, at, cmd), ct);
     }
@@ -277,7 +281,10 @@ public sealed class ItemService
         if (seen is not null) return OpResult.Ok();
 
         var occurredAtValue = occurredAt ?? DateTimeOffset.UtcNow;
-        _session.SetHeader(EventActor.HeaderKey, caller.Actor);
+        EventActor.Stamp(_session, caller.Actor, commandId);
+        // Cascade: the item's cross-API relations are orphaned by the tombstone — drop them in the
+        // same commit (rolled back with the append if the dedup race is lost) so dangling edges don't accrete.
+        _session.DeleteWhere<Relation>(r => r.FromId == itemId);
         await _idempotency.AppendDedupAsync(
             commandId, itemId, new object[] { new ItemDeleted(itemId, occurredAtValue, commandId) }, ct);
 
@@ -304,7 +311,7 @@ public sealed class ItemService
         if (seen is not null) return OpResult<ItemResponse>.Ok(item.ToResponse());
 
         var occurredAt = occurredAtRaw ?? DateTimeOffset.UtcNow;
-        _session.SetHeader(EventActor.HeaderKey, caller.Actor);
+        EventActor.Stamp(_session, caller.Actor, commandId);
         await _idempotency.AppendDedupAsync(
             commandId, itemId, new[] { makeEvent(itemId, occurredAt, commandId) }, ct);
 

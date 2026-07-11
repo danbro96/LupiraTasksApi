@@ -3,6 +3,9 @@ using LupiraTasksApi.Application;
 using LupiraTasksApi.Auth;
 using LupiraTasksApi.Data;
 using LupiraTasksApi.Dav;
+using LupiraTasksApi.Domain.Items;
+using LupiraTasksApi.Domain.Lists;
+using LupiraTasksApi.Domain.Shares;
 using LupiraTasksApi.Endpoints;
 using LupiraTasksApi.Handlers;
 using LupiraTasksApi.Http;
@@ -327,6 +330,21 @@ if (args.Contains("--apply-schema"))
     var store = scope.ServiceProvider.GetRequiredService<IDocumentStore>();
     await store.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
     Console.WriteLine("Schema applied.");
+    return;
+}
+
+// One-shot projection rebuild. Snapshots are inline, so a projection/LWW formula fix heals only on a
+// deliberate replay from event zero (e.g. `docker exec ... --rebuild-projections`), never at boot.
+// Runs the async daemon once to rebuild each aggregate, then exits.
+if (args.Contains("--rebuild-projections"))
+{
+    await using var scope = app.Services.CreateAsyncScope();
+    var store = scope.ServiceProvider.GetRequiredService<IDocumentStore>();
+    using var daemon = await store.BuildProjectionDaemonAsync();
+    await daemon.RebuildProjectionAsync<TodoList>(CancellationToken.None);
+    await daemon.RebuildProjectionAsync<Item>(CancellationToken.None);
+    await daemon.RebuildProjectionAsync<ShareLink>(CancellationToken.None);
+    Console.WriteLine("Projections rebuilt.");
     return;
 }
 

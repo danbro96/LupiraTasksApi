@@ -61,7 +61,7 @@ public sealed class TaskDavService
         var occurredAt = DateTimeOffset.UtcNow;   // DAV carries no client wall-clock; the server clock orders LWW.
         var commandId = Guid.CreateVersion7();
 
-        _session.SetHeader(EventActor.HeaderKey, caller.Actor);
+        EventActor.Stamp(_session, caller.Actor, commandId);
 
         if (existing is null)
         {
@@ -96,9 +96,13 @@ public sealed class TaskDavService
         if (existing is null) return OpResult.NotFound();
         if (ifMatch is not null && Etag(existing) != ifMatch) return OpResult.Conflict("ETag mismatch.");
 
-        _session.SetHeader(EventActor.HeaderKey, caller.Actor);
+        var commandId = Guid.CreateVersion7();
+        EventActor.Stamp(_session, caller.Actor, commandId);
         var stream = await _session.Events.FetchForWriting<Item>(existing.Id, ct);
-        stream.AppendOne(new ItemDeleted(existing.Id, DateTimeOffset.UtcNow, Guid.CreateVersion7()));
+        stream.AppendOne(new ItemDeleted(existing.Id, DateTimeOffset.UtcNow, commandId));
+        // Cascade: the item's cross-API relations are orphaned by the tombstone — drop them in the
+        // same commit so dangling edges don't accrete (see RelationService / architecture.md).
+        _session.DeleteWhere<Relation>(r => r.FromId == existing.Id);
         await _session.SaveChangesAsync(ct);
         return OpResult.Ok();
     }

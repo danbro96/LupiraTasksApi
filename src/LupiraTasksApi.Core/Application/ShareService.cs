@@ -62,7 +62,7 @@ public sealed class ShareService
         var shareId = Guid.CreateVersion7();
         var token = NewToken();
 
-        _session.SetHeader(EventActor.HeaderKey, caller.Actor);
+        EventActor.Stamp(_session, caller.Actor, commandId);
         try
         {
             _session.Events.StartStream<ShareLink>(
@@ -116,7 +116,7 @@ public sealed class ShareService
         var seen = await _idempotency.SeenAsync(commandId, ct);
         if (seen is not null) return OpResult.Ok();
 
-        _session.SetHeader(EventActor.HeaderKey, caller.Actor);
+        EventActor.Stamp(_session, caller.Actor, commandId);
         await _idempotency.AppendDedupAsync(
             commandId, shareId, new object[] { new ShareLinkRevoked(shareId, "Revoked by owner") }, ct);
 
@@ -157,7 +157,7 @@ public sealed class ShareService
         var seen = await _idempotency.SeenAsync(commandId, ct);
         if (seen is null)
         {
-            _session.SetHeader(EventActor.HeaderKey, email); // the joiner adds themselves
+            EventActor.Stamp(_session, email, commandId); // the joiner adds themselves
             await _idempotency.AppendDedupAsync(
                 commandId, link.ListId, new object[] { new MemberAdded(link.ListId, email, role) }, ct);
         }

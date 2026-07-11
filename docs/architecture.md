@@ -170,10 +170,25 @@ API keys). The application layer reduces every authenticated request to a
 - **Share** — an account-less share-link recipient (`ShareGrant`: scoped to one list at one
   `ShareAccess`), with no email.
 
-Every mutation stamps an `actor` header into its events — a member's email, or `share:{label}` for a
-share-link write. Aggregates read it back to populate `CreatedBy`, `CompletedBy`, `Member.AddedBy`, and
-`RevokedBy`. Admin rights come from membership in a configured admin group; a share-link caller is
-never admin.
+Every mutation stamps three provenance facts onto its events via
+[`EventActor.Stamp`](../src/LupiraTasksApi.Core/Domain/EventActor.cs) before the single commit
+(they are unbackfillable, so they are never optional):
+
+- **actor** header — a member's email, or `share:{label}` for a share-link write. Aggregates read it
+  back to populate `CreatedBy`, `CompletedBy`, `Member.AddedBy`, and `RevokedBy`.
+- **causation id** — the originating command id (the direct cause of the events).
+- **correlation id** — the current OpenTelemetry trace id, so every event links back to the request
+  that produced it (absent only when no trace is active).
+
+Admin rights come from membership in a configured admin group; a share-link caller is never admin.
+
+> **Identity anchor (known limitation).** Identity is the *email* claim, and email is the durable key
+> everywhere (`UserProfile.Id`, `Member.Email`, the `actor` header, the DAV LDAP bind). Email is
+> mutable, so this couples identity to a value that can change. The platform-consistent target
+> (mirroring cal-api's `Principal`, which anchors on the immutable Authentik `sub` with email as a
+> secondary key) is to anchor tasks-api identity on `sub` too. Deferred: it ripples through
+> membership, sharing, and the DAV bind, so it is a separate migration, not part of the greenfield
+> hardening.
 
 ### Authorization and the 404-not-403 rule
 
@@ -221,6 +236,80 @@ The LAN-only `/dav-backend` seam (consumed by the LupiraDavApi gateway — see [
 - `CATEGORIES` map to the list's `TagDef` labels (case-insensitive); unknown labels are ignored, so a
   client can't create uncontrolled tags. VALARM sub-components are stored but not re-emitted in v1 — a
   known gap.
+
+## Event schema & evolution
+
+Every event's durable storage alias (the `mt_events.type` string) is pinned explicitly in
+[`MartenRegistrations.MapEvents`](../src/LupiraTasksApi.Core/Data/MartenRegistrations.cs), decoupled
+from the CLR type name. Each alias equals Marten's current snake_case default (e.g. `ItemAdded` →
+`item_added`), so pinning changed nothing in storage — it froze the contract. **A record can now be
+renamed or relocated without breaking deserialization of history.**
+
+**Evolution rule:** a breaking shape change is a *new versioned type mapped to the same alias plus an
+upcaster* — never a trailing-optional field. A trailing-optional param silently defaults every
+historical event, which corrupts state whenever the default is not semantically neutral. Making the
+default explicit at an upcast site keeps it reviewed. Worked example (adding a `Source` to
+`ItemAdded`):
+
+```csharp
+// ItemAddedV2 is the new shape; both map to the SAME alias, distinguished by schema version.
+opts.Events.MapEventType<ItemAdded>("item_added");                       // v1 (implicit)
+opts.Events.MapEventTypeWithSchemaVersion<ItemAddedV2>("item_added", 2); // v2 writes going forward
+
+// Read path: transform persisted v1 rows to v2, with the new field's default explicit here.
+opts.Events.Upcast<ItemAdded, ItemAddedV2>(old =>
+    new ItemAddedV2(old.ItemId, old.ListId, old.ParentItemId, old.Title,
+        old.SortOrder, old.OccurredAt, old.CommandId, old.Uid, ItemSource.Unknown));
+```
+
+Events carry no derived/denormalized values (rollups, hashes) — those are computed in the projection,
+so a formula fix heals on rebuild. Enums serialize by name (`JsonStringEnumConverter`), so appending
+values is safe; renaming/removing a value is a breaking change to both stored events and the API.
+
+## Cross-aggregate references & cleanup
+
+References across aggregates carry no FK — integrity is by convention. Two are cleaned at command
+time (in the same transaction as the tombstone, so a lost dedup race rolls the cleanup back too);
+the rest are deliberately tolerated at read time.
+
+| Edge | On source removal | Handling |
+| --- | --- | --- |
+| `Relation.FromId` → `Item` | item tombstoned | **Cascade**: relations deleted (`ItemService.DeleteAsync`, `TaskDavService.DeleteByUidAsync`) — they'd otherwise accrete and point into the assistant graph |
+| `ShareLink.ListId` → `TodoList` | list tombstoned | **Cascade**: active links revoked (`ListService`, both the owner-delete and last-owner-leaves paths) so a deleted list leaves no usable token |
+| `Item.Tags` → `TagDef` | tag removed from list | **Read-time tolerant**: an unknown tag id renders as nothing (same as the VTODO CATEGORIES path); harmless, no cleanup |
+| `Item.AssignedTo` → `Member` | member removed | **Read-time tolerant**: assignment to a former member is meaningful history |
+| `Item.ParentItemId` → `Item` | parent tombstoned | **Read-time tolerant**: children keep the ref; the client resolves/orphans them |
+| `Item.ListId` → `TodoList` | list tombstoned | **Read-time tolerant**: items stay live but are invisible (membership filter) |
+| `Relation.ToRef` → cal-item / url | cross-API | **By convention**: the other service owns its side; no cleanup possible from here |
+
+Referential *existence* is **not** enforced at command time (only value invariants — title length,
+priority range, quantity, "keep ≥1 owner" — are). A hard "parent/tag must exist" check would fight
+the offline-first replay model, where a child or tag-add can legitimately arrive before the stream it
+references. The one purely-local structural guard that *is* enforced (it needs no other stream):
+`ParentItemId == self` is rejected on create and move.
+
+## Tenancy & data lifecycle
+
+- **Tenancy — single-tenant, permanent.** No `tenant_id`; isolation is logical, by list membership.
+  A list shared across two households has no single tenant, so conjoined tenancy would fight the
+  sharing model. This matches the platform (cal-api is also single-tenant).
+- **Retention — full history, no limit.** Family scale; event volume is negligible for years. No
+  archiving policy.
+- **GDPR / erasure.** Event stores don't delete, and events carry PII (emails in `actor` /
+  membership; free text in `Notes` / `Metadata`). At personal/household scale the pragmatic stance is
+  documented stream archival on an erasure request, **not** crypto-shredding. Crypto-shredding would
+  require the `sub`-anchored identity above (PII behind a deletable key) and should be revisited only
+  if non-household user data ever lands here.
+
+## Operations
+
+- **Schema.** `AutoCreateSchemaObjects = None` in every non-Development environment; DDL is a
+  deliberate one-shot `--apply-schema` invocation, never a boot side-effect.
+- **Projection rebuild.** Snapshots are inline, so a projection/LWW formula fix heals only on a
+  deliberate replay: `--rebuild-projections` runs the async daemon once to rebuild `TodoList`,
+  `Item`, and `ShareLink` from event zero, then exits. Rehearse it once against a restored backup.
+- **Backups.** The `tasks` schema lives in the platform Postgres; confirm it is in the backup set and
+  test one restore. (Not owned by this repo.)
 
 ## Bounded-context boundary
 

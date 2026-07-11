@@ -3,6 +3,7 @@ using LupiraTasksApi.Auth;
 using LupiraTasksApi.Data;
 using LupiraTasksApi.Domain;
 using LupiraTasksApi.Domain.Lists;
+using LupiraTasksApi.Domain.Shares;
 using LupiraTasksApi.Dtos.Lists;
 using LupiraTasksApi.Mappers;
 using Marten;
@@ -73,7 +74,7 @@ public sealed class ListService
             if (prior is not null) return OpResult<ListResponse>.Ok(prior.ToResponse());
         }
 
-        _session.SetHeader(EventActor.HeaderKey, email);
+        EventActor.Stamp(_session, email, commandId);
         try
         {
             // StartStream + the dedup-ledger Insert commit together: a stream-id collision OR
@@ -135,7 +136,7 @@ public sealed class ListService
 
         if (events.Count == 0) return OpResult<ListResponse>.Ok(access.List!.ToResponse());
 
-        _session.SetHeader(EventActor.HeaderKey, email);
+        EventActor.Stamp(_session, email, commandId);
         await _idempotency.AppendDedupAsync(commandId, listId, events, ct);
 
         var updated = await _session.LoadAsync<TodoList>(listId, ct);
@@ -158,7 +159,8 @@ public sealed class ListService
         var seen = await _idempotency.SeenAsync(commandId, ct);
         if (seen is not null) return OpResult.Ok();
 
-        _session.SetHeader(EventActor.HeaderKey, email);
+        EventActor.Stamp(_session, email, commandId);
+        await StageShareRevokesAsync(listId, ct);
         await _idempotency.AppendDedupAsync(
             commandId, listId, new object[] { new ListDeleted(listId, "Deleted by owner") }, ct);
 
@@ -186,7 +188,7 @@ public sealed class ListService
         var memberEmail = existing?.Email ?? target;
         var role = request.Role ?? ListRole.Editor;
 
-        _session.SetHeader(EventActor.HeaderKey, email);
+        EventActor.Stamp(_session, email, commandId);
         await _idempotency.AppendDedupAsync(
             commandId, listId, new object[] { new MemberAdded(listId, memberEmail, role) }, ct);
 
@@ -218,7 +220,7 @@ public sealed class ListService
         var seen = await _idempotency.SeenAsync(commandId, ct);
         if (seen is not null) return OpResult<ListResponse>.Ok(membership.List!.ToResponse());
 
-        _session.SetHeader(EventActor.HeaderKey, email);
+        EventActor.Stamp(_session, email, commandId);
         await _idempotency.AppendDedupAsync(
             commandId, listId, new object[] { new MemberRoleChanged(listId, targetMember.Email, request.Role) }, ct);
 
@@ -250,10 +252,12 @@ public sealed class ListService
 
         var events = new List<object> { new MemberRemoved(listId, targetMember.Email) };
         // The last owner leaving/being removed auto-deletes the list (tombstone) for everyone.
-        if (targetMember.Role == ListRole.Owner && !OtherOwnerExists(members, target))
+        var listDeleted = targetMember.Role == ListRole.Owner && !OtherOwnerExists(members, target);
+        if (listDeleted)
             events.Add(new ListDeleted(listId, "last owner left"));
 
-        _session.SetHeader(EventActor.HeaderKey, email);
+        EventActor.Stamp(_session, email, commandId);
+        if (listDeleted) await StageShareRevokesAsync(listId, ct);
         await _idempotency.AppendDedupAsync(commandId, listId, events, ct);
 
         return OpResult.Ok();
@@ -270,11 +274,26 @@ public sealed class ListService
         var seen = await _idempotency.SeenAsync(commandId, ct);
         if (seen is not null) return OpResult<ListResponse>.Ok(access.List!.ToResponse());
 
-        _session.SetHeader(EventActor.HeaderKey, email);
+        EventActor.Stamp(_session, email, commandId);
         await _idempotency.AppendDedupAsync(commandId, listId, new[] { makeEvent(access.List!) }, ct);
 
         var updated = await _session.LoadAsync<TodoList>(listId, ct);
         return OpResult<ListResponse>.Ok(updated!.ToResponse());
+    }
+
+    /// <summary>
+    /// Stage a <see cref="ShareLinkRevoked"/> on every still-active link of a list about to be tombstoned,
+    /// so a deleted list leaves no usable public token. Appended to the session (not committed here) so it
+    /// rides the SAME transaction as the <see cref="ListDeleted"/> — if the dedup race is lost the whole
+    /// batch, revokes included, rolls back. Already-revoked links are skipped, so a re-run is a no-op.
+    /// </summary>
+    private async Task StageShareRevokesAsync(Guid listId, CancellationToken ct)
+    {
+        var links = await _session.Query<ShareLink>()
+            .Where(s => s.ListId == listId && !s.Revoked)
+            .ToListAsync(ct);
+        foreach (var link in links)
+            _session.Events.Append(link.Id, new ShareLinkRevoked(link.Id, "list deleted"));
     }
 
     /// <summary>Trim + length-check a member email; <c>null</c> if empty/too long. Casing is preserved
