@@ -45,11 +45,8 @@ public static class MartenRegistrations
         // those per-resource GET/PUT/DELETE lookups don't table-scan the items.
         opts.Schema.For<Item>().Index(x => x.Uid);
 
-        // Identity document, keyed by the internal principal id. The Authentik sub is the resolution
-        // anchor and is unique — without the constraint, concurrent first-sight logins each insert their
-        // own row and the caller silently resolves to whichever one Postgres returns first. Email stays
-        // non-unique: it is mutable, and a DAV-first `email|{email}` placeholder row legitimately shares
-        // an email with its real-sub counterpart until the upgrade lands.
+        // Unique sub: without it, concurrent first-sight logins fork one login into two principals.
+        // Email stays non-unique — mutable, and a placeholder row shares it until the sub upgrade lands.
         opts.Schema.For<Principal>().Identity(x => x.Id)
             .Index(x => x.AuthentikSub, i => i.IsUnique = true)
             .Index(x => x.Email);
