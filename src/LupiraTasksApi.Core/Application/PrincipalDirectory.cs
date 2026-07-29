@@ -1,5 +1,6 @@
 using LupiraTasksApi.Domain.Identity;
 using Marten;
+using Npgsql;
 
 namespace LupiraTasksApi.Application;
 
@@ -10,9 +11,18 @@ namespace LupiraTasksApi.Application;
 /// sub that is upgraded when the real OIDC <c>sub</c> later appears. The single funnel from a login to an
 /// internal principal id; the batch <see cref="LookupAsync"/> resolves stored ids back to people on reads.
 /// Mirrors LupiraCalApi's PrincipalDirectory (the platform identity pattern).
+///
+/// Provisioning is a check-then-insert, so two concurrent first-sight logins can both reach the insert.
+/// A unique index on <c>AuthentikSub</c> lets only one win; the loser catches the violation and adopts the
+/// winner's row. Without both halves the same login forks into two principals and everything keyed to the
+/// principal id (membership, ownership, attribution) resolves to whichever row Postgres happens to return.
 /// </summary>
 public sealed class PrincipalDirectory
 {
+    /// <summary>How stale <see cref="Principal.LastSeenAt"/> must be before a read refreshes it, so
+    /// steady-state resolution doesn't write on every authenticated request.</summary>
+    private static readonly TimeSpan LastSeenRefresh = TimeSpan.FromMinutes(5);
+
     private readonly IDocumentSession _session;
 
     public PrincipalDirectory(IDocumentSession session)
@@ -25,7 +35,9 @@ public sealed class PrincipalDirectory
     public async Task<Principal?> FindByEmailAsync(string email, CancellationToken ct = default)
     {
         email = email.Trim().ToLowerInvariant();
-        return email.Length == 0 ? null : await _session.Query<Principal>().FirstOrDefaultAsync(x => x.Email == email, ct);
+        return email.Length == 0
+            ? null
+            : await _session.Query<Principal>().Where(x => x.Email == email).OrderBy(x => x.Id).FirstOrDefaultAsync(ct);
     }
 
     /// <summary>Resolve a login to its <see cref="Principal"/>, provisioning on first sight. Saves only when
@@ -34,9 +46,7 @@ public sealed class PrincipalDirectory
     {
         email = email.Trim().ToLowerInvariant();
 
-        Principal? p = null;
-        if (sub is not null) p = await _session.Query<Principal>().FirstOrDefaultAsync(x => x.AuthentikSub == sub, ct);
-        if (p is null && email.Length > 0) p = await _session.Query<Principal>().FirstOrDefaultAsync(x => x.Email == email, ct);
+        var p = await FindAsync(sub, email, ct);
 
         var now = DateTimeOffset.UtcNow;
         if (p is null)
@@ -51,8 +61,19 @@ public sealed class PrincipalDirectory
                 LastSeenAt = now,
             };
             _session.Store(p);
-            await _session.SaveChangesAsync(ct);
-            return p;
+            try
+            {
+                await _session.SaveChangesAsync(ct);
+                return p;
+            }
+            catch (Exception ex) when (IsUniqueViolation(ex))
+            {
+                // Lost the provisioning race: a concurrent request inserted this sub first. Adopt its
+                // row rather than forking a second identity for the same login.
+                _session.EjectAllPendingChanges();
+                p = await FindAsync(sub, email, ct);
+                if (p is null) throw;
+            }
         }
 
         var changed = false;
@@ -64,9 +85,28 @@ public sealed class PrincipalDirectory
         }
         if (email.Length > 0 && p.Email != email) { p.Email = email; changed = true; }
         if (name is not null && p.DisplayName != name) { p.DisplayName = name; changed = true; }
-        if (p.LastSeenAt != now) { p.LastSeenAt = now; changed = true; }
+        if (now - p.LastSeenAt > LastSeenRefresh) { p.LastSeenAt = now; changed = true; }
         if (changed) { _session.Store(p); await _session.SaveChangesAsync(ct); }
         return p;
+    }
+
+    /// <summary>Resolve by <c>sub</c> then email, ordered so the result is stable if duplicate rows ever
+    /// exist — an unordered <c>FirstOrDefault</c> over duplicates flips between them per request.</summary>
+    private async Task<Principal?> FindAsync(string? sub, string email, CancellationToken ct)
+    {
+        Principal? p = null;
+        if (sub is not null)
+            p = await _session.Query<Principal>().Where(x => x.AuthentikSub == sub).OrderBy(x => x.Id).FirstOrDefaultAsync(ct);
+        if (p is null && email.Length > 0)
+            p = await _session.Query<Principal>().Where(x => x.Email == email).OrderBy(x => x.Id).FirstOrDefaultAsync(ct);
+        return p;
+    }
+
+    private static bool IsUniqueViolation(Exception ex)
+    {
+        for (Exception? e = ex; e is not null; e = e.InnerException)
+            if (e is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation }) return true;
+        return false;
     }
 
     /// <summary>Batch-resolve stored principal ids to their <see cref="Principal"/> rows for the read
