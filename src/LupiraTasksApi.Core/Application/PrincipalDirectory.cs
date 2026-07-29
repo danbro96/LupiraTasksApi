@@ -34,7 +34,7 @@ public sealed class PrincipalDirectory
     /// missing principal is "not found" (role change/remove, assignee filter), not a reason to create one.</summary>
     public async Task<Principal?> FindByEmailAsync(string email, CancellationToken ct = default)
     {
-        email = email.Trim().ToLowerInvariant();
+        email = Normalize(email);
         return email.Length == 0
             ? null
             : await _session.Query<Principal>().Where(x => x.Email == email).OrderBy(x => x.Id).FirstOrDefaultAsync(ct);
@@ -44,7 +44,7 @@ public sealed class PrincipalDirectory
     /// something changed (new row, sub upgrade, or refreshed email/name), so steady-state reads don't write.</summary>
     public async Task<Principal> ResolveOrProvisionAsync(string? sub, string email, string? name, CancellationToken ct = default)
     {
-        email = email.Trim().ToLowerInvariant();
+        email = Normalize(email);
 
         var p = await FindAsync(sub, email, ct);
 
@@ -108,6 +108,10 @@ public sealed class PrincipalDirectory
             if (e is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation }) return true;
         return false;
     }
+
+    /// <summary>The single normalization point for a login email. Lookup only matches if every read and
+    /// write normalizes identically — a missed lowercase silently provisions a second principal.</summary>
+    private static string Normalize(string email) => email.Trim().ToLowerInvariant();
 
     /// <summary>Batch-resolve stored principal ids to their <see cref="Principal"/> rows for the read
     /// boundary (owner/members/assignee/attribution → <c>PersonRef</c>).</summary>
