@@ -99,6 +99,7 @@ public static class MartenRegistrations
         opts.Events.MapEventType<MemberAdded>("member_added");
         opts.Events.MapEventType<MemberRoleChanged>("member_role_changed");
         opts.Events.MapEventType<MemberRemoved>("member_removed");
+        opts.Events.MapEventType<MemberListOrderSet>("member_list_order_set");
 
         opts.Events.MapEventType<ShareLinkCreated>("share_link_created");
         opts.Events.MapEventType<ShareLinkRevoked>("share_link_revoked");

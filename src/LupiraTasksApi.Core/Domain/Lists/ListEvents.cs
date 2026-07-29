@@ -37,3 +37,7 @@ public record MemberAdded(Guid ListId, Guid PrincipalId, ListRole Role);
 public record MemberRoleChanged(Guid ListId, Guid PrincipalId, ListRole Role);
 
 public record MemberRemoved(Guid ListId, Guid PrincipalId);
+
+/// <summary>One member's own position for this list in their lists screen (a fractional-index key).
+/// Per-member: reordering never moves the list for anyone else.</summary>
+public record MemberListOrderSet(Guid ListId, Guid PrincipalId, string SortOrder);

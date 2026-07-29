@@ -25,6 +25,7 @@ public sealed class ListService
 {
     private const int MaxNameLength = 128;
     private const int MaxEmailLength = 320;
+    private const int MaxSortOrderLength = 64;
 
     private readonly IDocumentSession _session;
     private readonly AccessResolver _access;
@@ -48,7 +49,16 @@ public sealed class ListService
             .Where(l => !l.IsDeleted && l.IsArchived == archived && l.Members.Any(m => m.PrincipalId == principalId))
             .ToListAsync(ct);
 
-        var ordered = docs.OrderBy(l => l.Name, StringComparer.OrdinalIgnoreCase).ToList();
+        // Same order the clients apply, so a client that renders the payload as-is agrees with one
+        // that re-sorts: active = the caller's own drag order first, then never-dragged by name;
+        // archived = most recently archived first (UpdatedAt only as a pre-ArchivedAt fallback).
+        var ordered = archived
+            ? docs.OrderByDescending(l => l.ArchivedAt ?? l.UpdatedAt).ToList()
+            : docs
+                .OrderBy(l => SortKeyOf(l, principalId) is null)
+                .ThenBy(l => SortKeyOf(l, principalId), StringComparer.Ordinal)
+                .ThenBy(l => l.Name, StringComparer.OrdinalIgnoreCase)
+                .ToList();
         var lookup = await _principals.LookupAsync(ordered.SelectMany(PrincipalIdsOf), ct);
         var lists = ordered.Select(l => l.ToResponse(lookup, principalId)).ToList();
 
@@ -251,6 +261,35 @@ public sealed class ListService
 
         return OpResult.Ok();
     }
+
+    /// <summary>
+    /// Set the caller's own position for a list. Viewer+ on purpose: reordering your own lists screen
+    /// is a personal view concern, not an edit of the list's contents.
+    /// </summary>
+    public async Task<OpResult<ListResponse>> SetOrderAsync(Caller caller, Guid? cmdId, Guid listId, SetListOrderRequest request, CancellationToken ct)
+    {
+        var access = await _access.RequireMembershipAsync(listId, caller.PrincipalId!.Value, ListRole.Viewer, ct);
+        if (!access.Allowed) return OpResult<ListResponse>.NotFound();
+
+        var sortOrder = request.SortOrder?.Trim();
+        if (string.IsNullOrEmpty(sortOrder) || sortOrder.Length > MaxSortOrderLength || !sortOrder.All(char.IsAsciiLetterOrDigit))
+            return OpResult<ListResponse>.Invalid($"`sortOrder` must be 1..{MaxSortOrderLength} alphanumeric characters (a fractional-index key).");
+
+        var commandId = cmdId ?? Guid.CreateVersion7();
+        var seen = await _idempotency.SeenAsync(commandId, ct);
+        if (seen is not null) return OpResult<ListResponse>.Ok(await ToResponseAsync(access.List!, caller.PrincipalId!.Value, ct));
+
+        EventActor.Stamp(_session, caller.Actor, caller.ActorEmail, commandId);
+        await _idempotency.AppendDedupAsync(
+            commandId, listId, new object[] { new MemberListOrderSet(listId, caller.PrincipalId!.Value, sortOrder) }, ct);
+
+        var updated = await _session.LoadAsync<TodoList>(listId, ct);
+        return OpResult<ListResponse>.Ok(await ToResponseAsync(updated!, caller.PrincipalId!.Value, ct));
+    }
+
+    /// <summary>A member's own list-screen position, or null if they've never reordered it.</summary>
+    private static string? SortKeyOf(TodoList list, Guid principalId) =>
+        list.Members.Find(m => m.PrincipalId == principalId)?.SortOrder;
 
     private async Task<OpResult<ListResponse>> OwnerLifecycleAsync(
         Caller caller, Guid? cmdId, Guid listId, Func<TodoList, object> makeEvent, CancellationToken ct)

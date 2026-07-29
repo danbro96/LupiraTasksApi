@@ -543,6 +543,78 @@
         ]
       }
     },
+    "/lists/{listId}/order": {
+      "post": {
+        "tags": [
+          "Lists"
+        ],
+        "summary": "Set the caller's own position for this list (Viewer+).",
+        "description": "Body `{ sortOrder }` — a fractional-index key generated between the neighbours the list was dropped between. Per-user: other members' ordering is untouched, and this does not count as a change to the list. Returned as `sortOrder` on the caller's `ListResponse`; lists the caller has never ordered come back null and sort by name after the ordered ones.",
+        "parameters": [
+          {
+            "name": "listId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Client-generated GUIDv7 command id. A redelivery with the same key is a no-op that returns the prior result (offline-safe retry).",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetListOrderRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
     "/lists/{listId}/members": {
       "post": {
         "tags": [
@@ -3102,8 +3174,21 @@
           "access": {
             "$ref": "#/components/schemas/ListRole"
           },
+          "sortOrder": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
           "isArchived": {
             "type": "boolean"
+          },
+          "archivedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
           },
           "createdAt": {
             "type": "string",
@@ -3353,6 +3438,17 @@
                 "$ref": "#/components/schemas/JsonNode"
               }
             ]
+          }
+        }
+      },
+      "SetListOrderRequest": {
+        "required": [
+          "sortOrder"
+        ],
+        "type": "object",
+        "properties": {
+          "sortOrder": {
+            "type": "string"
           }
         }
       },

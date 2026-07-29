@@ -111,6 +111,17 @@ public sealed class ListsHandler
             await _lists.ChangeMemberRoleAsync(caller, IdempotencyKey.From(ctx), listId, principalId, request, ct));
     }
 
+    public async Task<Results<Ok<ListResponse>, NotFound, ProblemHttpResult, UnauthorizedHttpResult>> SetOrderAsync(
+        HttpContext ctx,
+        Guid listId,
+        SetListOrderRequest request,
+        CancellationToken ct)
+    {
+        var caller = await _callers.MemberAsync(ct);
+        if (caller is null) return TypedResults.Unauthorized();
+        return OpResultMap.OkNotFoundProblem(await _lists.SetOrderAsync(caller, IdempotencyKey.From(ctx), listId, request, ct));
+    }
+
     public async Task<Results<NoContent, NotFound, ProblemHttpResult, UnauthorizedHttpResult>> RemoveMemberAsync(
         HttpContext ctx,
         Guid listId,

@@ -61,6 +61,19 @@ public static class ListsEndpoints
             .Produces(StatusCodes.Status401Unauthorized)
             .Produces(StatusCodes.Status404NotFound);
 
+        group.MapPost("/{listId:guid}/order", (HttpContext ctx, Guid listId, SetListOrderRequest body, ListsHandler h, CancellationToken ct) =>
+                h.SetOrderAsync(ctx, listId, body, ct))
+            .WithIdempotencyKey()
+            .WithSummary("Set the caller's own position for this list (Viewer+).")
+            .WithDescription("Body `{ sortOrder }` — a fractional-index key generated between the neighbours " +
+                "the list was dropped between. Per-user: other members' ordering is untouched, and this does " +
+                "not count as a change to the list. Returned as `sortOrder` on the caller's `ListResponse`; " +
+                "lists the caller has never ordered come back null and sort by name after the ordered ones.")
+            .Produces<ListResponse>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status404NotFound);
+
         group.MapDelete("/{listId:guid}", (HttpContext ctx, Guid listId, ListsHandler h, CancellationToken ct) =>
                 h.DeleteAsync(ctx, listId, ct))
             .WithIdempotencyKey()

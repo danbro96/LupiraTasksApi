@@ -18,6 +18,10 @@ public sealed class Member
     public DateTimeOffset AddedAt { get; set; }
     /// <summary>The actor who added them (a principal id, or <c>share:{label}</c>).</summary>
     public string? AddedBy { get; set; }
+
+    /// <summary>This member's own position for the list in their lists screen (fractional-index key).
+    /// Null until they first reorder; the clients sort those by name.</summary>
+    public string? SortOrder { get; set; }
 }
 
 /// <summary>
@@ -44,6 +48,11 @@ public sealed class TodoList
 
     public bool IsArchived { get; set; }
     public bool IsDeleted { get; set; }
+
+    /// <summary>When the list was archived; null while active. Distinct from <see cref="UpdatedAt"/>,
+    /// which later edits bump — the archived view sorts on this. Null on snapshots written before the
+    /// field existed until the projection is rebuilt.</summary>
+    public DateTimeOffset? ArchivedAt { get; set; }
 
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
@@ -93,12 +102,14 @@ public sealed class TodoList
     public void Apply(IEvent<ListArchived> e)
     {
         IsArchived = true;
+        ArchivedAt = e.Timestamp;
         UpdatedAt = e.Timestamp;
     }
 
     public void Apply(IEvent<ListRestored> e)
     {
         IsArchived = false;
+        ArchivedAt = null;
         UpdatedAt = e.Timestamp;
     }
 
@@ -171,5 +182,13 @@ public sealed class TodoList
     {
         Members.RemoveAll(m => m.PrincipalId == e.Data.PrincipalId);
         UpdatedAt = e.Timestamp;
+    }
+
+    /// <summary>Deliberately leaves <see cref="UpdatedAt"/> alone: one member's screen order is not a
+    /// change to the list, and bumping it would announce a remote change in every other member's client.</summary>
+    public void Apply(IEvent<MemberListOrderSet> e)
+    {
+        var member = Members.Find(m => m.PrincipalId == e.Data.PrincipalId);
+        if (member is not null) member.SortOrder = e.Data.SortOrder;
     }
 }
