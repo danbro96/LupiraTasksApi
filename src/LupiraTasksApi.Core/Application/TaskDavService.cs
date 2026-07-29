@@ -1,3 +1,5 @@
+using System.Security.Cryptography;
+using System.Text.Json;
 using LupiraTasksApi.Auth;
 using LupiraTasksApi.Domain;
 using LupiraTasksApi.Domain.Items;
@@ -11,8 +13,8 @@ namespace LupiraTasksApi.Application;
 /// The CalDAV (VTODO) core: enumerates and mutates items for the <c>/dav</c> surface, reusing the
 /// same Marten <c>Item</c> streams, <see cref="AccessResolver"/>, and per-field LWW engine as REST/MCP
 /// — so a phone edit and a web edit converge identically. Writes are addressed by the resource UID
-/// (not the stream id); concurrency is governed by CalDAV ETag preconditions (the item's stream
-/// <c>Version</c>), so this path deliberately bypasses the REST idempotency ledger.
+/// (not the stream id); concurrency is governed by CalDAV ETag preconditions (see <see cref="Etag"/>),
+/// so this path deliberately bypasses the REST idempotency ledger.
 /// </summary>
 public sealed class TaskDavService
 {
@@ -25,8 +27,24 @@ public sealed class TaskDavService
         _access = access;
     }
 
-    /// <summary>The ETag for an item = its stream version, unquoted (the router adds the quotes).</summary>
-    public static string Etag(Item item) => item.Version.ToString();
+    /// <summary>
+    /// The ETag for an item, unquoted (the router adds the quotes): a short digest of its full LWW
+    /// state, so it changes whenever anything about the item changes.
+    ///
+    /// It cannot be the stream <c>Version</c> — Marten leaves that at 0 on every event after the
+    /// first, so every edited item shared one ETag and <c>If-Match</c> accepted arbitrarily stale
+    /// tokens. Nor can it be <c>UpdatedAt</c> alone: that only ever advances, so a late-arriving
+    /// offline edit can win a per-field LWW race and change the item while leaving the timestamp
+    /// where a concurrent newer edit put it.
+    ///
+    /// Digesting the state rather than the rendered VTODO keeps this a pure function of the item —
+    /// the render also needs the list's tag labels, so renaming a tag changes a client's CATEGORIES
+    /// without rotating the ETag. Including the LWW guards means a re-set of an unchanged value
+    /// rotates it, which is the safe direction for a validator. Reordering <see cref="ItemState"/>'s
+    /// properties rotates every ETag once; clients re-fetch and self-heal.
+    /// </summary>
+    public static string Etag(Item item) =>
+        Convert.ToHexStringLower(SHA256.HashData(JsonSerializer.SerializeToUtf8Bytes(item.State)))[..16];
 
     /// <summary>All live (non-deleted) items in a list — the collection a CalDAV PROPFIND/REPORT enumerates.</summary>
     public async Task<IReadOnlyList<Item>> ItemsAsync(Guid listId, CancellationToken ct) =>

@@ -2926,7 +2926,6 @@
       "ItemResponse": {
         "required": [
           "id",
-          "version",
           "listId",
           "title",
           "status",
@@ -2942,14 +2941,6 @@
           "id": {
             "type": "string",
             "format": "uuid"
-          },
-          "version": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
-            "format": "int32"
           },
           "listId": {
             "type": "string",
@@ -3127,7 +3118,6 @@
       "ListResponse": {
         "required": [
           "id",
-          "version",
           "name",
           "kind",
           "simplePriority",
@@ -3144,14 +3134,6 @@
           "id": {
             "type": "string",
             "format": "uuid"
-          },
-          "version": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
-            "format": "int32"
           },
           "name": {
             "type": "string"

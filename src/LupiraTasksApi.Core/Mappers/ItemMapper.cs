@@ -13,7 +13,6 @@ internal static class ItemMapper
     public static ItemResponse ToResponse(this Item item, IReadOnlyDictionary<Guid, Principal> principals) => new()
     {
         Id = item.Id,
-        Version = item.Version,
         ListId = item.ListId,
         ParentItemId = item.ParentItemId,
         Title = item.Title,

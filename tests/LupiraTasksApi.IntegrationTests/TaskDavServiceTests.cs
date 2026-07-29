@@ -99,11 +99,30 @@ public sealed class TaskDavServiceTests(TasksApiTestFactory factory) : Integrati
         var stale = await WithDav(d => d.PutVtodoAsync(Alice, listId, "dav-uid-1", RawVtodo, ifMatch: "999", ifNoneMatchStar: false, CancellationToken.None));
         Assert.Equal(OpStatus.Conflict, stale.Status);
 
-        // Correct ETag → update succeeds and the version (ETag) advances.
+        // Correct ETag → update succeeds and the ETag rotates.
         var ok = await WithDav(d => d.PutVtodoAsync(Alice, listId, "dav-uid-1", RawVtodo, ifMatch: etag, ifNoneMatchStar: false, CancellationToken.None));
         Assert.Equal(OpStatus.Ok, ok.Status);
         Assert.False(ok.Value.Created);
         Assert.NotEqual(etag, ok.Value.Etag);
+    }
+
+    [Fact]
+    public async Task An_etag_from_two_edits_ago_is_still_rejected()
+    {
+        var listId = await SeedListAsync();
+        var created = await WithDav(d => d.PutVtodoAsync(Alice, listId, "dav-uid-1", RawVtodo, null, false, CancellationToken.None));
+        var afterCreate = created.Value.Etag;
+
+        var second = await WithDav(d => d.PutVtodoAsync(Alice, listId, "dav-uid-1", MinimalVtodo("dav-uid-1", "Edit one"), afterCreate, false, CancellationToken.None));
+        var third = await WithDav(d => d.PutVtodoAsync(Alice, listId, "dav-uid-1", MinimalVtodo("dav-uid-1", "Edit two"), second.Value.Etag, false, CancellationToken.None));
+
+        // Every edit must produce a distinct validator. While the ETag was the Marten stream version
+        // — 0 for every aggregate past its first event — these collided and the stale PUT below won,
+        // silently overwriting "Edit two".
+        Assert.Equal(3, new[] { afterCreate, second.Value.Etag, third.Value.Etag }.Distinct().Count());
+
+        var stale = await WithDav(d => d.PutVtodoAsync(Alice, listId, "dav-uid-1", MinimalVtodo("dav-uid-1", "Lost update"), second.Value.Etag, false, CancellationToken.None));
+        Assert.Equal(OpStatus.Conflict, stale.Status);
     }
 
     [Fact]

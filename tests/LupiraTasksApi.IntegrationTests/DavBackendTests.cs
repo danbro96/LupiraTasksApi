@@ -1,4 +1,5 @@
 using LupiraTasksApi.Dav;
+using LupiraTasksApi.Dtos.Items;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text;
@@ -8,7 +9,7 @@ namespace LupiraTasksApi.IntegrationTests;
 
 /// <summary>
 /// The /dav-backend contract as the LupiraDavApi gateway consumes it: collection listing (the caller's
-/// lists as TodoList collections), query/multiget, VTODO round-trip with version ETags, PUT/DELETE with
+/// lists as TodoList collections), query/multiget, VTODO round-trip with content ETags, PUT/DELETE with
 /// preconditions, and the sync-token changes feed with tombstones. HTTP-level promotion of the
 /// service-level coverage in <see cref="TaskDavServiceTests"/>.
 /// </summary>
@@ -36,7 +37,7 @@ public sealed class DavBackendTests(TasksApiTestFactory factory) : IntegrationTe
     }
 
     [Fact]
-    public async Task Put_get_roundtrip_returns_the_vtodo_with_a_version_etag()
+    public async Task Put_get_roundtrip_returns_the_vtodo_with_a_content_etag()
     {
         var api = Factory.ApiClient(Email);
         var list = await CreateListAsync(api);
@@ -91,7 +92,7 @@ public sealed class DavBackendTests(TasksApiTestFactory factory) : IntegrationTe
 
         var update = await PutVtodoAsync(api, list.Id, "c@x", MinimalVtodo("c@x", "Renamed"), ifMatch: etag);
         Assert.Equal(HttpStatusCode.NoContent, update.StatusCode);
-        Assert.NotEqual(etag, update.Headers.ETag!.Tag.Trim('"'));   // Version bumped
+        Assert.NotEqual(etag, update.Headers.ETag!.Tag.Trim('"'));   // the edit rotates the validator
     }
 
     [Fact]
@@ -132,6 +133,39 @@ public sealed class DavBackendTests(TasksApiTestFactory factory) : IntegrationTe
 
         var anon = Factory.AnonymousClient();
         Assert.Equal(HttpStatusCode.Unauthorized, (await anon.GetAsync($"{Base()}/collections")).StatusCode);
+    }
+
+    /// <summary>
+    /// The ETag must track REST/MCP edits too, not just DAV ones. It used to be the Marten stream
+    /// version, which only the DAV write path maintains (it fetches the aggregate); a REST write is a
+    /// blind event append that leaves the snapshot's version at 0. So every REST-edited item reported
+    /// ETag "0" forever, and the stale If-Match PUT at the end of this test silently won.
+    /// </summary>
+    [Fact]
+    public async Task Rest_edits_rotate_the_dav_etag_so_a_stale_if_match_still_loses()
+    {
+        var api = Factory.ApiClient(Email);
+        var list = await CreateListAsync(api);
+        await PutVtodoAsync(api, list.Id, "todo-1@x", MinimalVtodo("todo-1@x", "Buy milk"));
+        var itemId = (await ReadAsync<ItemCollectionResponse>(await api.GetAsync($"/lists/{list.Id}/items"))).Items[0].Id;
+
+        async Task<string> DavEtag() =>
+            (await api.GetAsync($"{Base()}/collections/{list.Id}/resources/todo-1@x")).Headers.ETag!.Tag.Trim('"');
+
+        await SendJson(api, HttpMethod.Patch, $"/lists/{list.Id}/items/{itemId}",
+            new UpdateItemRequest { Title = "Buy oat milk", TitleProvided = true });
+        var afterFirstRestEdit = await DavEtag();
+
+        await SendJson(api, HttpMethod.Patch, $"/lists/{list.Id}/items/{itemId}",
+            new UpdateItemRequest { Notes = "2 litres", NotesProvided = true });
+        var afterSecondRestEdit = await DavEtag();
+
+        Assert.NotEqual(afterFirstRestEdit, afterSecondRestEdit);
+
+        var stale = await PutVtodoAsync(api, list.Id, "todo-1@x",
+            MinimalVtodo("todo-1@x", "Lost update"), ifMatch: afterFirstRestEdit);
+        Assert.Equal(HttpStatusCode.PreconditionFailed, stale.StatusCode);
+        Assert.Contains("2 litres", await (await api.GetAsync($"{Base()}/collections/{list.Id}/resources/todo-1@x")).Content.ReadAsStringAsync());
     }
 
     private static async Task<HttpResponseMessage> PutVtodoAsync(

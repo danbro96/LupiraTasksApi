@@ -26,7 +26,6 @@ public sealed class MemberResponse
 public sealed class ListResponse
 {
     public required Guid Id { get; set; }
-    public required int Version { get; set; }
     public required string Name { get; set; }
     public required ListKind Kind { get; set; }
     public string? Color { get; set; }

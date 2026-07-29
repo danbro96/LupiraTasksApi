@@ -15,7 +15,6 @@ internal static class ListMapper
     public static ListResponse ToResponse(this TodoList list, IReadOnlyDictionary<Guid, Principal> principals, Guid callerPrincipalId) => new()
     {
         Id = list.Id,
-        Version = list.Version,
         Name = list.Name,
         Kind = list.Kind,
         Color = list.Color,

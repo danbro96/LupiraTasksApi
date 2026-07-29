@@ -7,7 +7,6 @@ namespace LupiraTasksApi.Dtos.Items;
 public sealed class ItemResponse
 {
     public required Guid Id { get; set; }
-    public required int Version { get; set; }
     public required Guid ListId { get; set; }
     public Guid? ParentItemId { get; set; }
     public required string Title { get; set; }
