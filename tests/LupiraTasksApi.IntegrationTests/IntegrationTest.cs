@@ -6,8 +6,11 @@ using LupiraTasksApi.Domain;
 using LupiraTasksApi.Dtos.Items;
 using LupiraTasksApi.Dtos.Lists;
 using LupiraTasksApi.Dtos.Shares;
+using LupiraTasksApi.Mcp;
 using Marten;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
+using System.Security.Claims;
 using Xunit;
 
 namespace LupiraTasksApi.IntegrationTests;
@@ -40,6 +43,21 @@ public abstract class IntegrationTest(TasksApiTestFactory factory) : IAsyncLifet
     {
         using var scope = Factory.Services.CreateScope();
         return await f(scope.ServiceProvider);
+    }
+
+    /// <summary>
+    /// Run <paramref name="act"/> against the MCP tools as <paramref name="email"/>. Reaching <c>/mcp</c> over HTTP
+    /// would mean a full protocol handshake, so the tools are driven directly over the real service graph instead —
+    /// in a scope whose <c>HttpContext</c> carries the caller's claims, which is all the transport itself supplies.
+    /// </summary>
+    protected async Task<T> AsAgent<T>(string email, Func<TaskTools, Task<T>> act)
+    {
+        using var scope = Factory.Services.CreateScope();
+        var identity = new ClaimsIdentity(authenticationType: "test", nameType: "email", roleType: "groups");
+        identity.AddClaim(new Claim("email", email));
+        scope.ServiceProvider.GetRequiredService<IHttpContextAccessor>().HttpContext =
+            new DefaultHttpContext { User = new ClaimsPrincipal(identity) };
+        return await act(ActivatorUtilities.CreateInstance<TaskTools>(scope.ServiceProvider));
     }
 
     // ---- HTTP helpers ----

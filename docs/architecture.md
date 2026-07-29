@@ -164,6 +164,29 @@ identity outside their list.
 `TodoList.SimplePriority` is a render-neutral hint (default `true`) that clients map to their own
 control — a checkbox vs. the full 0..9 scale — and is **not** UI rendering itself.
 
+### Ordering and the task tree
+
+An item's position is a pair: `ParentItemId` (null = top level) and `SortOrder`, which orders it among
+its siblings. `SortOrder` is a **fractional index** — a base-62 order key that compares ordinally, so a
+key can always be minted strictly between two others and an insert or reorder writes one item's key
+instead of renumbering the group. Two offline clients that insert at the same place get distinct keys
+and both survive the merge, which a dense integer index cannot do.
+
+The key is a wire format, not a server detail: app clients mint theirs with the `fractional-indexing`
+npm package, and [`FractionalIndex`](../src/LupiraTasksApi.Core/Domain/Items/FractionalIndex.cs) is the
+port of that algorithm (pinned to it by generated vectors in `FractionalIndexTests`), so keys from
+either side interleave. Who mints one differs by surface:
+
+| Surface | Mints the key |
+| --- | --- |
+| REST | The client — `sortOrder` is required on create and move |
+| MCP | The server, from the target sibling group: agents express intent (`parentTaskId`, `afterTaskId`, `atStart`) and never see a key |
+| DAV backend | The server, as `'~' + commandId` — deliberately *not* a fractional index, since CalDAV has no ordering concept; `'~'` sorts after every base-62 key, so DAV-created items land at the end. Readers that do key arithmetic skip keys failing `FractionalIndex.IsValid` |
+
+Nesting is a plain parent pointer with no depth limit; clients render the tree by grouping on
+`ParentItemId` and sorting each group by `SortOrder`. `add_tasks_batch` caps one call at 500 tasks and
+5 levels — a payload guard matching the app importer's own limit, not a model constraint.
+
 ## Ownership and identity
 
 Identity is anchored on an internal **principal id** (a Guid). A login (OIDC `sub` + email, or a DAV
@@ -303,6 +326,13 @@ the offline-first replay model, where a child or tag-add can legitimately arrive
 references. The one purely-local structural guard that *is* enforced (it needs no other stream):
 `ParentItemId == self` is rejected on create and move.
 
+The MCP tools do pre-flight the parent (exists, same list, not a descendant of the task being moved)
+before delegating — an agent call is online and synchronous, so nothing legitimate arrives out of
+order and a bad parent is better returned as a tool error than accepted as an orphan. That is an
+affordance of the one surface that can afford it, not a domain invariant: the check reads the caller's
+own readable items, so it cannot probe for tasks they can't see, and REST keeps the tolerant behaviour
+offline replay needs.
+
 ## Tenancy & data lifecycle
 
 - **Tenancy — single-tenant, permanent.** No `tenant_id`; isolation is logical, by list membership.
@@ -330,9 +360,9 @@ references. The one purely-local structural guard that *is* enforced (it needs n
 ## Bounded-context boundary
 
 **In scope:** lists (create/rename/recolor/archive/restore/delete), items (add/edit/move/complete/
-reopen/delete, nesting one level via `ParentItemId`), tag definitions, membership and roles, share
-links, DAV sync, the user-profile cache, idempotency, and per-field LWW conflict resolution.
+reopen/delete, nested via `ParentItemId`), tag definitions, membership and roles, share links, DAV
+sync, the user-profile cache, idempotency, and per-field LWW conflict resolution.
 
 **Out of scope:** authentication itself (delegated to the OIDC provider), notifications/webhooks, a
 separate audit log (the event streams are the history), real-time collaboration (eventual consistency,
-no operational transform), recurring tasks, and nesting beyond one parent level.
+no operational transform), and recurring tasks.

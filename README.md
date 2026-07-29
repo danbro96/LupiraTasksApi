@@ -26,9 +26,20 @@ REST and MCP are the primary surfaces; share links and the DAV seam are secondar
 
 ### MCP tools
 
-`list_my_lists`, `create_list`, `find_tasks`, `add_task`, `complete_task`, `reopen_task`,
-`update_task`, `share_list`, `create_share_link`, `list_share_links`, `revoke_share_link`. Each calls
-the same application services as the REST handlers, so the surfaces never diverge.
+| Group | Tools |
+| --- | --- |
+| Lists | `list_my_lists`, `create_list` |
+| Tasks | `find_tasks`, `add_task`, `add_tasks_batch`, `update_task`, `move_task`, `complete_task`, `reopen_task`, `set_task_status`, `set_task_metadata` |
+| Cross-API links | `link_task`, `list_task_relations`, `unlink_task` |
+| Sharing | `share_list`, `create_share_link`, `list_share_links`, `revoke_share_link` |
+
+Each calls the same application services as the REST handlers, so the surfaces never diverge.
+
+Nesting is first-class: `add_task` and `add_tasks_batch` take a parent, `move_task` reparents and
+reorders (`parentTaskId`, `afterTaskId`, `atStart`), and every task read carries its `parentTaskId` —
+so an agent builds and rearranges a tree by intent and never handles a sort key. `add_tasks_batch`
+takes a nested `{title, subtasks[]}` tree (≤ 500 tasks, ≤ 5 levels), the shape the app's list
+export/import round-trips, so a whole structured list is one call.
 
 ## Authentication
 
@@ -75,7 +86,7 @@ Two projects in one solution (`LupiraTasksApi.slnx`), split so ASP.NET cannot le
   (`Endpoints/` + `Handlers/`, `Mcp/`, `Dav/`, the `/shared` endpoints), HTTP concerns (`Http/`:
   result mapping, the `Idempotency-Key` reader), the auth handlers, plus OpenTelemetry, rate
   limiting, OpenAPI, and health probes.
-- **`tests/`** — `LupiraTasksApi.Tests` (xunit unit tests, no infrastructure) and
+- **`tests/`** — `LupiraTasksApi.UnitTests` (xunit unit tests, no infrastructure) and
   `LupiraTasksApi.IntegrationTests` (HTTP end-to-end against a Testcontainers Postgres).
 
 ## Run locally
@@ -89,7 +100,7 @@ docker run -d --name tasks-db -e POSTGRES_PASSWORD=postgres -p 5432:5432 postgre
 # 2. Restore, build, and run the unit tests
 dotnet restore LupiraTasksApi.slnx
 dotnet build   LupiraTasksApi.slnx -c Release
-dotnet test    tests/LupiraTasksApi.Tests
+dotnet test    LupiraTasksApi.slnx
 ```
 
 Configure the connection string and (placeholder) OIDC values — the host refuses to start without an
