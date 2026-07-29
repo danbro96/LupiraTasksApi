@@ -2,16 +2,13 @@ namespace LupiraTasksApi.Domain.Items;
 
 /// <summary>
 /// Order-key arithmetic for <see cref="ItemState.SortOrder"/>: a wire-compatible port of the
-/// <c>fractional-indexing</c> npm package the app clients use, so a key minted server-side (MCP)
-/// interleaves with keys minted on a phone and both sort identically under ordinal comparison.
+/// <c>fractional-indexing</c> npm package the app clients use, so a key minted server-side (MCP) interleaves with
+/// keys minted on a phone and both sort identically under ordinal comparison.
 ///
-/// <para>
-/// A key is an integer part — a head char encoding its digit count (<c>a</c>..<c>z</c> = 1..26
-/// digits for non-negative, <c>Z</c>..<c>A</c> for negative) followed by base-62 digits — plus an
-/// optional fractional tail. A key can always be produced strictly between two distinct keys, so an
-/// insert or reorder never renumbers siblings, and appending stays short: 500 appends from empty
-/// reach 3 characters.
-/// </para>
+/// A key is an integer part — a head char encoding its digit count (<c>a</c>..<c>z</c> = 1..26 digits for
+/// non-negative, <c>Z</c>..<c>A</c> for negative) followed by base-62 digits — plus an optional fractional tail. A
+/// key can always be produced strictly between two distinct keys, so an insert or reorder never renumbers
+/// siblings, and appending stays short: 500 appends from empty reach 3 characters.
 /// </summary>
 public static class FractionalIndex
 {

@@ -3,16 +3,12 @@ using LupiraTasksApi.Domain;
 namespace LupiraTasksApi.Application;
 
 /// <summary>
-/// The authenticated caller, reduced to the transport-neutral facts the service layer needs.
-/// It is one of two shapes:
-/// <list type="bullet">
-/// <item><b>Member</b> — a real user identified by <see cref="Email"/> (the OIDC subject) + groups;
-/// built from the JWT bearer by each surface's adapter.</item>
-/// <item><b>Share</b> — an account-less share-link recipient (<see cref="Share"/> is set,
-/// <see cref="Email"/> is null), scoped to one list at one access level.</item>
-/// </list>
-/// Services authorize via <c>AccessResolver.AuthorizeAsync(caller, …)</c> and stamp <see cref="Actor"/>
-/// into the event <c>actor</c> header, so the same code path serves members and share recipients.
+/// The authenticated caller, reduced to the transport-neutral facts the service layer needs. Two shapes:
+/// a <b>Member</b> — a real user identified by <see cref="Email"/> (the OIDC subject) + groups, built from the
+/// JWT bearer by each surface's adapter; or a <b>Share</b> — an account-less share-link recipient
+/// (<see cref="Share"/> set, <see cref="Email"/> null) scoped to one list at one access level.
+/// Services authorize via <c>AccessResolver.AuthorizeAsync(caller, …)</c> and stamp <see cref="Actor"/> into
+/// the event <c>actor</c> header, so one code path serves members and share recipients alike.
 /// </summary>
 public sealed record Caller
 {

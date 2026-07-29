@@ -60,8 +60,6 @@ public abstract class IntegrationTest(TasksApiTestFactory factory) : IAsyncLifet
         return await act(ActivatorUtilities.CreateInstance<TaskTools>(scope.ServiceProvider));
     }
 
-    // ---- HTTP helpers ----
-
     /// <summary>Send a JSON request, optionally carrying an <c>Idempotency-Key</c> header.</summary>
     protected static async Task<HttpResponseMessage> SendJson(
         HttpClient client, HttpMethod method, string url, object? body = null, Guid? idempotencyKey = null)
@@ -74,8 +72,6 @@ public abstract class IntegrationTest(TasksApiTestFactory factory) : IAsyncLifet
 
     protected static async Task<T> ReadAsync<T>(HttpResponseMessage resp) =>
         (await resp.Content.ReadFromJsonAsync<T>(Json))!;
-
-    // ---- REST fixture helpers ----
 
     protected static async Task<ListResponse> CreateListAsync(HttpClient api, string name = "Groceries", ListKind kind = ListKind.Todo)
     {
@@ -100,8 +96,6 @@ public abstract class IntegrationTest(TasksApiTestFactory factory) : IAsyncLifet
         resp.EnsureSuccessStatusCode();
         return await ReadAsync<ShareResponse>(resp);
     }
-
-    // ---- payload builders ----
 
     protected static string MinimalVtodo(string uid, string summary) =>
         new StringBuilder()

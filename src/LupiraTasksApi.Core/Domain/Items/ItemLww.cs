@@ -3,26 +3,20 @@ using LupiraTasksApi.Domain;
 namespace LupiraTasksApi.Domain.Items;
 
 /// <summary>
-/// Pure, DB-free conflict-resolution rules for an item. Every method mutates an
-/// <see cref="ItemState"/> in place and is deterministic given (state, event data,
-/// actor) — no Postgres, no Marten, no clock. This is the single source of truth
-/// for the per-field last-writer-wins (LWW) semantics, shared by the server's
-/// Marten <c>Item</c> snapshot and pinned by the LWW test-vector suite (the same
-/// fixtures the client reducer must satisfy, for client/server convergence).
+/// Pure, DB-free conflict-resolution rules for an item: every method mutates an <see cref="ItemState"/> in place
+/// and is deterministic given (state, event data, actor) — no Postgres, no Marten, no clock. The single source of
+/// truth for the per-field last-writer-wins semantics, shared by the server's Marten <c>Item</c> snapshot and
+/// pinned by the LWW test-vector suite, whose fixtures the offline client reducer must also satisfy.
 ///
 /// Rules:
-///  * Per-field LWW keyed on the pair (<c>OccurredAt</c>, <c>CommandId</c>): a field
-///    is written only when the incoming event is strictly newer than that field's
-///    guard — i.e. its OccurredAt is later, OR its OccurredAt is equal and its
-///    CommandId compares greater. An older event, or an equal (OccurredAt, CommandId)
-///    replay, is a no-op (so a late-arriving stale edit never clobbers newer state,
-///    and a redelivered command is idempotent). CommandId breaks exact-OccurredAt
-///    ties deterministically so the server and the offline client reducer converge on
-///    the same winner regardless of the order events are applied.
+///  * Per-field LWW keyed on (<c>OccurredAt</c>, <c>CommandId</c>): a field is written only when the incoming
+///    event is strictly newer than that field's guard — later OccurredAt, or equal OccurredAt with a greater
+///    CommandId. An older event or an equal-pair replay is a no-op, so a late-arriving stale edit never clobbers
+///    newer state and a redelivery is idempotent. The CommandId tiebreak is what makes server and client
+///    converge on the same winner regardless of apply order.
 ///  * Tag add/remove are commutative set deltas resolved per-tag by (OccurredAt, CommandId).
-///  * <see cref="ApplyDeleted"/> is a tombstone: once Deleted, every later field
-///    event is ignored. Each field apply checks Deleted first, so delete wins over
-///    a concurrent edit regardless of OccurredAt.
+///  * <see cref="ApplyDeleted"/> is a tombstone checked first in every field apply, so delete wins over a
+///    concurrent edit regardless of OccurredAt.
 /// </summary>
 public static class ItemLww
 {

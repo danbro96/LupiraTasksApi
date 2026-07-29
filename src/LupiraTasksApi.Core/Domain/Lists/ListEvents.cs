@@ -4,8 +4,6 @@ namespace LupiraTasksApi.Domain.Lists;
 // is always the aggregate id. The acting user is carried out-of-band as a Marten
 // event-metadata header ("actor"), not as an event field.
 
-// --- Lifecycle ---
-
 public record ListCreated(Guid ListId, string Name, ListKind Kind, string? Color, Guid OwnerPrincipalId);
 
 public record ListRenamed(Guid ListId, string Name);
@@ -29,8 +27,6 @@ public record TagDefined(Guid ListId, Guid TagId, string Label, string Color);
 public record TagRecolored(Guid ListId, Guid TagId, string Color);
 
 public record TagRemoved(Guid ListId, Guid TagId);
-
-// --- Membership ---
 
 public record MemberAdded(Guid ListId, Guid PrincipalId, ListRole Role);
 

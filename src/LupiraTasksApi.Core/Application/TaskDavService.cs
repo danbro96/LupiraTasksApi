@@ -28,20 +28,18 @@ public sealed class TaskDavService
     }
 
     /// <summary>
-    /// The ETag for an item, unquoted (the router adds the quotes): a short digest of its full LWW
-    /// state, so it changes whenever anything about the item changes.
+    /// The ETag for an item, unquoted (the router adds the quotes): a short digest of its full LWW state, so it
+    /// changes whenever anything about the item does.
     ///
-    /// It cannot be the stream <c>Version</c> — Marten leaves that at 0 on every event after the
-    /// first, so every edited item shared one ETag and <c>If-Match</c> accepted arbitrarily stale
-    /// tokens. Nor can it be <c>UpdatedAt</c> alone: that only ever advances, so a late-arriving
-    /// offline edit can win a per-field LWW race and change the item while leaving the timestamp
-    /// where a concurrent newer edit put it.
+    /// It cannot be the stream <c>Version</c> — Marten leaves that at 0 on every event after the first, so every
+    /// edited item shared one ETag and <c>If-Match</c> accepted arbitrarily stale tokens. Nor <c>UpdatedAt</c>
+    /// alone: it only advances, so a late offline edit can win a per-field LWW race and change the item while
+    /// leaving the timestamp where a concurrent newer edit put it.
     ///
-    /// Digesting the state rather than the rendered VTODO keeps this a pure function of the item —
-    /// the render also needs the list's tag labels, so renaming a tag changes a client's CATEGORIES
-    /// without rotating the ETag. Including the LWW guards means a re-set of an unchanged value
-    /// rotates it, which is the safe direction for a validator. Reordering <see cref="ItemState"/>'s
-    /// properties rotates every ETag once; clients re-fetch and self-heal.
+    /// Digesting the state rather than the rendered VTODO keeps it a pure function of the item — the render also
+    /// needs the list's tag labels, so renaming a tag would change CATEGORIES without rotating the ETag. Including
+    /// the LWW guards means re-setting an unchanged value rotates it, the safe direction for a validator.
+    /// Reordering <see cref="ItemState"/>'s properties rotates every ETag once; clients re-fetch and self-heal.
     /// </summary>
     public static string Etag(Item item) =>
         Convert.ToHexStringLower(SHA256.HashData(JsonSerializer.SerializeToUtf8Bytes(item.State)))[..16];

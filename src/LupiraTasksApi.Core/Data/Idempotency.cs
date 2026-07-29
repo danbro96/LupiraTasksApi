@@ -5,26 +5,16 @@ using Marten;
 namespace LupiraTasksApi.Data;
 
 /// <summary>
-/// Offline-first idempotency gate. Every mutation may carry an <c>Idempotency-Key</c>
-/// header (a client-generated GUIDv7 <c>command_id</c>); the serialized replay worker
-/// resends the same key on retry after a lost response, so a redelivered command must
-/// be a no-op that returns the prior result.
-///
-/// <para>
-/// The dedup row and the event append live in the SAME <see cref="IDocumentSession"/>,
-/// committed by a SINGLE <c>SaveChangesAsync</c>. The ledger row is written with
-/// <see cref="IDocumentSession.Insert{T}"/> — a plain INSERT, NOT an upsert — so a
-/// second concurrent command bearing the same key violates the <c>ProcessedCommand</c>
-/// primary key and rolls back the WHOLE transaction (including the loser's already-staged
-/// events). Only one writer wins; the loser catches the duplicate and treats it as
-/// idempotent success (re-resolve and return the existing aggregate). This closes the
-/// check-then-write TOCTOU that an upsert + version-less append would leave open.
-/// </para>
-///
-/// <para>
-/// With no key present the append simply commits — clients are expected to always send
-/// one, but the API stays usable without it (at the cost of no cross-request dedup).
-/// </para>
+/// Offline-first idempotency gate. A mutation may carry an <c>Idempotency-Key</c> header (a client-minted GUIDv7
+/// <c>command_id</c>); the serialized replay worker resends the same key after a lost response, so a redelivered
+/// command must be a no-op returning the prior result.
+/// <para>The dedup row and the event append share ONE <see cref="IDocumentSession"/> and ONE
+/// <c>SaveChangesAsync</c>. The ledger row goes in via <see cref="IDocumentSession.Insert{T}"/> — a plain INSERT,
+/// not an upsert — so a concurrent duplicate violates the <c>ProcessedCommand</c> primary key and rolls back the
+/// whole transaction including the loser's already-staged events; the loser catches it and returns the existing
+/// aggregate. This closes the check-then-write TOCTOU an upsert plus a version-less append would leave open.</para>
+/// <para>With no key the append simply commits — clients should always send one, but the API stays usable
+/// without, at the cost of no cross-request dedup.</para>
 /// </summary>
 public sealed class Idempotency
 {
@@ -45,23 +35,15 @@ public sealed class Idempotency
         commandId is { } key ? await _session.LoadAsync<ProcessedCommand>(key, ct) : null;
 
     /// <summary>
-    /// Append events to an existing stream and, in the same session, record the dedup
-    /// ledger row, then commit with a single <c>SaveChangesAsync</c>.
-    /// <para>
-    /// The resulting version is computed from the stream's CURRENT head — read fresh via
-    /// <c>FetchStreamStateAsync</c> rather than the snapshot's possibly-stale loaded
-    /// <c>Version</c> — plus the number of events appended, and stored in
-    /// <see cref="ProcessedCommand.ResultVersion"/>. (A pre-save <c>StreamAction.Version</c>
-    /// is unreliable: under the Quick append modes the version is assigned server-side at
-    /// INSERT time and reads as 0 beforehand.)
-    /// </para>
-    /// <para>
-    /// On a concurrent duplicate key the <c>Insert</c> of the ledger row throws
-    /// <see cref="DocumentAlreadyExistsException"/> (or a Postgres unique-violation) from
-    /// <c>SaveChangesAsync</c>, rolling back the appended events; the caller catches it and
-    /// returns the already-committed aggregate. Returns the resulting version, or
-    /// <c>null</c> when the commit lost the dedup race.
-    /// </para>
+    /// Appends events to an existing stream and records the dedup ledger row in the same session, committed by a
+    /// single <c>SaveChangesAsync</c>. Returns the resulting version, or <c>null</c> when the commit lost the race.
+    /// <para>The version comes from the stream's CURRENT head (<c>FetchStreamStateAsync</c>, not the loaded
+    /// snapshot's possibly-stale <c>Version</c>) plus the event count, stored in
+    /// <see cref="ProcessedCommand.ResultVersion"/>. A pre-save <c>StreamAction.Version</c> would not do: the
+    /// Quick append modes assign it server-side at INSERT, so it reads 0 beforehand.</para>
+    /// <para>A concurrent duplicate key throws <see cref="DocumentAlreadyExistsException"/> (or a Postgres
+    /// unique-violation) out of <c>SaveChangesAsync</c>, rolling back the appended events; the caller returns the
+    /// already-committed aggregate.</para>
     /// </summary>
     public async Task<int?> AppendDedupAsync(
         Guid? commandId,

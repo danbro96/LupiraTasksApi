@@ -12,7 +12,6 @@ namespace LupiraTasksApi.Domain.Items;
 /// </summary>
 public sealed class ItemState
 {
-    // --- Snapshot fields ---
     public Guid Id { get; set; }
     public Guid ListId { get; set; }
     public Guid? ParentItemId { get; set; }
@@ -75,7 +74,6 @@ public sealed class ItemState
 
     public bool Deleted { get; set; }
 
-    // --- Per-field LWW guards ---
     // Each field's guard is the (OccurredAt, CommandId) of the event that last set it.
     // OccurredAt is the primary key; CommandId is the deterministic tiebreaker on an
     // exact OccurredAt tie, so concurrent same-field edits converge identically on the

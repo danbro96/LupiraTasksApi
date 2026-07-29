@@ -8,7 +8,6 @@ namespace LupiraTasksApi.Endpoints;
 /// </summary>
 public sealed class IdempotentMutation;
 
-/// <summary>Shared endpoint conventions.</summary>
 internal static class EndpointConventions
 {
     /// <summary>Marks the endpoint as accepting the <c>Idempotency-Key</c> header (documented in OpenAPI).</summary>

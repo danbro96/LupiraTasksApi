@@ -26,7 +26,6 @@ public sealed class CrossListItemsTests(TasksApiTestFactory factory) : Integrati
         Assert.Equal(["Pay electricity bill", "Pay parking fine"], pays.Items.Select(i => i.Title).OrderBy(t => t));
         Assert.Contains(pays.Items, i => i.Id == pay.Id && i.ListId == bills.Id);
 
-        // Open only.
         var open = await ReadAsync<ItemCollectionResponse>(await alice.GetAsync("/items?query=pay&completed=false"));
         Assert.Equal("Pay electricity bill", Assert.Single(open.Items).Title);
     }

@@ -6,22 +6,16 @@ using System.Text.Encodings.Web;
 namespace LupiraTasksApi.Auth;
 
 /// <summary>
-/// DEVELOPMENT-ONLY authentication. Lets the API (REST and the MCP surface) be exercised
-/// without Authentik by trusting an <c>X-Dev-User</c> header (the caller's email) plus an
-/// optional <c>X-Dev-Groups</c> (comma-separated group names).
+/// DEVELOPMENT-ONLY authentication. Lets the API (REST and MCP) be exercised without Authentik by trusting an
+/// <c>X-Dev-User</c> header (the caller's email) plus an optional comma-separated <c>X-Dev-Groups</c>.
 ///
-/// <para>
-/// Registered ONLY when the host environment is Development (see <c>Program.cs</c>), so it can
-/// never authenticate a request in Production — prod runs <c>ASPNETCORE_ENVIRONMENT=Production</c>
-/// (the aspnet base-image default; the deploy compose never sets Development), where this scheme
-/// is not added at all.
-/// </para>
+/// <para>Registered ONLY when the host environment is Development (see <c>Program.cs</c>), so it can never
+/// authenticate a Production request — prod runs <c>ASPNETCORE_ENVIRONMENT=Production</c> (the aspnet
+/// base-image default; the deploy compose never sets Development), where the scheme is not added at all.</para>
 ///
-/// <para>
-/// Claims are shaped to match the JWT bearer's mapping — the email lands on the configured
-/// <c>NameClaimType</c> ("email") and each group on the <c>RoleClaimType</c> ("groups") — so
-/// <see cref="CurrentUser"/> and everything downstream behave identically to a real Authentik token.
-/// </para>
+/// <para>Claims match the JWT bearer's mapping — email on the configured <c>NameClaimType</c> ("email"), each
+/// group on the <c>RoleClaimType</c> ("groups") — so <see cref="CurrentUser"/> and everything downstream
+/// behave identically to a real Authentik token.</para>
 /// </summary>
 public sealed class DevAuthHandler : AuthenticationHandler<AuthenticationSchemeOptions>
 {

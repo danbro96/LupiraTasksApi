@@ -5,16 +5,10 @@ using Xunit;
 namespace LupiraTasksApi.UnitTests;
 
 /// <summary>
-/// Shared last-writer-wins (LWW) test vectors for the pure <see cref="ItemLww"/>
-/// engine. These run with no Postgres and no Marten — they exercise the exact
-/// conflict-resolution rules the server's <c>Item</c> snapshot applies, and are the
-/// same fixtures the offline client reducer must satisfy for client/server
-/// convergence. If a rule changes here, both implementations must change together.
-///
-/// Resolution is keyed on the pair (OccurredAt, CommandId): OccurredAt is the
-/// primary key; CommandId is the deterministic tiebreaker on an exact OccurredAt
-/// tie. The tie vectors below assert CONVERGENCE — the same final state regardless
-/// of the order events are applied — which is the contract the mobile reducer mirrors.
+/// Shared last-writer-wins test vectors for the pure <see cref="ItemLww"/> engine (no Postgres, no Marten) —
+/// the rules are documented there. These are also the fixtures the offline client reducer must satisfy, so a
+/// rule change here means both implementations change together. The tie vectors assert CONVERGENCE: the same
+/// final state regardless of apply order, which is the contract the mobile reducer mirrors.
 /// </summary>
 public class ItemLwwTests
 {
@@ -40,8 +34,6 @@ public class ItemLwwTests
             actor);
         return s;
     }
-
-    // --- Creation ---
 
     [Fact]
     public void Added_seeds_fields_and_creator_from_actor()

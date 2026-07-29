@@ -412,8 +412,6 @@ public sealed class TaskTools
         return new { revoked = true, shareId };
     }
 
-    // ── helpers ───────────────────────────────────────────────────────────────────────────
-
     private async Task<Caller> CallerAsync(CancellationToken ct) =>
         await _callers.MemberAsync(ct) ?? throw new McpException("Unauthenticated.");
 
