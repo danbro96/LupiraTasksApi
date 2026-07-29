@@ -17,7 +17,7 @@ namespace Microsoft.Extensions.DependencyInjection;
 /// binding (<c>ShareLinkOptions</c>).
 /// </para>
 /// </summary>
-public static class TasksCoreServiceCollectionExtensions
+public static class CoreServiceCollectionExtensions
 {
     public static IServiceCollection AddTasksCore(this IServiceCollection services) =>
         services

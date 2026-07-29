@@ -17,18 +17,11 @@ namespace LupiraTasksApi.Application;
 /// winner's row. Without both halves the same login forks into two principals and everything keyed to the
 /// principal id (membership, ownership, attribution) resolves to whichever row Postgres happens to return.
 /// </summary>
-public sealed class PrincipalDirectory
+public sealed class PrincipalDirectory(IDocumentSession session)
 {
     /// <summary>How stale <see cref="Principal.LastSeenAt"/> must be before a read refreshes it, so
     /// steady-state resolution doesn't write on every authenticated request.</summary>
     private static readonly TimeSpan LastSeenRefresh = TimeSpan.FromMinutes(5);
-
-    private readonly IDocumentSession _session;
-
-    public PrincipalDirectory(IDocumentSession session)
-    {
-        _session = session;
-    }
 
     /// <summary>Look up an existing principal by login email without provisioning — for surfaces where a
     /// missing principal is "not found" (role change/remove, assignee filter), not a reason to create one.</summary>
@@ -37,7 +30,7 @@ public sealed class PrincipalDirectory
         email = Normalize(email);
         return email.Length == 0
             ? null
-            : await _session.Query<Principal>().Where(x => x.Email == email).OrderBy(x => x.Id).FirstOrDefaultAsync(ct);
+            : await session.Query<Principal>().Where(x => x.Email == email).OrderBy(x => x.Id).FirstOrDefaultAsync(ct);
     }
 
     /// <summary>Resolve a login to its <see cref="Principal"/>, provisioning on first sight. Saves only when
@@ -60,17 +53,17 @@ public sealed class PrincipalDirectory
                 CreatedAt = now,
                 LastSeenAt = now,
             };
-            _session.Store(p);
+            session.Store(p);
             try
             {
-                await _session.SaveChangesAsync(ct);
+                await session.SaveChangesAsync(ct);
                 return p;
             }
             catch (Exception ex) when (IsUniqueViolation(ex))
             {
                 // Lost the provisioning race: a concurrent request inserted this sub first. Adopt its
                 // row rather than forking a second identity for the same login.
-                _session.EjectAllPendingChanges();
+                session.EjectAllPendingChanges();
                 p = await FindAsync(sub, email, ct);
                 if (p is null) throw;
             }
@@ -86,7 +79,7 @@ public sealed class PrincipalDirectory
         if (email.Length > 0 && p.Email != email) { p.Email = email; changed = true; }
         if (name is not null && p.DisplayName != name) { p.DisplayName = name; changed = true; }
         if (now - p.LastSeenAt > LastSeenRefresh) { p.LastSeenAt = now; changed = true; }
-        if (changed) { _session.Store(p); await _session.SaveChangesAsync(ct); }
+        if (changed) { session.Store(p); await session.SaveChangesAsync(ct); }
         return p;
     }
 
@@ -96,9 +89,9 @@ public sealed class PrincipalDirectory
     {
         Principal? p = null;
         if (sub is not null)
-            p = await _session.Query<Principal>().Where(x => x.AuthentikSub == sub).OrderBy(x => x.Id).FirstOrDefaultAsync(ct);
+            p = await session.Query<Principal>().Where(x => x.AuthentikSub == sub).OrderBy(x => x.Id).FirstOrDefaultAsync(ct);
         if (p is null && email.Length > 0)
-            p = await _session.Query<Principal>().Where(x => x.Email == email).OrderBy(x => x.Id).FirstOrDefaultAsync(ct);
+            p = await session.Query<Principal>().Where(x => x.Email == email).OrderBy(x => x.Id).FirstOrDefaultAsync(ct);
         return p;
     }
 
@@ -119,7 +112,7 @@ public sealed class PrincipalDirectory
     {
         var distinct = ids.Where(id => id != Guid.Empty).Distinct().ToArray();
         if (distinct.Length == 0) return EmptyLookup;
-        var rows = await _session.Query<Principal>().Where(p => distinct.Contains(p.Id)).ToListAsync(ct);
+        var rows = await session.Query<Principal>().Where(p => distinct.Contains(p.Id)).ToListAsync(ct);
         return rows.ToDictionary(p => p.Id);
     }
 

@@ -10,7 +10,7 @@ namespace LupiraTasksApi.Data;
 
 public static class MartenRegistrations
 {
-    public static void Configure(StoreOptions opts)
+    public static StoreOptions UseLupiraTasks(this StoreOptions opts)
     {
         // Provenance is unbackfillable, so capture it on every event:
         //  * headers   — "actor" (principal id / share:{label}) + "actor.email" + "source" (api/dav).
@@ -60,6 +60,8 @@ public static class MartenRegistrations
         // Cross-API links (plain document). Indexed by FromId so listing a task's relations doesn't
         // table-scan. The document id is the tuple-derived Relation.DeterministicId, so add/remove are idempotent.
         opts.Schema.For<Relation>().Index(x => x.FromId);
+
+        return opts;
     }
 
     /// <summary>

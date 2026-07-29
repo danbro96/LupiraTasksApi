@@ -53,7 +53,7 @@ builder.Services
         opts.AutoCreateSchemaObjects = env.IsDevelopment()
             ? AutoCreate.CreateOrUpdate
             : AutoCreate.None;
-        MartenRegistrations.Configure(opts);
+        opts.UseLupiraTasks();
         return opts;
     })
     .UseLightweightSessions();
