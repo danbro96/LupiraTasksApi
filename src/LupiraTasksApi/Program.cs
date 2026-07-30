@@ -291,6 +291,7 @@ if (allowedOrigins.Length > 0)
 builder.Services.Configure<Microsoft.AspNetCore.Http.Json.JsonOptions>(o =>
 {
     o.SerializerOptions.PropertyNameCaseInsensitive = true;
+    o.SerializerOptions.NumberHandling = JsonNumberHandling.Strict;
     o.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
 });
 

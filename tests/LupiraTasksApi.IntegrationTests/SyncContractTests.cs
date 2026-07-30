@@ -22,6 +22,7 @@ public sealed class SyncContractTests(TasksApiTestFactory factory) : Integration
         Assert.Single(sync.Items);
         Assert.Equal(keep.Id, sync.Items[0].Id);
         Assert.True(sync.NextCursor > 0);
+        Assert.True(sync.NextCursor <= 9007199254740991); // JS Number.MAX_SAFE_INTEGER
     }
 
     [Fact]

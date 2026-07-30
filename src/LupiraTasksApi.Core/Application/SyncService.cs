@@ -47,9 +47,9 @@ public sealed class SyncService
         // One lookup resolves every principal id referenced by the list and its items.
         var lookup = await _principals.LookupAsync(PrincipalIds(access.List!, items), ct);
         var ordered = items.Select(i => i.ToResponse(lookup)).ToList();
-        // High-water mark of the items' LWW clock. It was the max stream version, which Marten leaves
-        // at 0 after an aggregate's first event — so the cursor was 0 or 1 regardless of the data.
-        var nextCursor = items.Count == 0 ? 0L : items.Max(i => i.UpdatedAt.UtcTicks);
+        // Epoch ms, not ticks: a tick count exceeds JS's safe integer range, so a browser client would
+        // silently round the cursor it plumbs back.
+        var nextCursor = items.Count == 0 ? 0L : items.Max(i => i.UpdatedAt.ToUnixTimeMilliseconds());
 
         return OpResult<SyncResponse>.Ok(new SyncResponse
         {
