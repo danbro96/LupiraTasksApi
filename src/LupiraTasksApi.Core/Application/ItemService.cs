@@ -2,7 +2,6 @@ using JasperFx;
 using LupiraTasksApi.Auth;
 using LupiraTasksApi.Data;
 using LupiraTasksApi.Domain;
-using LupiraTasksApi.Domain.Identity;
 using LupiraTasksApi.Domain.Items;
 using LupiraTasksApi.Domain.Lists;
 using LupiraTasksApi.Dtos.Items;
@@ -206,6 +205,7 @@ public sealed class ItemService
                 return OpResult<ItemResponse>.Invalid($"Title must be 1..{MaxTitleLength} characters.");
             events.Add(new ItemRenamed(itemId, title, occurredAt, commandId));
         }
+
         if (request.NotesProvided)
             events.Add(new ItemNotesEdited(itemId, request.Notes, occurredAt, commandId));
         if (request.DueAtProvided)
@@ -216,18 +216,21 @@ public sealed class ItemService
             var assigneePrincipalId = await ResolveAssigneeAsync(request.AssigneeEmail, ct);
             events.Add(new ItemAssigned(itemId, assigneePrincipalId, occurredAt, commandId));
         }
+
         if (request.QuantityProvided)
         {
             if (request.Quantity is < 0)
                 return OpResult<ItemResponse>.Invalid("`quantity` must be non-negative.");
             events.Add(new ItemQuantitySet(itemId, request.Quantity, request.Unit, occurredAt, commandId));
         }
+
         if (request.PriorityProvided)
         {
             if (request.Priority is < 0 or > 9)
                 return OpResult<ItemResponse>.Invalid("`priority` must be 0..9.");
             events.Add(new ItemPrioritySet(itemId, request.Priority, occurredAt, commandId));
         }
+
         if (request.AddTagIds is { Count: > 0 })
             foreach (var tagId in request.AddTagIds.Distinct())
                 events.Add(new ItemTagAdded(itemId, tagId, occurredAt, commandId));

@@ -2,10 +2,9 @@ using JasperFx;
 using LupiraTasksApi.Auth;
 using LupiraTasksApi.Data;
 using LupiraTasksApi.Domain;
-using LupiraTasksApi.Domain.Identity;
 using LupiraTasksApi.Domain.Lists;
-using LupiraTasksApi.Dtos.Lists;
 using LupiraTasksApi.Domain.Shares;
+using LupiraTasksApi.Dtos.Lists;
 using LupiraTasksApi.Mappers;
 using Marten;
 using Marten.Exceptions;
@@ -140,6 +139,7 @@ public sealed class ListService
                 return OpResult<ListResponse>.Invalid($"Name must be 1..{MaxNameLength} characters.");
             events.Add(new ListRenamed(listId, name));
         }
+
         if (request.ColorProvided)
             events.Add(new ListRecolored(listId, request.Color));
         if (request.SimplePriority is { } simplePriority)

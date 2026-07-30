@@ -53,7 +53,7 @@ public sealed class Idempotency
     {
         // Real current head (not the loaded snapshot's possibly-stale version).
         var state = await _session.Events.FetchStreamStateAsync(aggregateId, ct);
-        var version = (int)(state?.Version ?? 0) + events.Count;
+        var version = (int) (state?.Version ?? 0) + events.Count;
 
         _session.Events.Append(aggregateId, events.ToArray());
         Record(commandId, aggregateId, version);
@@ -67,6 +67,7 @@ public sealed class Idempotency
             // Its events are authoritative; our staged append rolled back. Idempotent.
             return null;
         }
+
         return version;
     }
 

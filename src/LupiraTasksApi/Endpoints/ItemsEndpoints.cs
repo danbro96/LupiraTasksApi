@@ -1,4 +1,4 @@
-﻿using LupiraTasksApi.Domain;
+using LupiraTasksApi.Domain;
 using LupiraTasksApi.Dtos.Items;
 using LupiraTasksApi.Handlers;
 

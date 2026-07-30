@@ -1,5 +1,4 @@
 using JasperFx.Events;
-using LupiraTasksApi.Domain;
 
 namespace LupiraTasksApi.Domain.Items;
 

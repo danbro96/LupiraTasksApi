@@ -96,7 +96,7 @@ public static class FractionalIndex
         var digitA = a.Length > 0 ? Digits.IndexOf(a[0]) : 0;
         var digitB = b is not null ? Digits.IndexOf(b[0]) : Digits.Length;
         if (digitB - digitA > 1)
-            return Digits[(int)Math.Round(0.5 * (digitA + digitB), MidpointRounding.AwayFromZero)].ToString();
+            return Digits[(int) Math.Round(0.5 * (digitA + digitB), MidpointRounding.AwayFromZero)].ToString();
         if (b is { Length: > 1 }) return b[..1];
         // Digits are consecutive with no room between them: keep a's digit and go one place deeper.
         return Digits[digitA] + Midpoint(Rest(a, 1), null);
@@ -147,12 +147,13 @@ public static class FractionalIndex
             if (next == Digits.Length) digits[i] = Digits[0];
             else (digits[i], carry) = (Digits[next], false);
         }
+
         if (!carry) return head + new string(digits);
 
         if (head == 'Z') return $"a{Digits[0]}";
         if (head == 'z') return null;
         // Carrying past the head widens (lowercase) or narrows (uppercase) the integer part by a digit.
-        var wider = (char)(head + 1);
+        var wider = (char) (head + 1);
         var rest = new string(digits);
         return wider + (wider > 'a' ? rest + Digits[0] : rest[..^1]);
     }
@@ -171,11 +172,12 @@ public static class FractionalIndex
             if (next == -1) digits[i] = Digits[^1];
             else (digits[i], borrow) = (Digits[next], false);
         }
+
         if (!borrow) return head + new string(digits);
 
         if (head == 'a') return $"Z{Digits[^1]}";
         if (head == 'A') return null;
-        var narrower = (char)(head - 1);
+        var narrower = (char) (head - 1);
         var rest = new string(digits);
         return narrower + (narrower < 'Z' ? rest + Digits[^1] : rest[..^1]);
     }

@@ -1,6 +1,6 @@
+using System.ComponentModel;
 using LupiraTasksApi.Domain.Items;
 using ModelContextProtocol;
-using System.ComponentModel;
 
 namespace LupiraTasksApi.Mcp;
 

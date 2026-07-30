@@ -163,6 +163,7 @@ public sealed class TaskDavService
                 ? new DavChange(i.Uid, null, Deleted: true)
                 : new DavChange(i.Uid, Etag(i), Deleted: false));
         }
+
         return OpResult<DavChangesResult>.Ok(new DavChangesResult(newToken, changes));
     }
 

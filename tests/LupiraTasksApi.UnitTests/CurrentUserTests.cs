@@ -1,6 +1,6 @@
-﻿using LupiraTasksApi.Auth;
-using Microsoft.AspNetCore.Http;
 using System.Security.Claims;
+using LupiraTasksApi.Auth;
+using Microsoft.AspNetCore.Http;
 using Xunit;
 
 namespace LupiraTasksApi.UnitTests;

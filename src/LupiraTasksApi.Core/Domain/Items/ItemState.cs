@@ -1,5 +1,3 @@
-using LupiraTasksApi.Domain;
-
 namespace LupiraTasksApi.Domain.Items;
 
 /// <summary>

@@ -636,6 +636,7 @@ public class ItemLwwTests
     private static IEnumerable<T[]> Permutations<T>(T[] items)
     {
         if (items.Length <= 1) { yield return items; yield break; }
+
         for (var i = 0; i < items.Length; i++)
         {
             var rest = new T[items.Length - 1];

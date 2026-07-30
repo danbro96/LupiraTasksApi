@@ -1,7 +1,6 @@
 using LupiraTasksApi.Auth;
 using LupiraTasksApi.Domain;
 using LupiraTasksApi.Domain.Items;
-using LupiraTasksApi.Domain.Lists;
 using LupiraTasksApi.Dtos.Relations;
 using LupiraTasksApi.Mappers;
 using Marten;

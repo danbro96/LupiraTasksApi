@@ -1,6 +1,5 @@
 using LupiraTasksApi.Auth;
 using LupiraTasksApi.Domain;
-using LupiraTasksApi.Domain.Identity;
 using LupiraTasksApi.Domain.Items;
 using LupiraTasksApi.Domain.Lists;
 using LupiraTasksApi.Dtos.Sync;
@@ -67,6 +66,7 @@ public sealed class SyncService
             yield return m.PrincipalId;
             if (Guid.TryParse(m.AddedBy, out var addedBy)) yield return addedBy;
         }
+
         foreach (var i in items)
         {
             if (i.AssignedToPrincipalId is { } a) yield return a;

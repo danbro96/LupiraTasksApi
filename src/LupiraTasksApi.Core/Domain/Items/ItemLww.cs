@@ -1,5 +1,3 @@
-using LupiraTasksApi.Domain;
-
 namespace LupiraTasksApi.Domain.Items;
 
 /// <summary>
@@ -60,6 +58,7 @@ public static class ItemLww
             s.CreatedAt = e.OccurredAt;
             s.UpdatedAt = e.OccurredAt;
         }
+
         if (s.Deleted) return;
 
         if (Wins(e.OccurredAt, e.CommandId, s.NameTs, s.NameCmd))
@@ -69,6 +68,7 @@ public static class ItemLww
             s.NameCmd = e.CommandId;
             Touch(s, e.OccurredAt);
         }
+
         if (Wins(e.OccurredAt, e.CommandId, s.NotesTs, s.NotesCmd))
         {
             s.Notes = e.Notes;
@@ -76,6 +76,7 @@ public static class ItemLww
             s.NotesCmd = e.CommandId;
             Touch(s, e.OccurredAt);
         }
+
         if (Wins(e.OccurredAt, e.CommandId, s.DueTs, s.DueCmd))
         {
             s.DueAt = e.DueAt;
@@ -83,6 +84,7 @@ public static class ItemLww
             s.DueCmd = e.CommandId;
             Touch(s, e.OccurredAt);
         }
+
         if (Wins(e.OccurredAt, e.CommandId, s.PriorityTs, s.PriorityCmd))
         {
             s.Priority = e.Priority;
@@ -90,6 +92,7 @@ public static class ItemLww
             s.PriorityCmd = e.CommandId;
             Touch(s, e.OccurredAt);
         }
+
         if (Wins(e.OccurredAt, e.CommandId, s.StatusTs, s.StatusCmd))
         {
             // VTODO is a whole-item write and can't model a status reason; setting the lifecycle clears it.
@@ -123,6 +126,7 @@ public static class ItemLww
             s.TagCmd[tagId] = cmd;
             Touch(s, ts);
         }
+
         foreach (var tagId in s.Tags.ToList())
         {
             if (want.Contains(tagId) || !NewerTag(s, tagId, ts, cmd)) continue;
@@ -234,6 +238,7 @@ public static class ItemLww
             s.CompletedAt = null;
             s.CompletedBy = null;
         }
+
         s.StatusTs = occurredAt;
         s.StatusCmd = commandId;
     }

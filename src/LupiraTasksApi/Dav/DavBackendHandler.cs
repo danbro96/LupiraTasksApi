@@ -105,6 +105,7 @@ public sealed class DavBackendHandler(IQuerySession session, TaskDavService dav,
             ctx.Response.Headers.ETag = $"\"{w.Etag}\"";
             return TypedResults.StatusCode(w.Created ? StatusCodes.Status201Created : StatusCodes.Status204NoContent);
         }
+
         return TypedResults.StatusCode(DavStatus(result.Status));
     }
 

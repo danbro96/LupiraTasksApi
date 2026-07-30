@@ -1,4 +1,6 @@
-﻿using JasperFx;
+using System.Text.Json.Serialization;
+using System.Threading.RateLimiting;
+using JasperFx;
 using LupiraTasksApi.Application;
 using LupiraTasksApi.Auth;
 using LupiraTasksApi.Data;
@@ -20,8 +22,6 @@ using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Scalar.AspNetCore;
-using System.Text.Json.Serialization;
-using System.Threading.RateLimiting;
 using Weasel.Core;
 
 // The build-time OpenAPI emitter (Microsoft.Extensions.ApiDescription.Server's GetDocument.Insider)
@@ -173,6 +173,7 @@ if (!isOpenApiBuild && string.IsNullOrWhiteSpace(oidc.Authority))
 {
     throw new InvalidOperationException("Auth:Oidc:Authority is required.");
 }
+
 if (!isOpenApiBuild && string.IsNullOrWhiteSpace(oidc.Audience))
 {
     throw new InvalidOperationException("Auth:Oidc:Audience is required.");

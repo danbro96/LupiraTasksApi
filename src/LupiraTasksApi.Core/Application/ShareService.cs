@@ -1,4 +1,5 @@
-﻿using JasperFx;
+using System.Security.Cryptography;
+using JasperFx;
 using LupiraTasksApi.Auth;
 using LupiraTasksApi.Data;
 using LupiraTasksApi.Domain;
@@ -11,7 +12,6 @@ using LupiraTasksApi.Mappers;
 using Marten;
 using Marten.Exceptions;
 using Microsoft.Extensions.Options;
-using System.Security.Cryptography;
 
 namespace LupiraTasksApi.Application;
 

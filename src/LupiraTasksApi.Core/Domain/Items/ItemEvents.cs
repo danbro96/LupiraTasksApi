@@ -1,5 +1,3 @@
-using LupiraTasksApi.Domain;
-
 namespace LupiraTasksApi.Domain.Items;
 
 // Item event stream (stream id = ItemId). Positional records; the first field is

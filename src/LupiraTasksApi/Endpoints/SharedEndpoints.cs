@@ -1,4 +1,4 @@
-﻿using LupiraTasksApi.Auth;
+using LupiraTasksApi.Auth;
 using LupiraTasksApi.Dtos.Items;
 using LupiraTasksApi.Dtos.Shared;
 using LupiraTasksApi.Handlers;

@@ -1,4 +1,7 @@
-﻿using LupiraTasksApi.Application;
+using System.ComponentModel;
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using LupiraTasksApi.Application;
 using LupiraTasksApi.Auth;
 using LupiraTasksApi.Domain;
 using LupiraTasksApi.Domain.Items;
@@ -8,9 +11,6 @@ using LupiraTasksApi.Dtos.Relations;
 using LupiraTasksApi.Dtos.Shares;
 using ModelContextProtocol;
 using ModelContextProtocol.Server;
-using System.ComponentModel;
-using System.Text.Json;
-using System.Text.Json.Nodes;
 
 namespace LupiraTasksApi.Mcp;
 
@@ -121,6 +121,7 @@ public sealed class TaskTools
                 results.Add(Summarize(list, it));
             }
         }
+
         return results;
     }
 
@@ -187,6 +188,7 @@ public sealed class TaskTools
             var item = Require(await _items.CreateAsync(caller, Guid.CreateVersion7(), listId, request, ct));
             created.Add(new CreatedTask(item.Id, item.ParentItemId, item.Title));
         }
+
         return created;
     }
 
@@ -480,6 +482,7 @@ public sealed class TaskTools
                 .FirstOrDefault(k => string.CompareOrdinal(k, key) > 0);
             return FractionalIndex.KeyBetween(key, upper);
         }
+
         return atStart
             ? FractionalIndex.KeyBetween(null, siblings.Count > 0 ? siblings[0].SortOrder : null)
             : FractionalIndex.KeyAfter(siblings.Count > 0 ? siblings[^1].SortOrder : null);
