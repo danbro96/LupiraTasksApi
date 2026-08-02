@@ -311,7 +311,8 @@ if (!string.IsNullOrWhiteSpace(otlpEndpoint))
             {
                 o.RecordException = true;
                 // Health probes are polled constantly by docker + devops-monitor; their spans add nothing.
-                o.Filter = ctx => ctx.Request.Path != "/livez" && ctx.Request.Path != "/readyz";
+                o.Filter = ctx => ctx.Request.Path != "/livez" && ctx.Request.Path != "/readyz"
+                    && ctx.Request.Path != "/pingz";
             })
             .AddHttpClientInstrumentation()
             .AddOtlpExporter())
@@ -380,6 +381,7 @@ app.MapGet("/", () => TypedResults.Redirect("/scalar"))
 
 app.MapAppHealthChecks(app.Environment);
 
+app.MapPing();
 app.MapMe();
 app.MapUsers();
 app.MapLists();
