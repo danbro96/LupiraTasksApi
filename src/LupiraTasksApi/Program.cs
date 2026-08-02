@@ -214,12 +214,17 @@ authBuilder.AddJwtBearer(opts =>
     };
     opts.Events = new JwtBearerEvents
     {
-        // MCP auth spec: a 401 on /mcp advertises the RFC 9728 metadata so clients can discover the issuer.
+        // MCP auth spec: a 401 on /mcp advertises the RFC 9728 metadata so clients can discover the
+        // issuer. HandleResponse suppresses the default bare "Bearer" header so exactly one goes out.
         OnChallenge = ctx =>
         {
             if (ctx.Request.Path.StartsWithSegments("/mcp"))
-                ctx.Response.Headers.Append("WWW-Authenticate",
-                    $"Bearer resource_metadata=\"{McpResourceMetadata.ResourceMetadataUrl(ctx.Request)}\"");
+            {
+                ctx.HandleResponse();
+                ctx.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                ctx.Response.Headers.WWWAuthenticate =
+                    $"Bearer resource_metadata=\"{McpResourceMetadata.ResourceMetadataUrl(ctx.Request)}\"";
+            }
             return Task.CompletedTask;
         },
     };
@@ -360,14 +365,15 @@ if (args.Contains("--rebuild-projections"))
     return;
 }
 
+// Keep the LAN-only surfaces (/mcp + its discovery metadata, /dav-backend) LAN/WireGuard-only: reject
+// anything that arrived via the Cloudflare Tunnel (backstop behind the ingress not routing them at all).
+// Before auth so a tunnelled probe never even receives a challenge.
+app.UseLanOnlySurfaces();
+
 if (allowedOrigins.Length > 0) app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseRateLimiter();
-
-// Keep the MCP surface LAN/WireGuard-only: reject any /mcp request that arrived via the
-// Cloudflare Tunnel (backstop behind the tunnel ingress not routing /mcp at all).
-app.UseMcpLanOnly();
 
 app.MapOpenApi("/openapi/{documentName}.json").AllowAnonymous();
 app.MapScalarApiReference("/scalar", o => o

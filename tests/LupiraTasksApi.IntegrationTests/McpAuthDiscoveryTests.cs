@@ -31,9 +31,21 @@ public sealed class McpAuthDiscoveryTests(TasksApiTestFactory factory) : Integra
         var resp = await anon.GetAsync("/mcp");
         Assert.Equal(HttpStatusCode.Unauthorized, resp.StatusCode);
 
-        var challenges = resp.Headers.WwwAuthenticate.Select(h => h.ToString()).ToList();
-        Assert.Contains(challenges,
-            c => c.Contains("resource_metadata=\"http://localhost/.well-known/oauth-protected-resource/mcp\""));
+        var challenge = Assert.Single(resp.Headers.WwwAuthenticate).ToString();
+        Assert.Contains("resource_metadata=\"http://localhost/.well-known/oauth-protected-resource/mcp\"", challenge);
+    }
+
+    [Theory]
+    [InlineData("/.well-known/oauth-protected-resource")]
+    [InlineData("/.well-known/oauth-protected-resource/mcp")]
+    [InlineData("/mcp")]
+    public async Task Tunnelled_requests_get_404(string path)
+    {
+        var anon = Factory.AnonymousClient();
+        using var req = new HttpRequestMessage(HttpMethod.Get, path);
+        req.Headers.Add("CF-Ray", "test-ray");
+        var resp = await anon.SendAsync(req);
+        Assert.Equal(HttpStatusCode.NotFound, resp.StatusCode);
     }
 
     [Fact]

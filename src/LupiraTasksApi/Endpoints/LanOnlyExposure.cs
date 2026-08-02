@@ -8,12 +8,12 @@ namespace LupiraTasksApi.Endpoints;
 /// answered 404, indistinguishable from "no such route". Plain middleware rather than an endpoint filter
 /// because <c>MapMcp</c>'s streaming endpoint does not run the minimal-API filter pipeline.
 /// </summary>
-internal static class McpExposure
+internal static class LanOnlyExposure
 {
-    private static readonly string[] LanOnlyPrefixes = ["/mcp", "/dav-backend"];
+    private static readonly string[] LanOnlyPrefixes = ["/mcp", "/dav-backend", "/.well-known/oauth-protected-resource"];
     private static readonly string[] CloudflareHeaders = ["CF-Ray", "CF-Connecting-IP"];
 
-    public static IApplicationBuilder UseMcpLanOnly(this WebApplication app)
+    public static IApplicationBuilder UseLanOnlySurfaces(this WebApplication app)
     {
         return app.Use(async (ctx, next) =>
         {
