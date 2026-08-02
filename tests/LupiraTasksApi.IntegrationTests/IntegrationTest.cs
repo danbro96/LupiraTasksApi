@@ -81,10 +81,10 @@ public abstract class IntegrationTest(TasksApiTestFactory factory) : IAsyncLifet
         return await ReadAsync<ListResponse>(resp);
     }
 
-    protected static async Task<ItemResponse> CreateItemAsync(HttpClient api, Guid listId, string title = "Milk", string sortOrder = "a0")
+    protected static async Task<ItemResponse> CreateItemAsync(HttpClient api, Guid listId, string title = "Milk", string sortOrder = "a0", DateTimeOffset? dueAt = null)
     {
         var resp = await SendJson(api, HttpMethod.Post, $"/lists/{listId}/items",
-            new CreateItemRequest { Id = Guid.CreateVersion7(), Title = title, SortOrder = sortOrder });
+            new CreateItemRequest { Id = Guid.CreateVersion7(), Title = title, SortOrder = sortOrder, DueAt = dueAt });
         resp.EnsureSuccessStatusCode();
         return await ReadAsync<ItemResponse>(resp);
     }

@@ -66,11 +66,13 @@ public sealed class ItemService
     }
 
     /// <summary>Search live items across every list the caller is a member of (archived lists included),
-    /// filtered by an optional case-insensitive title substring + completion/status. The membership predicate
-    /// scopes results to the caller's own + shared lists; no per-list role beyond Viewer is needed. Ordered by
-    /// title for a stable candidate list. Backs the cross-list REST <c>GET /items</c> search.</summary>
+    /// filtered by an optional case-insensitive title substring + completion/status + a half-open
+    /// <c>[dueFrom, dueTo)</c> window on <c>DueAt</c> (either bound implies <c>DueAt</c> is set). The membership
+    /// predicate scopes results to the caller's own + shared lists; no per-list role beyond Viewer is needed.
+    /// Ordered by title for a stable candidate list. Backs the cross-list REST <c>GET /items</c> search.</summary>
     public async Task<OpResult<ItemCollectionResponse>> SearchAsync(
-        Caller caller, string? query, bool? completed, ItemStatus? status, CancellationToken ct)
+        Caller caller, string? query, bool? completed, ItemStatus? status,
+        DateTimeOffset? dueFrom, DateTimeOffset? dueTo, CancellationToken ct)
     {
         var principalId = caller.PrincipalId!.Value;
         var listIds = await _session.Query<TodoList>()
@@ -88,6 +90,10 @@ public sealed class ItemService
         IEnumerable<Item> filtered = items;
         if (completed is { } c) filtered = filtered.Where(i => i.Completed == c);
         if (status is { } st) filtered = filtered.Where(i => i.Status == st);
+        if (dueFrom is not null || dueTo is not null)
+            filtered = filtered.Where(i => i.DueAt is { } d
+                && (dueFrom is null || d >= dueFrom)
+                && (dueTo is null || d < dueTo));
         if (!string.IsNullOrWhiteSpace(query))
             filtered = filtered.Where(i => i.Title.Contains(query, StringComparison.OrdinalIgnoreCase));
 

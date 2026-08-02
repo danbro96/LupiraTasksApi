@@ -11,10 +11,10 @@ public static class ItemsEndpoints
         // Cross-list surface (address a task by id alone; the caller need not know its list).
         var top = app.MapGroup("/items").RequireAuthorization().WithTags("Items");
 
-        top.MapGet("/", (string? query, bool? completed, ItemStatus? status, ItemsHandler h, CancellationToken ct) =>
-                h.SearchAsync(query, completed, status, ct))
+        top.MapGet("/", (string? query, bool? completed, ItemStatus? status, DateTimeOffset? dueFrom, DateTimeOffset? dueTo, ItemsHandler h, CancellationToken ct) =>
+                h.SearchAsync(query, completed, status, dueFrom, dueTo, ct))
             .WithSummary("Search items across the caller's lists (Viewer+).")
-            .WithDescription("Case-insensitive `query` title substring, optional `completed`/`status`. Spans every list the caller is a member of (archived included).")
+            .WithDescription("Case-insensitive `query` title substring, optional `completed`/`status`. `dueFrom`/`dueTo` bound `dueAt` half-open `[from, to)`; either bound implies `dueAt` is set. Spans every list the caller is a member of (archived included).")
             .Produces<ItemCollectionResponse>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status401Unauthorized);
 

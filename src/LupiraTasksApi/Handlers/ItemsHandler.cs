@@ -44,11 +44,13 @@ public sealed class ItemsHandler
         string? query,
         bool? completed,
         ItemStatus? status,
+        DateTimeOffset? dueFrom,
+        DateTimeOffset? dueTo,
         CancellationToken ct)
     {
         var caller = await _callers.MemberAsync(ct);
         if (caller is null) return TypedResults.Unauthorized();
-        return OpResultMap.OkOnly(await _items.SearchAsync(caller, query, completed, status, ct));
+        return OpResultMap.OkOnly(await _items.SearchAsync(caller, query, completed, status, dueFrom, dueTo, ct));
     }
 
     /// <summary>Edit an item addressed by id alone — the list is resolved server-side (the caller may not

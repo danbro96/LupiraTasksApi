@@ -879,7 +879,7 @@
           "Items"
         ],
         "summary": "Search items across the caller's lists (Viewer+).",
-        "description": "Case-insensitive `query` title substring, optional `completed`/`status`. Spans every list the caller is a member of (archived included).",
+        "description": "Case-insensitive `query` title substring, optional `completed`/`status`. `dueFrom`/`dueTo` bound `dueAt` half-open `[from, to)`; either bound implies `dueAt` is set. Spans every list the caller is a member of (archived included).",
         "parameters": [
           {
             "name": "query",
@@ -900,6 +900,22 @@
             "in": "query",
             "schema": {
               "$ref": "#/components/schemas/ItemStatus"
+            }
+          },
+          {
+            "name": "dueFrom",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "dueTo",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
             }
           }
         ],
@@ -3328,6 +3344,30 @@
           }
         }
       },
+      "PingDto": {
+        "required": [
+          "subject",
+          "audiences"
+        ],
+        "type": "object",
+        "properties": {
+          "subject": {
+            "type": "string"
+          },
+          "audiences": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "email": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
       "ProblemDetails": {
         "type": "object",
         "properties": {
@@ -3878,6 +3918,9 @@
     }
   },
   "tags": [
+    {
+      "name": "Ping"
+    },
     {
       "name": "Sync"
     },

@@ -31,6 +31,51 @@ public sealed class CrossListItemsTests(TasksApiTestFactory factory) : Integrati
     }
 
     [Fact]
+    public async Task Search_bounds_dueAt_half_open_and_excludes_undated()
+    {
+        var alice = Factory.ApiClient("alice@x.test");
+        var list = await CreateListAsync(alice, "Deadlines");
+
+        var from = new DateTimeOffset(2026, 8, 3, 0, 0, 0, TimeSpan.Zero);
+        var to = new DateTimeOffset(2026, 8, 10, 0, 0, 0, TimeSpan.Zero);
+
+        await CreateItemAsync(alice, list.Id, "On from boundary", dueAt: from);
+        await CreateItemAsync(alice, list.Id, "Inside", dueAt: from.AddDays(3));
+        await CreateItemAsync(alice, list.Id, "On to boundary", dueAt: to);
+        await CreateItemAsync(alice, list.Id, "Before", dueAt: from.AddDays(-1));
+        await CreateItemAsync(alice, list.Id, "Undated");
+
+        static string Iso(DateTimeOffset d) => Uri.EscapeDataString(d.ToString("O"));
+
+        var window = await ReadAsync<ItemCollectionResponse>(
+            await alice.GetAsync($"/items?dueFrom={Iso(from)}&dueTo={Iso(to)}"));
+        Assert.Equal(["Inside", "On from boundary"], window.Items.Select(i => i.Title).OrderBy(t => t));
+
+        var fromOnly = await ReadAsync<ItemCollectionResponse>(await alice.GetAsync($"/items?dueFrom={Iso(from)}"));
+        Assert.Equal(["Inside", "On from boundary", "On to boundary"], fromOnly.Items.Select(i => i.Title).OrderBy(t => t));
+
+        var toOnly = await ReadAsync<ItemCollectionResponse>(await alice.GetAsync($"/items?dueTo={Iso(to)}"));
+        Assert.Equal(["Before", "Inside", "On from boundary"], toOnly.Items.Select(i => i.Title).OrderBy(t => t));
+    }
+
+    [Fact]
+    public async Task Search_composes_due_window_with_completion()
+    {
+        var alice = Factory.ApiClient("alice@x.test");
+        var list = await CreateListAsync(alice, "Deadlines");
+        var due = new DateTimeOffset(2026, 8, 5, 12, 0, 0, TimeSpan.Zero);
+        await CreateItemAsync(alice, list.Id, "Still open", dueAt: due);
+        var done = await CreateItemAsync(alice, list.Id, "Already done", dueAt: due);
+        await SendJson(alice, HttpMethod.Post, $"/lists/{list.Id}/items/{done.Id}/complete");
+
+        static string Iso(DateTimeOffset d) => Uri.EscapeDataString(d.ToString("O"));
+
+        var open = await ReadAsync<ItemCollectionResponse>(await alice.GetAsync(
+            $"/items?completed=false&dueFrom={Iso(due.AddDays(-1))}&dueTo={Iso(due.AddDays(1))}"));
+        Assert.Equal("Still open", Assert.Single(open.Items).Title);
+    }
+
+    [Fact]
     public async Task Search_excludes_lists_the_caller_is_not_a_member_of()
     {
         var alice = Factory.ApiClient("alice@x.test");
