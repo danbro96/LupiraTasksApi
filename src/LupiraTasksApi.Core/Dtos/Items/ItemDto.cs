@@ -4,7 +4,7 @@ using LupiraTasksApi.Core.Domain;
 namespace LupiraTasksApi.Core.Dtos.Items;
 
 /// <summary>An item's current snapshot. Clients nest by <see cref="ParentItemId"/>.</summary>
-public sealed class ItemResponse
+public sealed class ItemDto
 {
     public required Guid Id { get; set; }
 

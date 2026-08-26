@@ -23,7 +23,7 @@ public static class ItemsEndpoints
             .WithIdempotencyKey()
             .WithSummary("Edit item fields addressed by id (Editor+); the list is resolved server-side.")
             .WithDescription("Same body as the list-scoped PATCH (`*Provided` flags). 404 if no such item or the caller can't edit its list.")
-            .Produces<ItemResponse>(StatusCodes.Status200OK)
+            .Produces<ItemDto>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status404NotFound)
             .WithName("UpdateItem");
@@ -33,7 +33,7 @@ public static class ItemsEndpoints
             .WithIdempotencyKey()
             .WithSummary("Set an item's metadata addressed by id (Editor+); the list is resolved server-side.")
             .WithDescription("Body `{ metadata (JSON object or null), occurredAt? }`. Whole-field LWW. 404 if no such item or the caller can't edit its list.")
-            .Produces<ItemResponse>(StatusCodes.Status200OK)
+            .Produces<ItemDto>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status404NotFound)
             .WithName("SetItemMetadata");
@@ -63,7 +63,7 @@ public static class ItemsEndpoints
             .WithIdempotencyKey()
             .WithSummary("Add an item (Editor+).")
             .WithDescription("Body `{ id (GUIDv7), title, parentItemId?, dueAt?, assigneeEmail?, quantity?, unit?, priority? (0..9), tagIds?, sortOrder, occurredAt? }`. Re-sending an existing id is idempotent.")
-            .Produces<ItemResponse>(StatusCodes.Status200OK)
+            .Produces<ItemDto>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status404NotFound)
             .WithName("CreateListItem");
@@ -71,7 +71,7 @@ public static class ItemsEndpoints
         group.MapGet("/{itemId:guid}", (Guid listId, Guid itemId, ItemsHandler h, CancellationToken ct) =>
                 h.GetAsync(listId, itemId, ct))
             .WithSummary("Get a single item (Viewer+).")
-            .Produces<ItemResponse>(StatusCodes.Status200OK)
+            .Produces<ItemDto>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status404NotFound)
             .WithName("GetItem");
 
@@ -80,7 +80,7 @@ public static class ItemsEndpoints
             .WithIdempotencyKey()
             .WithSummary("Edit item fields (Editor+).")
             .WithDescription("One event per changed field. Use the `*Provided` flags so a null can mean 'clear' rather than 'unchanged' (e.g. `priority` 0..9 with `priorityProvided`). Tags via `addTagIds`/`removeTagIds`.")
-            .Produces<ItemResponse>(StatusCodes.Status200OK)
+            .Produces<ItemDto>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status404NotFound)
             .WithName("UpdateListItem");
@@ -89,7 +89,7 @@ public static class ItemsEndpoints
                 h.CompleteAsync(ctx, listId, itemId, body, ct))
             .WithIdempotencyKey()
             .WithSummary("Mark an item complete (Editor+).")
-            .Produces<ItemResponse>(StatusCodes.Status200OK)
+            .Produces<ItemDto>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status404NotFound)
             .WithName("CompleteItem");
 
@@ -97,7 +97,7 @@ public static class ItemsEndpoints
                 h.ReopenAsync(ctx, listId, itemId, body, ct))
             .WithIdempotencyKey()
             .WithSummary("Reopen a completed item (Editor+).")
-            .Produces<ItemResponse>(StatusCodes.Status200OK)
+            .Produces<ItemDto>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status404NotFound)
             .WithName("ReopenItem");
 
@@ -107,7 +107,7 @@ public static class ItemsEndpoints
             .WithSummary("Set an item's lifecycle status (Editor+).")
             .WithDescription("Body `{ status (Open|InProgress|Blocked|Waiting|Done|Cancelled), reason?, occurredAt? }`. " +
                 "`Done` is equivalent to completing the item; `completed` is the derived `status == Done`.")
-            .Produces<ItemResponse>(StatusCodes.Status200OK)
+            .Produces<ItemDto>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status404NotFound)
             .WithName("SetItemStatus");
@@ -117,7 +117,7 @@ public static class ItemsEndpoints
             .WithIdempotencyKey()
             .WithSummary("Set an item's free-form JSON metadata (Editor+).")
             .WithDescription("Body `{ metadata (JSON object or null), occurredAt? }`. Server-side bookkeeping; never in VTODO or share links. Whole-field LWW.")
-            .Produces<ItemResponse>(StatusCodes.Status200OK)
+            .Produces<ItemDto>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status404NotFound)
             .WithName("SetListItemMetadata");
@@ -127,7 +127,7 @@ public static class ItemsEndpoints
             .WithIdempotencyKey()
             .WithSummary("Reparent / reorder an item (Editor+).")
             .WithDescription("Carries the fractional-index `sortOrder` string and optional `parentItemId`.")
-            .Produces<ItemResponse>(StatusCodes.Status200OK)
+            .Produces<ItemDto>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status404NotFound)
             .WithName("MoveItem");

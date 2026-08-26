@@ -3,7 +3,7 @@ using LupiraTasksApi.Core.Domain;
 namespace LupiraTasksApi.Core.Dtos.Shares;
 
 /// <summary>A share link as the owner sees it, including the opaque <see cref="Token"/> and ready-to-copy <see cref="Url"/>.</summary>
-public sealed class ShareResponse
+public sealed class ShareDto
 {
     public required Guid ShareId { get; set; }
 

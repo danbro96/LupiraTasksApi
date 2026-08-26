@@ -15,10 +15,10 @@ public sealed class ItemMetadataTests(TasksApiTestFactory factory) : Integration
     private static readonly DateTimeOffset T0 = new(2026, 6, 6, 12, 0, 0, TimeSpan.Zero);
     private static DateTimeOffset At(int seconds) => T0.AddSeconds(seconds);
 
-    private static Task<ItemResponse> SetMetadataAsync(HttpClient api, Guid listId, Guid itemId, JsonNode? metadata, DateTimeOffset? at = null) =>
+    private static Task<ItemDto> SetMetadataAsync(HttpClient api, Guid listId, Guid itemId, JsonNode? metadata, DateTimeOffset? at = null) =>
         SendJson(api, HttpMethod.Post, $"/lists/{listId}/items/{itemId}/metadata",
             new SetMetadataRequest { Metadata = metadata, OccurredAt = at })
-            .ContinueWith(t => ReadAsync<ItemResponse>(t.Result.EnsureSuccessStatusCode())).Unwrap();
+            .ContinueWith(t => ReadAsync<ItemDto>(t.Result.EnsureSuccessStatusCode())).Unwrap();
 
     [Fact]
     public async Task Metadata_round_trips_and_can_be_cleared()
@@ -31,7 +31,7 @@ public sealed class ItemMetadataTests(TasksApiTestFactory factory) : Integration
         var set = await SetMetadataAsync(api, list.Id, item.Id, JsonNode.Parse("""{"alertId":"abc","checks":3}"""));
         Assert.Equal("""{"alertId":"abc","checks":3}""", set.Metadata!.ToJsonString());
 
-        var reloaded = await ReadAsync<ItemResponse>(await api.GetAsync($"/lists/{list.Id}/items/{item.Id}"));
+        var reloaded = await ReadAsync<ItemDto>(await api.GetAsync($"/lists/{list.Id}/items/{item.Id}"));
         Assert.Equal("""{"alertId":"abc","checks":3}""", reloaded.Metadata!.ToJsonString());
 
         var cleared = await SetMetadataAsync(api, list.Id, item.Id, null);

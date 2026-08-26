@@ -94,7 +94,7 @@ public sealed class CrossListItemsTests(TasksApiTestFactory factory) : Integrati
         var list = await CreateListAsync(alice);
         var item = await CreateItemAsync(alice, list.Id, "Draft title");
 
-        var updated = await ReadAsync<ItemResponse>(await SendJson(alice, HttpMethod.Patch, $"/items/{item.Id}",
+        var updated = await ReadAsync<ItemDto>(await SendJson(alice, HttpMethod.Patch, $"/items/{item.Id}",
             new UpdateItemRequest { Title = "Final title", TitleProvided = true }));
         Assert.Equal("Final title", updated.Title);
         Assert.Equal(list.Id, updated.ListId);
@@ -127,7 +127,7 @@ public sealed class CrossListItemsTests(TasksApiTestFactory factory) : Integrati
         var item = await CreateItemAsync(alice, list.Id, "Pay bill");
 
         var body = new SetMetadataRequest { Metadata = new JsonObject { ["kind"] = "bill", ["invoiceNumber"] = "INV-42" } };
-        var updated = await ReadAsync<ItemResponse>(await SendJson(alice, HttpMethod.Post, $"/items/{item.Id}/metadata", body));
+        var updated = await ReadAsync<ItemDto>(await SendJson(alice, HttpMethod.Post, $"/items/{item.Id}/metadata", body));
         Assert.Equal("INV-42", updated.Metadata?["invoiceNumber"]?.GetValue<string>());
     }
 

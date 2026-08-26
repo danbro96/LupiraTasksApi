@@ -29,7 +29,7 @@ public sealed class ShareRedeemTests(TasksApiTestFactory factory) : IntegrationT
         Assert.Equal(ListRole.Editor, redeemed.Role);
 
         // Bob is now a member: a previously-forbidden GET on the list now succeeds.
-        var view = await ReadAsync<ListResponse>(await bob.GetAsync($"/lists/{list.Id}"));
+        var view = await ReadAsync<ListDto>(await bob.GetAsync($"/lists/{list.Id}"));
         Assert.Contains(view.Members, m => m.Email == "bob@x.test" && m.Role == ListRole.Editor);
     }
 
@@ -60,7 +60,7 @@ public sealed class ShareRedeemTests(TasksApiTestFactory factory) : IntegrationT
         again.EnsureSuccessStatusCode();
         Assert.Equal(ListRole.Editor, (await ReadAsync<RedeemShareResponse>(again)).Role);
 
-        var view = await ReadAsync<ListResponse>(await bob.GetAsync($"/lists/{list.Id}"));
+        var view = await ReadAsync<ListDto>(await bob.GetAsync($"/lists/{list.Id}"));
         Assert.Equal(1, view.Members.Count(m => m.Email == "bob@x.test"));
     }
 

@@ -107,25 +107,25 @@ public sealed class ItemService
             new ItemCollectionResponse { Items = await ToResponsesAsync(ordered, ct) });
     }
 
-    public async Task<OpResult<ItemResponse>> CreateAsync(
+    public async Task<OpResult<ItemDto>> CreateAsync(
         Caller caller, Guid? cmdId, Guid listId, CreateItemRequest request, CancellationToken ct)
     {
         var access = await _access.AuthorizeAsync(caller, listId, ListRole.Editor, ct);
-        if (!access.Allowed) return OpResult<ItemResponse>.NotFound();
+        if (!access.Allowed) return OpResult<ItemDto>.NotFound();
 
         var title = request.Title?.Trim();
         if (string.IsNullOrEmpty(title) || title.Length > MaxTitleLength)
-            return OpResult<ItemResponse>.Invalid($"Title must be 1..{MaxTitleLength} characters.");
+            return OpResult<ItemDto>.Invalid($"Title must be 1..{MaxTitleLength} characters.");
         if (request.Id == Guid.Empty)
-            return OpResult<ItemResponse>.Invalid("A client-generated `id` (GUIDv7) is required.");
+            return OpResult<ItemDto>.Invalid("A client-generated `id` (GUIDv7) is required.");
         if (string.IsNullOrEmpty(request.SortOrder))
-            return OpResult<ItemResponse>.Invalid("`sortOrder` is required.");
+            return OpResult<ItemDto>.Invalid("`sortOrder` is required.");
         if (request.Quantity is < 0)
-            return OpResult<ItemResponse>.Invalid("`quantity` must be non-negative.");
+            return OpResult<ItemDto>.Invalid("`quantity` must be non-negative.");
         if (request.Priority is < 0 or > 9)
-            return OpResult<ItemResponse>.Invalid("`priority` must be 0..9.");
+            return OpResult<ItemDto>.Invalid("`priority` must be 0..9.");
         if (request.ParentItemId == request.Id)
-            return OpResult<ItemResponse>.Invalid("An item cannot be its own parent.");
+            return OpResult<ItemDto>.Invalid("An item cannot be its own parent.");
 
         var commandId = cmdId ?? Guid.CreateVersion7();
         var seen = await _idempotency.SeenAsync(commandId, ct);
@@ -135,7 +135,7 @@ public sealed class ItemService
             // AggregateId), ignoring the body id — a retried create with the same key but a
             // different body id must NOT spawn a second stream.
             var prior = await _session.LoadAsync<Item>(seen.AggregateId, ct);
-            if (prior is not null) return OpResult<ItemResponse>.Ok(await ToResponseAsync(prior, ct));
+            if (prior is not null) return OpResult<ItemDto>.Ok(await ToResponseAsync(prior, ct));
         }
 
         var occurredAt = request.OccurredAt ?? DateTimeOffset.UtcNow;
@@ -177,36 +177,36 @@ public sealed class ItemService
         {
             // Lost the dedup race on the command id — another create with this key committed.
             var prior = await ReResolveCreatedAsync(commandId, request.Id, ct);
-            if (prior is not null) return OpResult<ItemResponse>.Ok(await ToResponseAsync(prior, ct));
+            if (prior is not null) return OpResult<ItemDto>.Ok(await ToResponseAsync(prior, ct));
         }
 
         var item = await _session.LoadAsync<Item>(request.Id, ct);
         return item is null
-            ? OpResult<ItemResponse>.Invalid("Item could not be created.")
-            : OpResult<ItemResponse>.Ok(await ToResponseAsync(item, ct));
+            ? OpResult<ItemDto>.Invalid("Item could not be created.")
+            : OpResult<ItemDto>.Ok(await ToResponseAsync(item, ct));
     }
 
-    public async Task<OpResult<ItemResponse>> GetAsync(Caller caller, Guid listId, Guid itemId, CancellationToken ct)
+    public async Task<OpResult<ItemDto>> GetAsync(Caller caller, Guid listId, Guid itemId, CancellationToken ct)
     {
         var access = await _access.AuthorizeAsync(caller, listId, ListRole.Viewer, ct);
-        if (!access.Allowed) return OpResult<ItemResponse>.NotFound();
+        if (!access.Allowed) return OpResult<ItemDto>.NotFound();
 
         var item = await LoadInListAsync(itemId, listId, ct);
-        return item is null ? OpResult<ItemResponse>.NotFound() : OpResult<ItemResponse>.Ok(await ToResponseAsync(item, ct));
+        return item is null ? OpResult<ItemDto>.NotFound() : OpResult<ItemDto>.Ok(await ToResponseAsync(item, ct));
     }
 
-    public async Task<OpResult<ItemResponse>> UpdateAsync(
+    public async Task<OpResult<ItemDto>> UpdateAsync(
         Caller caller, Guid? cmdId, Guid listId, Guid itemId, UpdateItemRequest request, CancellationToken ct)
     {
         var access = await _access.AuthorizeAsync(caller, listId, ListRole.Editor, ct);
-        if (!access.Allowed) return OpResult<ItemResponse>.NotFound();
+        if (!access.Allowed) return OpResult<ItemDto>.NotFound();
 
         var item = await LoadInListAsync(itemId, listId, ct);
-        if (item is null) return OpResult<ItemResponse>.NotFound();
+        if (item is null) return OpResult<ItemDto>.NotFound();
 
         var commandId = cmdId ?? Guid.CreateVersion7();
         var seen = await _idempotency.SeenAsync(commandId, ct);
-        if (seen is not null) return OpResult<ItemResponse>.Ok(await ToResponseAsync(item, ct));
+        if (seen is not null) return OpResult<ItemDto>.Ok(await ToResponseAsync(item, ct));
 
         var occurredAt = request.OccurredAt ?? DateTimeOffset.UtcNow;
         var events = new List<object>();
@@ -215,7 +215,7 @@ public sealed class ItemService
         {
             var title = request.Title?.Trim();
             if (string.IsNullOrEmpty(title) || title.Length > MaxTitleLength)
-                return OpResult<ItemResponse>.Invalid($"Title must be 1..{MaxTitleLength} characters.");
+                return OpResult<ItemDto>.Invalid($"Title must be 1..{MaxTitleLength} characters.");
             events.Add(new ItemRenamed(itemId, title, occurredAt, commandId));
         }
 
@@ -233,14 +233,14 @@ public sealed class ItemService
         if (request.QuantityProvided)
         {
             if (request.Quantity is < 0)
-                return OpResult<ItemResponse>.Invalid("`quantity` must be non-negative.");
+                return OpResult<ItemDto>.Invalid("`quantity` must be non-negative.");
             events.Add(new ItemQuantitySet(itemId, request.Quantity, request.Unit, occurredAt, commandId));
         }
 
         if (request.PriorityProvided)
         {
             if (request.Priority is < 0 or > 9)
-                return OpResult<ItemResponse>.Invalid("`priority` must be 0..9.");
+                return OpResult<ItemDto>.Invalid("`priority` must be 0..9.");
             events.Add(new ItemPrioritySet(itemId, request.Priority, occurredAt, commandId));
         }
 
@@ -256,40 +256,40 @@ public sealed class ItemService
                 events.Add(new ItemTagRemoved(itemId, tagId, occurredAt, commandId));
         }
 
-        if (events.Count == 0) return OpResult<ItemResponse>.Ok(await ToResponseAsync(item, ct));
+        if (events.Count == 0) return OpResult<ItemDto>.Ok(await ToResponseAsync(item, ct));
 
         EventActor.Stamp(_session, caller.Actor, caller.ActorEmail, commandId);
         await _idempotency.AppendDedupAsync(commandId, itemId, events, ct);
 
         var updated = await _session.LoadAsync<Item>(itemId, ct);
-        return OpResult<ItemResponse>.Ok(await ToResponseAsync(updated!, ct));
+        return OpResult<ItemDto>.Ok(await ToResponseAsync(updated!, ct));
     }
 
-    public Task<OpResult<ItemResponse>> CompleteAsync(
+    public Task<OpResult<ItemDto>> CompleteAsync(
         Caller caller, Guid? cmdId, Guid listId, Guid itemId, DateTimeOffset? occurredAt, CancellationToken ct) =>
         SingleEventAsync(caller, cmdId, listId, itemId, occurredAt, (id, at, cmd) => new ItemCompleted(id, at, cmd), ct);
 
-    public Task<OpResult<ItemResponse>> ReopenAsync(
+    public Task<OpResult<ItemDto>> ReopenAsync(
         Caller caller, Guid? cmdId, Guid listId, Guid itemId, DateTimeOffset? occurredAt, CancellationToken ct) =>
         SingleEventAsync(caller, cmdId, listId, itemId, occurredAt, (id, at, cmd) => new ItemReopened(id, at, cmd), ct);
 
-    public Task<OpResult<ItemResponse>> SetStatusAsync(
+    public Task<OpResult<ItemDto>> SetStatusAsync(
         Caller caller, Guid? cmdId, Guid listId, Guid itemId, ItemStatus status, string? reason, DateTimeOffset? occurredAt, CancellationToken ct) =>
         SingleEventAsync(caller, cmdId, listId, itemId, occurredAt,
             (id, at, cmd) => new ItemStatusChanged(id, status, string.IsNullOrWhiteSpace(reason) ? null : reason.Trim(), at, cmd), ct);
 
-    public Task<OpResult<ItemResponse>> SetMetadataAsync(
+    public Task<OpResult<ItemDto>> SetMetadataAsync(
         Caller caller, Guid? cmdId, Guid listId, Guid itemId, string? metadata, DateTimeOffset? occurredAt, CancellationToken ct) =>
         SingleEventAsync(caller, cmdId, listId, itemId, occurredAt,
             (id, at, cmd) => new ItemMetadataSet(id, metadata, at, cmd), ct);
 
-    public async Task<OpResult<ItemResponse>> MoveAsync(
+    public async Task<OpResult<ItemDto>> MoveAsync(
         Caller caller, Guid? cmdId, Guid listId, Guid itemId, MoveItemRequest request, CancellationToken ct)
     {
         if (string.IsNullOrEmpty(request.SortOrder))
-            return OpResult<ItemResponse>.Invalid("`sortOrder` is required.");
+            return OpResult<ItemDto>.Invalid("`sortOrder` is required.");
         if (request.ParentItemId == itemId)
-            return OpResult<ItemResponse>.Invalid("An item cannot be its own parent.");
+            return OpResult<ItemDto>.Invalid("An item cannot be its own parent.");
         return await SingleEventAsync(caller, cmdId, listId, itemId, request.OccurredAt,
             (id, at, cmd) => new ItemMoved(id, request.ParentItemId, request.SortOrder, at, cmd), ct);
     }
@@ -318,7 +318,7 @@ public sealed class ItemService
         return OpResult.Ok();
     }
 
-    private async Task<OpResult<ItemResponse>> SingleEventAsync(
+    private async Task<OpResult<ItemDto>> SingleEventAsync(
         Caller caller,
         Guid? cmdId,
         Guid listId,
@@ -328,14 +328,14 @@ public sealed class ItemService
         CancellationToken ct)
     {
         var access = await _access.AuthorizeAsync(caller, listId, ListRole.Editor, ct);
-        if (!access.Allowed) return OpResult<ItemResponse>.NotFound();
+        if (!access.Allowed) return OpResult<ItemDto>.NotFound();
 
         var item = await LoadInListAsync(itemId, listId, ct);
-        if (item is null) return OpResult<ItemResponse>.NotFound();
+        if (item is null) return OpResult<ItemDto>.NotFound();
 
         var commandId = cmdId ?? Guid.CreateVersion7();
         var seen = await _idempotency.SeenAsync(commandId, ct);
-        if (seen is not null) return OpResult<ItemResponse>.Ok(await ToResponseAsync(item, ct));
+        if (seen is not null) return OpResult<ItemDto>.Ok(await ToResponseAsync(item, ct));
 
         var occurredAt = occurredAtRaw ?? DateTimeOffset.UtcNow;
         EventActor.Stamp(_session, caller.Actor, caller.ActorEmail, commandId);
@@ -343,7 +343,7 @@ public sealed class ItemService
             commandId, itemId, new[] { makeEvent(itemId, occurredAt, commandId) }, ct);
 
         var updated = await _session.LoadAsync<Item>(itemId, ct);
-        return OpResult<ItemResponse>.Ok(await ToResponseAsync(updated!, ct));
+        return OpResult<ItemDto>.Ok(await ToResponseAsync(updated!, ct));
     }
 
     /// <summary>Resolve an assignee email to a principal id (provisioning a placeholder if unseen);
@@ -356,13 +356,13 @@ public sealed class ItemService
     }
 
     /// <summary>Map an item to its response, resolving assignee + attribution ids to <see cref="PersonRef"/>.</summary>
-    private async Task<ItemResponse> ToResponseAsync(Item item, CancellationToken ct)
+    private async Task<ItemDto> ToResponseAsync(Item item, CancellationToken ct)
     {
         var lookup = await _principals.LookupAsync(PrincipalIdsOf(item), ct);
         return item.ToResponse(lookup);
     }
 
-    private async Task<IReadOnlyList<ItemResponse>> ToResponsesAsync(IReadOnlyList<Item> items, CancellationToken ct)
+    private async Task<IReadOnlyList<ItemDto>> ToResponsesAsync(IReadOnlyList<Item> items, CancellationToken ct)
     {
         var lookup = await _principals.LookupAsync(items.SelectMany(PrincipalIdsOf), ct);
         return items.Select(i => i.ToResponse(lookup)).ToList();

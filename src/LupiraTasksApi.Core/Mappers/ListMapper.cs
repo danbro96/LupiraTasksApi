@@ -12,7 +12,7 @@ namespace LupiraTasksApi.Core.Mappers;
 /// and <c>SortOrder</c>.</summary>
 internal static class ListMapper
 {
-    public static ListResponse ToResponse(this TodoList list, IReadOnlyDictionary<Guid, Principal> principals, Guid callerPrincipalId) => new()
+    public static ListDto ToResponse(this TodoList list, IReadOnlyDictionary<Guid, Principal> principals, Guid callerPrincipalId) => new()
     {
         Id = list.Id,
         Name = list.Name,
@@ -22,17 +22,17 @@ internal static class ListMapper
         Owner = PersonRef.From(list.OwnerPrincipalId, principals)
             ?? new PersonRef { PrincipalId = list.OwnerPrincipalId, Email = string.Empty },
         Access = list.Members.Find(m => m.PrincipalId == callerPrincipalId)?.Role ?? ListRole.Viewer,
-        // The caller's own screen position — never another member's (MemberResponse omits it).
+        // The caller's own screen position — never another member's (MemberDto omits it).
         SortOrder = list.Members.Find(m => m.PrincipalId == callerPrincipalId)?.SortOrder,
         IsArchived = list.IsArchived,
         ArchivedAt = list.ArchivedAt,
         CreatedAt = list.CreatedAt,
         UpdatedAt = list.UpdatedAt,
         Tags = list.Tags
-            .Select(t => new TagResponse { Id = t.Id, Label = t.Label, Color = t.Color })
+            .Select(t => new TagDto { Id = t.Id, Label = t.Label, Color = t.Color })
             .ToList(),
         Members = list.Members
-            .Select(m => new MemberResponse
+            .Select(m => new MemberDto
             {
                 PrincipalId = m.PrincipalId,
                 Email = principals.TryGetValue(m.PrincipalId, out var p) ? p.Email : string.Empty,

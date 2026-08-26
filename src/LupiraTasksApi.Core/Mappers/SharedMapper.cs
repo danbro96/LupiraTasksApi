@@ -13,7 +13,7 @@ namespace LupiraTasksApi.Core.Mappers;
 /// </summary>
 public static class SharedMapper
 {
-    public static SharedItemResponse ToShared(this Item item) => new()
+    public static SharedItemDto ToShared(this Item item) => new()
     {
         Id = item.Id,
         ParentItemId = item.ParentItemId,
@@ -29,8 +29,8 @@ public static class SharedMapper
         SortOrder = item.SortOrder,
     };
 
-    /// <summary>Trim a full <see cref="ItemResponse"/> (returned by the reused ItemService) to the public shape.</summary>
-    public static SharedItemResponse ToShared(this ItemResponse item) => new()
+    /// <summary>Trim a full <see cref="ItemDto"/> (returned by the reused ItemService) to the public shape.</summary>
+    public static SharedItemDto ToShared(this ItemDto item) => new()
     {
         Id = item.Id,
         ParentItemId = item.ParentItemId,
@@ -46,14 +46,14 @@ public static class SharedMapper
         SortOrder = item.SortOrder,
     };
 
-    public static SharedListResponse ToShared(this TodoList list, ShareAccess access, IReadOnlyList<SharedItemResponse> items) => new()
+    public static SharedListResponse ToShared(this TodoList list, ShareAccess access, IReadOnlyList<SharedItemDto> items) => new()
     {
         Name = list.Name,
         Kind = list.Kind,
         Color = list.Color,
         SimplePriority = list.SimplePriority,
         Access = access,
-        Tags = list.Tags.Select(t => new SharedTagResponse { Id = t.Id, Label = t.Label, Color = t.Color }).ToList(),
+        Tags = list.Tags.Select(t => new SharedTagDto { Id = t.Id, Label = t.Label, Color = t.Color }).ToList(),
         Items = items,
     };
 }

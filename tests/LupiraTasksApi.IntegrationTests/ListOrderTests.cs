@@ -16,7 +16,7 @@ public sealed class ListOrderTests(TasksApiTestFactory factory) : IntegrationTes
     private static async Task<HttpResponseMessage> SetOrder(HttpClient api, Guid listId, string sortOrder) =>
         await SendJson(api, HttpMethod.Post, $"/lists/{listId}/order", new SetListOrderRequest { SortOrder = sortOrder });
 
-    private static async Task<List<ListResponse>> Lists(HttpClient api, bool archived = false)
+    private static async Task<List<ListDto>> Lists(HttpClient api, bool archived = false)
     {
         var resp = await ReadAsync<ListCollectionResponse>(
             await api.GetAsync($"/lists?archived={archived.ToString().ToLowerInvariant()}"));
@@ -101,7 +101,7 @@ public sealed class ListOrderTests(TasksApiTestFactory factory) : IntegrationTes
         var resp = await SetOrder(bob, list.Id, "a0");
 
         Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
-        Assert.Equal("a0", (await ReadAsync<ListResponse>(resp)).SortOrder);
+        Assert.Equal("a0", (await ReadAsync<ListDto>(resp)).SortOrder);
     }
 
     [Fact]

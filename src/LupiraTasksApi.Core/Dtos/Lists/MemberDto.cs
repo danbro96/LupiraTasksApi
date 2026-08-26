@@ -3,7 +3,7 @@ using LupiraTasksApi.Core.Domain;
 namespace LupiraTasksApi.Core.Dtos.Lists;
 
 /// <summary>A member of a list: the stable <c>PrincipalId</c> plus resolved <c>Email</c>/<c>DisplayName</c>.</summary>
-public sealed class MemberResponse
+public sealed class MemberDto
 {
     public required Guid PrincipalId { get; set; }
 

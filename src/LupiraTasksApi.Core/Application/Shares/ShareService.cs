@@ -43,24 +43,24 @@ public sealed class ShareService
         _linkBaseUrl = options.Value.LinkBaseUrl.TrimEnd('/');
     }
 
-    public async Task<OpResult<ShareResponse>> CreateAsync(Caller caller, Guid? cmdId, Guid listId, CreateShareRequest request, CancellationToken ct)
+    public async Task<OpResult<ShareDto>> CreateAsync(Caller caller, Guid? cmdId, Guid listId, CreateShareRequest request, CancellationToken ct)
     {
         var access = await _access.AuthorizeAsync(caller, listId, ListRole.Owner, ct);
-        if (!access.Allowed) return OpResult<ShareResponse>.NotFound();
+        if (!access.Allowed) return OpResult<ShareDto>.NotFound();
 
         if (request.ExpiresAt is { } exp && exp <= DateTimeOffset.UtcNow)
-            return OpResult<ShareResponse>.Invalid("`expiresAt` must be in the future.");
+            return OpResult<ShareDto>.Invalid("`expiresAt` must be in the future.");
 
         var label = string.IsNullOrWhiteSpace(request.Label) ? DefaultLabel(request.Access) : request.Label.Trim();
         if (label.Length > MaxLabelLength)
-            return OpResult<ShareResponse>.Invalid($"`label` must be at most {MaxLabelLength} characters.");
+            return OpResult<ShareDto>.Invalid($"`label` must be at most {MaxLabelLength} characters.");
 
         var commandId = cmdId ?? Guid.CreateVersion7();
         var seen = await _idempotency.SeenAsync(commandId, ct);
         if (seen is not null)
         {
             var prior = await _session.LoadAsync<ShareLink>(seen.AggregateId, ct);
-            if (prior is not null) return OpResult<ShareResponse>.Ok(ToResponse(prior));
+            if (prior is not null) return OpResult<ShareDto>.Ok(ToResponse(prior));
         }
 
         var shareId = Guid.CreateVersion7();
@@ -81,13 +81,13 @@ public sealed class ShareService
         catch (DocumentAlreadyExistsException)
         {
             var prior = await ReResolveAsync(commandId, shareId, ct);
-            if (prior is not null) return OpResult<ShareResponse>.Ok(ToResponse(prior));
+            if (prior is not null) return OpResult<ShareDto>.Ok(ToResponse(prior));
         }
 
         var link = await _session.LoadAsync<ShareLink>(shareId, ct);
         return link is null
-            ? OpResult<ShareResponse>.Invalid("Share link could not be created.")
-            : OpResult<ShareResponse>.Ok(ToResponse(link));
+            ? OpResult<ShareDto>.Invalid("Share link could not be created.")
+            : OpResult<ShareDto>.Ok(ToResponse(link));
     }
 
     public async Task<OpResult<ShareCollectionResponse>> ListAsync(Caller caller, Guid listId, CancellationToken ct)
@@ -199,7 +199,7 @@ public sealed class ShareService
         return await _session.LoadAsync<ShareLink>(seen?.AggregateId ?? shareId, ct);
     }
 
-    private ShareResponse ToResponse(ShareLink s) => new()
+    private ShareDto ToResponse(ShareLink s) => new()
     {
         ShareId = s.Id,
         Token = s.Token,

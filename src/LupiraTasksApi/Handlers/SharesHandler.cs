@@ -22,7 +22,7 @@ public sealed class SharesHandler
         _shares = shares;
     }
 
-    public async Task<Results<Ok<ShareResponse>, NotFound, ProblemHttpResult, UnauthorizedHttpResult>> CreateAsync(
+    public async Task<Results<Ok<ShareDto>, NotFound, ProblemHttpResult, UnauthorizedHttpResult>> CreateAsync(
         HttpContext ctx, Guid listId, CreateShareRequest request, CancellationToken ct)
     {
         var caller = await _callers.MemberAsync(ct);

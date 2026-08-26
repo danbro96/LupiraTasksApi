@@ -3,7 +3,7 @@ using LupiraTasksApi.Core.Domain;
 namespace LupiraTasksApi.Core.Dtos.Lists;
 
 /// <summary>Full list metadata including members and tag definitions.</summary>
-public sealed class ListResponse
+public sealed class ListDto
 {
     public required Guid Id { get; set; }
 
@@ -36,7 +36,7 @@ public sealed class ListResponse
 
     public required DateTimeOffset UpdatedAt { get; set; }
 
-    public required IReadOnlyList<TagResponse> Tags { get; set; }
+    public required IReadOnlyList<TagDto> Tags { get; set; }
 
-    public required IReadOnlyList<MemberResponse> Members { get; set; }
+    public required IReadOnlyList<MemberDto> Members { get; set; }
 }

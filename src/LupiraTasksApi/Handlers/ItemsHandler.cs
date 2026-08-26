@@ -56,7 +56,7 @@ public sealed class ItemsHandler
 
     /// <summary>Edit an item addressed by id alone — the list is resolved server-side (the caller may not
     /// know it). Membership is still enforced by the subsequent update (Editor+), so a non-member gets 404.</summary>
-    public async Task<Results<Ok<ItemResponse>, NotFound, ProblemHttpResult, UnauthorizedHttpResult>> UpdateByIdAsync(
+    public async Task<Results<Ok<ItemDto>, NotFound, ProblemHttpResult, UnauthorizedHttpResult>> UpdateByIdAsync(
         HttpContext ctx,
         Guid itemId,
         UpdateItemRequest request,
@@ -71,7 +71,7 @@ public sealed class ItemsHandler
 
     /// <summary>Set an item's metadata addressed by id alone; the list is resolved server-side. Membership
     /// (Editor+) is enforced by the update, so a non-member gets 404.</summary>
-    public async Task<Results<Ok<ItemResponse>, NotFound, ProblemHttpResult, UnauthorizedHttpResult>> SetMetadataByIdAsync(
+    public async Task<Results<Ok<ItemDto>, NotFound, ProblemHttpResult, UnauthorizedHttpResult>> SetMetadataByIdAsync(
         HttpContext ctx,
         Guid itemId,
         SetMetadataRequest body,
@@ -84,7 +84,7 @@ public sealed class ItemsHandler
             await _items.SetMetadataAsync(caller, IdempotencyKey.From(ctx), listId, itemId, body.Metadata?.ToJsonString(), body.OccurredAt, ct));
     }
 
-    public async Task<Results<Ok<ItemResponse>, NotFound, ProblemHttpResult, UnauthorizedHttpResult>> CreateAsync(
+    public async Task<Results<Ok<ItemDto>, NotFound, ProblemHttpResult, UnauthorizedHttpResult>> CreateAsync(
         HttpContext ctx,
         Guid listId,
         CreateItemRequest request,
@@ -96,7 +96,7 @@ public sealed class ItemsHandler
             await _items.CreateAsync(caller, IdempotencyKey.From(ctx), listId, request, ct));
     }
 
-    public async Task<Results<Ok<ItemResponse>, NotFound, UnauthorizedHttpResult>> GetAsync(
+    public async Task<Results<Ok<ItemDto>, NotFound, UnauthorizedHttpResult>> GetAsync(
         Guid listId,
         Guid itemId,
         CancellationToken ct)
@@ -106,7 +106,7 @@ public sealed class ItemsHandler
         return OpResultMap.OkNotFound(await _items.GetAsync(caller, listId, itemId, ct));
     }
 
-    public async Task<Results<Ok<ItemResponse>, NotFound, ProblemHttpResult, UnauthorizedHttpResult>> UpdateAsync(
+    public async Task<Results<Ok<ItemDto>, NotFound, ProblemHttpResult, UnauthorizedHttpResult>> UpdateAsync(
         HttpContext ctx,
         Guid listId,
         Guid itemId,
@@ -119,7 +119,7 @@ public sealed class ItemsHandler
             await _items.UpdateAsync(caller, IdempotencyKey.From(ctx), listId, itemId, request, ct));
     }
 
-    public async Task<Results<Ok<ItemResponse>, NotFound, ProblemHttpResult, UnauthorizedHttpResult>> CompleteAsync(
+    public async Task<Results<Ok<ItemDto>, NotFound, ProblemHttpResult, UnauthorizedHttpResult>> CompleteAsync(
         HttpContext ctx, Guid listId, Guid itemId, ItemTimestampRequest? body, CancellationToken ct)
     {
         var caller = await _callers.MemberAsync(ct);
@@ -128,7 +128,7 @@ public sealed class ItemsHandler
             await _items.CompleteAsync(caller, IdempotencyKey.From(ctx), listId, itemId, body?.OccurredAt, ct));
     }
 
-    public async Task<Results<Ok<ItemResponse>, NotFound, ProblemHttpResult, UnauthorizedHttpResult>> ReopenAsync(
+    public async Task<Results<Ok<ItemDto>, NotFound, ProblemHttpResult, UnauthorizedHttpResult>> ReopenAsync(
         HttpContext ctx, Guid listId, Guid itemId, ItemTimestampRequest? body, CancellationToken ct)
     {
         var caller = await _callers.MemberAsync(ct);
@@ -137,7 +137,7 @@ public sealed class ItemsHandler
             await _items.ReopenAsync(caller, IdempotencyKey.From(ctx), listId, itemId, body?.OccurredAt, ct));
     }
 
-    public async Task<Results<Ok<ItemResponse>, NotFound, ProblemHttpResult, UnauthorizedHttpResult>> SetStatusAsync(
+    public async Task<Results<Ok<ItemDto>, NotFound, ProblemHttpResult, UnauthorizedHttpResult>> SetStatusAsync(
         HttpContext ctx, Guid listId, Guid itemId, SetStatusRequest body, CancellationToken ct)
     {
         var caller = await _callers.MemberAsync(ct);
@@ -146,7 +146,7 @@ public sealed class ItemsHandler
             await _items.SetStatusAsync(caller, IdempotencyKey.From(ctx), listId, itemId, body.Status, body.Reason, body.OccurredAt, ct));
     }
 
-    public async Task<Results<Ok<ItemResponse>, NotFound, ProblemHttpResult, UnauthorizedHttpResult>> SetMetadataAsync(
+    public async Task<Results<Ok<ItemDto>, NotFound, ProblemHttpResult, UnauthorizedHttpResult>> SetMetadataAsync(
         HttpContext ctx, Guid listId, Guid itemId, SetMetadataRequest body, CancellationToken ct)
     {
         var caller = await _callers.MemberAsync(ct);
@@ -155,7 +155,7 @@ public sealed class ItemsHandler
             await _items.SetMetadataAsync(caller, IdempotencyKey.From(ctx), listId, itemId, body.Metadata?.ToJsonString(), body.OccurredAt, ct));
     }
 
-    public async Task<Results<Ok<ItemResponse>, NotFound, ProblemHttpResult, UnauthorizedHttpResult>> MoveAsync(
+    public async Task<Results<Ok<ItemDto>, NotFound, ProblemHttpResult, UnauthorizedHttpResult>> MoveAsync(
         HttpContext ctx, Guid listId, Guid itemId, MoveItemRequest request, CancellationToken ct)
     {
         var caller = await _callers.MemberAsync(ct);

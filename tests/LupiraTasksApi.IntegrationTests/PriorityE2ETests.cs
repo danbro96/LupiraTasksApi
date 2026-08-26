@@ -16,19 +16,19 @@ public sealed class PriorityE2ETests(TasksApiTestFactory factory) : IntegrationT
         var itemId = Guid.CreateVersion7();
         var createResp = await SendJson(alice, HttpMethod.Post, $"/lists/{list.Id}/items",
             new CreateItemRequest { Id = itemId, Title = "Buy milk", SortOrder = "a0", Priority = 3 });
-        var created = await ReadAsync<ItemResponse>(createResp);
+        var created = await ReadAsync<ItemDto>(createResp);
         Assert.Equal(3, created.Priority);
 
-        var patched = await ReadAsync<ItemResponse>(await SendJson(alice, HttpMethod.Patch, $"/lists/{list.Id}/items/{itemId}",
+        var patched = await ReadAsync<ItemDto>(await SendJson(alice, HttpMethod.Patch, $"/lists/{list.Id}/items/{itemId}",
             new UpdateItemRequest { Priority = 7, PriorityProvided = true }));
         Assert.Equal(7, patched.Priority);
 
         // GET reflects the patched value.
-        var fetched = await ReadAsync<ItemResponse>(await alice.GetAsync($"/lists/{list.Id}/items/{itemId}"));
+        var fetched = await ReadAsync<ItemDto>(await alice.GetAsync($"/lists/{list.Id}/items/{itemId}"));
         Assert.Equal(7, fetched.Priority);
 
         // Clearing = setting back to 0 (the default / "none").
-        var cleared = await ReadAsync<ItemResponse>(await SendJson(alice, HttpMethod.Patch, $"/lists/{list.Id}/items/{itemId}",
+        var cleared = await ReadAsync<ItemDto>(await SendJson(alice, HttpMethod.Patch, $"/lists/{list.Id}/items/{itemId}",
             new UpdateItemRequest { Priority = 0, PriorityProvided = true }));
         Assert.Equal(0, cleared.Priority);
     }

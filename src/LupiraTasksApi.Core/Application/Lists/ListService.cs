@@ -67,15 +67,15 @@ public sealed class ListService
         return OpResult<ListCollectionResponse>.Ok(new ListCollectionResponse { Lists = lists });
     }
 
-    public async Task<OpResult<ListResponse>> CreateAsync(Caller caller, Guid? cmdId, CreateListRequest request, CancellationToken ct)
+    public async Task<OpResult<ListDto>> CreateAsync(Caller caller, Guid? cmdId, CreateListRequest request, CancellationToken ct)
     {
         var ownerPrincipalId = caller.PrincipalId!.Value; // member-only surface
 
         var name = request.Name?.Trim();
         if (string.IsNullOrEmpty(name) || name.Length > MaxNameLength)
-            return OpResult<ListResponse>.Invalid($"Name must be 1..{MaxNameLength} characters.");
+            return OpResult<ListDto>.Invalid($"Name must be 1..{MaxNameLength} characters.");
         if (request.Id == Guid.Empty)
-            return OpResult<ListResponse>.Invalid("A client-generated `id` (GUIDv7) is required.");
+            return OpResult<ListDto>.Invalid("A client-generated `id` (GUIDv7) is required.");
 
         var commandId = cmdId ?? Guid.CreateVersion7();
         var seen = await _idempotency.SeenAsync(commandId, ct);
@@ -85,7 +85,7 @@ public sealed class ListService
             // AggregateId), ignoring the body id so a retried create with the same key but a
             // different body id can't spawn a second stream.
             var prior = await _session.LoadAsync<TodoList>(seen.AggregateId, ct);
-            if (prior is not null) return OpResult<ListResponse>.Ok(await ToResponseAsync(prior, caller.PrincipalId!.Value, ct));
+            if (prior is not null) return OpResult<ListDto>.Ok(await ToResponseAsync(prior, caller.PrincipalId!.Value, ct));
         }
 
         EventActor.Stamp(_session, caller.Actor, caller.ActorEmail, commandId);
@@ -108,38 +108,38 @@ public sealed class ListService
         {
             // Lost the dedup race on the command id — return the original aggregate.
             var prior = await ReResolveCreatedAsync(commandId, request.Id, ct);
-            if (prior is not null) return OpResult<ListResponse>.Ok(await ToResponseAsync(prior, caller.PrincipalId!.Value, ct));
+            if (prior is not null) return OpResult<ListDto>.Ok(await ToResponseAsync(prior, caller.PrincipalId!.Value, ct));
         }
 
         var list = await _session.LoadAsync<TodoList>(request.Id, ct);
         return list is null
-            ? OpResult<ListResponse>.Invalid("List could not be created.")
-            : OpResult<ListResponse>.Ok(await ToResponseAsync(list, caller.PrincipalId!.Value, ct));
+            ? OpResult<ListDto>.Invalid("List could not be created.")
+            : OpResult<ListDto>.Ok(await ToResponseAsync(list, caller.PrincipalId!.Value, ct));
     }
 
-    public async Task<OpResult<ListResponse>> GetAsync(Caller caller, Guid listId, CancellationToken ct)
+    public async Task<OpResult<ListDto>> GetAsync(Caller caller, Guid listId, CancellationToken ct)
     {
         var access = await _access.RequireMembershipAsync(listId, caller.PrincipalId!.Value, ListRole.Viewer, ct);
         return access.Allowed
-            ? OpResult<ListResponse>.Ok(await ToResponseAsync(access.List!, caller.PrincipalId!.Value, ct))
-            : OpResult<ListResponse>.NotFound();
+            ? OpResult<ListDto>.Ok(await ToResponseAsync(access.List!, caller.PrincipalId!.Value, ct))
+            : OpResult<ListDto>.NotFound();
     }
 
-    public async Task<OpResult<ListResponse>> UpdateAsync(Caller caller, Guid? cmdId, Guid listId, UpdateListRequest request, CancellationToken ct)
+    public async Task<OpResult<ListDto>> UpdateAsync(Caller caller, Guid? cmdId, Guid listId, UpdateListRequest request, CancellationToken ct)
     {
         var access = await _access.RequireMembershipAsync(listId, caller.PrincipalId!.Value, ListRole.Editor, ct);
-        if (!access.Allowed) return OpResult<ListResponse>.NotFound();
+        if (!access.Allowed) return OpResult<ListDto>.NotFound();
 
         var commandId = cmdId ?? Guid.CreateVersion7();
         var seen = await _idempotency.SeenAsync(commandId, ct);
-        if (seen is not null) return OpResult<ListResponse>.Ok(await ToResponseAsync(access.List!, caller.PrincipalId!.Value, ct));
+        if (seen is not null) return OpResult<ListDto>.Ok(await ToResponseAsync(access.List!, caller.PrincipalId!.Value, ct));
 
         var events = new List<object>();
         var name = request.Name?.Trim();
         if (name is not null)
         {
             if (name.Length is 0 or > MaxNameLength)
-                return OpResult<ListResponse>.Invalid($"Name must be 1..{MaxNameLength} characters.");
+                return OpResult<ListDto>.Invalid($"Name must be 1..{MaxNameLength} characters.");
             events.Add(new ListRenamed(listId, name));
         }
 
@@ -148,19 +148,19 @@ public sealed class ListService
         if (request.SimplePriority is { } simplePriority)
             events.Add(new ListSimplePrioritySet(listId, simplePriority));
 
-        if (events.Count == 0) return OpResult<ListResponse>.Ok(await ToResponseAsync(access.List!, caller.PrincipalId!.Value, ct));
+        if (events.Count == 0) return OpResult<ListDto>.Ok(await ToResponseAsync(access.List!, caller.PrincipalId!.Value, ct));
 
         EventActor.Stamp(_session, caller.Actor, caller.ActorEmail, commandId);
         await _idempotency.AppendDedupAsync(commandId, listId, events, ct);
 
         var updated = await _session.LoadAsync<TodoList>(listId, ct);
-        return OpResult<ListResponse>.Ok(await ToResponseAsync(updated!, caller.PrincipalId!.Value, ct));
+        return OpResult<ListDto>.Ok(await ToResponseAsync(updated!, caller.PrincipalId!.Value, ct));
     }
 
-    public Task<OpResult<ListResponse>> ArchiveAsync(Caller caller, Guid? cmdId, Guid listId, CancellationToken ct) =>
+    public Task<OpResult<ListDto>> ArchiveAsync(Caller caller, Guid? cmdId, Guid listId, CancellationToken ct) =>
         OwnerLifecycleAsync(caller, cmdId, listId, l => new ListArchived(l.Id), ct);
 
-    public Task<OpResult<ListResponse>> RestoreAsync(Caller caller, Guid? cmdId, Guid listId, CancellationToken ct) =>
+    public Task<OpResult<ListDto>> RestoreAsync(Caller caller, Guid? cmdId, Guid listId, CancellationToken ct) =>
         OwnerLifecycleAsync(caller, cmdId, listId, l => new ListRestored(l.Id), ct);
 
     public async Task<OpResult> DeleteAsync(Caller caller, Guid? cmdId, Guid listId, CancellationToken ct)
@@ -180,18 +180,18 @@ public sealed class ListService
         return OpResult.Ok();
     }
 
-    public async Task<OpResult<ListResponse>> AddMemberAsync(Caller caller, Guid? cmdId, Guid listId, AddMemberRequest request, CancellationToken ct)
+    public async Task<OpResult<ListDto>> AddMemberAsync(Caller caller, Guid? cmdId, Guid listId, AddMemberRequest request, CancellationToken ct)
     {
         var target = NormalizeEmail(request.Email);
-        if (target is null) return OpResult<ListResponse>.Invalid("A member email is required.");
+        if (target is null) return OpResult<ListDto>.Invalid("A member email is required.");
 
         // Any member may add another user (direct-add, no invite/accept).
         var access = await _access.RequireMembershipAsync(listId, caller.PrincipalId!.Value, ListRole.Viewer, ct);
-        if (!access.Allowed) return OpResult<ListResponse>.NotFound();
+        if (!access.Allowed) return OpResult<ListDto>.NotFound();
 
         var commandId = cmdId ?? Guid.CreateVersion7();
         var seen = await _idempotency.SeenAsync(commandId, ct);
-        if (seen is not null) return OpResult<ListResponse>.Ok(await ToResponseAsync(access.List!, caller.PrincipalId!.Value, ct));
+        if (seen is not null) return OpResult<ListDto>.Ok(await ToResponseAsync(access.List!, caller.PrincipalId!.Value, ct));
 
         // Resolve the invite email to a principal (provisioning a placeholder if the person hasn't
         // been seen yet); membership is keyed by that id, so a case variant re-adds the same member.
@@ -203,35 +203,35 @@ public sealed class ListService
             commandId, listId, new object[] { new MemberAdded(listId, principal.Id, role) }, ct);
 
         var updated = await _session.LoadAsync<TodoList>(listId, ct);
-        return OpResult<ListResponse>.Ok(await ToResponseAsync(updated!, caller.PrincipalId!.Value, ct));
+        return OpResult<ListDto>.Ok(await ToResponseAsync(updated!, caller.PrincipalId!.Value, ct));
     }
 
-    public async Task<OpResult<ListResponse>> ChangeMemberRoleAsync(Caller caller, Guid? cmdId, Guid listId, Guid targetPrincipalId, UpdateMemberRoleRequest request, CancellationToken ct)
+    public async Task<OpResult<ListDto>> ChangeMemberRoleAsync(Caller caller, Guid? cmdId, Guid listId, Guid targetPrincipalId, UpdateMemberRoleRequest request, CancellationToken ct)
     {
         // Member-but-not-owner → 403; non-member → 404 (don't leak the list).
         var membership = await _access.RequireMembershipAsync(listId, caller.PrincipalId!.Value, ListRole.Viewer, ct);
-        if (!membership.Allowed) return OpResult<ListResponse>.NotFound();
+        if (!membership.Allowed) return OpResult<ListDto>.NotFound();
         if (!AccessResolver.Satisfies(membership.Role, ListRole.Owner))
-            return OpResult<ListResponse>.Forbidden("Only an owner can change member roles.");
+            return OpResult<ListDto>.Forbidden("Only an owner can change member roles.");
 
         var members = membership.List!.Members;
         var targetMember = members.Find(m => m.PrincipalId == targetPrincipalId);
-        if (targetMember is null) return OpResult<ListResponse>.NotFound();
+        if (targetMember is null) return OpResult<ListDto>.NotFound();
 
         // Never strand the list without an owner.
         if (request.Role != ListRole.Owner && targetMember.Role == ListRole.Owner && !OtherOwnerExists(members, targetPrincipalId))
-            return OpResult<ListResponse>.Invalid("The list must keep at least one owner.");
+            return OpResult<ListDto>.Invalid("The list must keep at least one owner.");
 
         var commandId = cmdId ?? Guid.CreateVersion7();
         var seen = await _idempotency.SeenAsync(commandId, ct);
-        if (seen is not null) return OpResult<ListResponse>.Ok(await ToResponseAsync(membership.List!, caller.PrincipalId!.Value, ct));
+        if (seen is not null) return OpResult<ListDto>.Ok(await ToResponseAsync(membership.List!, caller.PrincipalId!.Value, ct));
 
         EventActor.Stamp(_session, caller.Actor, caller.ActorEmail, commandId);
         await _idempotency.AppendDedupAsync(
             commandId, listId, new object[] { new MemberRoleChanged(listId, targetPrincipalId, request.Role) }, ct);
 
         var updated = await _session.LoadAsync<TodoList>(listId, ct);
-        return OpResult<ListResponse>.Ok(await ToResponseAsync(updated!, caller.PrincipalId!.Value, ct));
+        return OpResult<ListDto>.Ok(await ToResponseAsync(updated!, caller.PrincipalId!.Value, ct));
     }
 
     public async Task<OpResult> RemoveMemberAsync(Caller caller, Guid? cmdId, Guid listId, Guid targetPrincipalId, CancellationToken ct)
@@ -269,50 +269,50 @@ public sealed class ListService
     /// Set the caller's own position for a list. Viewer+ on purpose: reordering your own lists screen
     /// is a personal view concern, not an edit of the list's contents.
     /// </summary>
-    public async Task<OpResult<ListResponse>> SetOrderAsync(Caller caller, Guid? cmdId, Guid listId, SetListOrderRequest request, CancellationToken ct)
+    public async Task<OpResult<ListDto>> SetOrderAsync(Caller caller, Guid? cmdId, Guid listId, SetListOrderRequest request, CancellationToken ct)
     {
         var access = await _access.RequireMembershipAsync(listId, caller.PrincipalId!.Value, ListRole.Viewer, ct);
-        if (!access.Allowed) return OpResult<ListResponse>.NotFound();
+        if (!access.Allowed) return OpResult<ListDto>.NotFound();
 
         var sortOrder = request.SortOrder?.Trim();
         if (string.IsNullOrEmpty(sortOrder) || sortOrder.Length > MaxSortOrderLength || !sortOrder.All(char.IsAsciiLetterOrDigit))
-            return OpResult<ListResponse>.Invalid($"`sortOrder` must be 1..{MaxSortOrderLength} alphanumeric characters (a fractional-index key).");
+            return OpResult<ListDto>.Invalid($"`sortOrder` must be 1..{MaxSortOrderLength} alphanumeric characters (a fractional-index key).");
 
         var commandId = cmdId ?? Guid.CreateVersion7();
         var seen = await _idempotency.SeenAsync(commandId, ct);
-        if (seen is not null) return OpResult<ListResponse>.Ok(await ToResponseAsync(access.List!, caller.PrincipalId!.Value, ct));
+        if (seen is not null) return OpResult<ListDto>.Ok(await ToResponseAsync(access.List!, caller.PrincipalId!.Value, ct));
 
         EventActor.Stamp(_session, caller.Actor, caller.ActorEmail, commandId);
         await _idempotency.AppendDedupAsync(
             commandId, listId, new object[] { new MemberListOrderSet(listId, caller.PrincipalId!.Value, sortOrder) }, ct);
 
         var updated = await _session.LoadAsync<TodoList>(listId, ct);
-        return OpResult<ListResponse>.Ok(await ToResponseAsync(updated!, caller.PrincipalId!.Value, ct));
+        return OpResult<ListDto>.Ok(await ToResponseAsync(updated!, caller.PrincipalId!.Value, ct));
     }
 
     /// <summary>A member's own list-screen position, or null if they've never reordered it.</summary>
     private static string? SortKeyOf(TodoList list, Guid principalId) =>
         list.Members.Find(m => m.PrincipalId == principalId)?.SortOrder;
 
-    private async Task<OpResult<ListResponse>> OwnerLifecycleAsync(
+    private async Task<OpResult<ListDto>> OwnerLifecycleAsync(
         Caller caller, Guid? cmdId, Guid listId, Func<TodoList, object> makeEvent, CancellationToken ct)
     {
         var access = await _access.RequireMembershipAsync(listId, caller.PrincipalId!.Value, ListRole.Owner, ct);
-        if (!access.Allowed) return OpResult<ListResponse>.NotFound();
+        if (!access.Allowed) return OpResult<ListDto>.NotFound();
 
         var commandId = cmdId ?? Guid.CreateVersion7();
         var seen = await _idempotency.SeenAsync(commandId, ct);
-        if (seen is not null) return OpResult<ListResponse>.Ok(await ToResponseAsync(access.List!, caller.PrincipalId!.Value, ct));
+        if (seen is not null) return OpResult<ListDto>.Ok(await ToResponseAsync(access.List!, caller.PrincipalId!.Value, ct));
 
         EventActor.Stamp(_session, caller.Actor, caller.ActorEmail, commandId);
         await _idempotency.AppendDedupAsync(commandId, listId, new[] { makeEvent(access.List!) }, ct);
 
         var updated = await _session.LoadAsync<TodoList>(listId, ct);
-        return OpResult<ListResponse>.Ok(await ToResponseAsync(updated!, caller.PrincipalId!.Value, ct));
+        return OpResult<ListDto>.Ok(await ToResponseAsync(updated!, caller.PrincipalId!.Value, ct));
     }
 
     /// <summary>Map a list to its response, resolving owner + member principal ids to <see cref="PersonRef"/>.</summary>
-    private async Task<ListResponse> ToResponseAsync(TodoList list, Guid callerPrincipalId, CancellationToken ct)
+    private async Task<ListDto> ToResponseAsync(TodoList list, Guid callerPrincipalId, CancellationToken ct)
     {
         var lookup = await _principals.LookupAsync(PrincipalIdsOf(list), ct);
         return list.ToResponse(lookup, callerPrincipalId);

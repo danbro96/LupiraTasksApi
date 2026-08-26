@@ -73,28 +73,28 @@ public abstract class IntegrationTest(TasksApiTestFactory factory) : IAsyncLifet
     protected static async Task<T> ReadAsync<T>(HttpResponseMessage resp) =>
         (await resp.Content.ReadFromJsonAsync<T>(Json))!;
 
-    protected static async Task<ListResponse> CreateListAsync(HttpClient api, string name = "Groceries", ListKind kind = ListKind.Todo)
+    protected static async Task<ListDto> CreateListAsync(HttpClient api, string name = "Groceries", ListKind kind = ListKind.Todo)
     {
         var resp = await SendJson(api, HttpMethod.Post, "/lists",
             new CreateListRequest { Id = Guid.CreateVersion7(), Name = name, Kind = kind });
         resp.EnsureSuccessStatusCode();
-        return await ReadAsync<ListResponse>(resp);
+        return await ReadAsync<ListDto>(resp);
     }
 
-    protected static async Task<ItemResponse> CreateItemAsync(HttpClient api, Guid listId, string title = "Milk", string sortOrder = "a0", DateTimeOffset? dueAt = null)
+    protected static async Task<ItemDto> CreateItemAsync(HttpClient api, Guid listId, string title = "Milk", string sortOrder = "a0", DateTimeOffset? dueAt = null)
     {
         var resp = await SendJson(api, HttpMethod.Post, $"/lists/{listId}/items",
             new CreateItemRequest { Id = Guid.CreateVersion7(), Title = title, SortOrder = sortOrder, DueAt = dueAt });
         resp.EnsureSuccessStatusCode();
-        return await ReadAsync<ItemResponse>(resp);
+        return await ReadAsync<ItemDto>(resp);
     }
 
-    protected static async Task<ShareResponse> MintShareLinkAsync(HttpClient api, Guid listId, ShareAccess access, string label = "fridge")
+    protected static async Task<ShareDto> MintShareLinkAsync(HttpClient api, Guid listId, ShareAccess access, string label = "fridge")
     {
         var resp = await SendJson(api, HttpMethod.Post, $"/lists/{listId}/shares",
             new CreateShareRequest { Access = access, Label = label });
         resp.EnsureSuccessStatusCode();
-        return await ReadAsync<ShareResponse>(resp);
+        return await ReadAsync<ShareDto>(resp);
     }
 
     protected static string MinimalVtodo(string uid, string summary) =>

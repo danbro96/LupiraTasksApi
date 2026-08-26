@@ -408,7 +408,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ListResponse"
+                  "$ref": "#/components/schemas/ListDto"
                 }
               }
             }
@@ -475,7 +475,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ListResponse"
+                  "$ref": "#/components/schemas/ListDto"
                 }
               }
             }
@@ -560,7 +560,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ListResponse"
+                  "$ref": "#/components/schemas/ListDto"
                 }
               }
             }
@@ -713,7 +713,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ListResponse"
+                  "$ref": "#/components/schemas/ListDto"
                 }
               }
             }
@@ -789,7 +789,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ListResponse"
+                  "$ref": "#/components/schemas/ListDto"
                 }
               }
             }
@@ -838,7 +838,7 @@
           "Lists"
         ],
         "summary": "Set the caller's own position for this list (Viewer+).",
-        "description": "Body `{ sortOrder }` — a fractional-index key generated between the neighbours the list was dropped between. Per-user: other members' ordering is untouched, and this does not count as a change to the list. Returned as `sortOrder` on the caller's `ListResponse`; lists the caller has never ordered come back null and sort by name after the ordered ones.",
+        "description": "Body `{ sortOrder }` — a fractional-index key generated between the neighbours the list was dropped between. Per-user: other members' ordering is untouched, and this does not count as a change to the list. Returned as `sortOrder` on the caller's `ListDto`; lists the caller has never ordered come back null and sort by name after the ordered ones.",
         "operationId": "ReorderListItems",
         "parameters": [
           {
@@ -876,7 +876,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ListResponse"
+                  "$ref": "#/components/schemas/ListDto"
                 }
               }
             }
@@ -973,7 +973,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ListResponse"
+                  "$ref": "#/components/schemas/ListDto"
                 }
               }
             }
@@ -1078,7 +1078,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ListResponse"
+                  "$ref": "#/components/schemas/ListDto"
                 }
               }
             }
@@ -1367,7 +1367,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ItemResponse"
+                  "$ref": "#/components/schemas/ItemDto"
                 }
               }
             }
@@ -1464,7 +1464,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ItemResponse"
+                  "$ref": "#/components/schemas/ItemDto"
                 }
               }
             }
@@ -1664,7 +1664,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ItemResponse"
+                  "$ref": "#/components/schemas/ItemDto"
                 }
               }
             }
@@ -1750,7 +1750,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ItemResponse"
+                  "$ref": "#/components/schemas/ItemDto"
                 }
               }
             }
@@ -1844,7 +1844,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ItemResponse"
+                  "$ref": "#/components/schemas/ItemDto"
                 }
               }
             }
@@ -2040,7 +2040,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ItemResponse"
+                  "$ref": "#/components/schemas/ItemDto"
                 }
               }
             }
@@ -2141,7 +2141,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ItemResponse"
+                  "$ref": "#/components/schemas/ItemDto"
                 }
               }
             }
@@ -2237,7 +2237,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ItemResponse"
+                  "$ref": "#/components/schemas/ItemDto"
                 }
               }
             }
@@ -2343,7 +2343,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ItemResponse"
+                  "$ref": "#/components/schemas/ItemDto"
                 }
               }
             }
@@ -2449,7 +2449,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ItemResponse"
+                  "$ref": "#/components/schemas/ItemDto"
                 }
               }
             }
@@ -2822,7 +2822,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ShareResponse"
+                  "$ref": "#/components/schemas/ShareDto"
                 }
               }
             }
@@ -3129,7 +3129,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SharedItemResponse"
+                  "$ref": "#/components/schemas/SharedItemDto"
                 }
               }
             }
@@ -3244,7 +3244,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SharedItemResponse"
+                  "$ref": "#/components/schemas/SharedItemDto"
                 }
               }
             }
@@ -3459,7 +3459,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SharedItemResponse"
+                  "$ref": "#/components/schemas/SharedItemDto"
                 }
               }
             }
@@ -3570,7 +3570,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SharedItemResponse"
+                  "$ref": "#/components/schemas/SharedItemDto"
                 }
               }
             }
@@ -3675,7 +3675,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SharedItemResponse"
+                  "$ref": "#/components/schemas/SharedItemDto"
                 }
               }
             }
@@ -3969,13 +3969,13 @@
           "items": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/ItemResponse"
+              "$ref": "#/components/schemas/ItemDto"
             }
           }
         },
         "description": "Envelope for a list's items."
       },
-      "ItemResponse": {
+      "ItemDto": {
         "required": [
           "id",
           "listId",
@@ -4015,7 +4015,7 @@
             ]
           },
           "status": {
-            "description": "The lifecycle status; bool ItemResponse.Completed is the derived `Status == Done` convenience.",
+            "description": "The lifecycle status; bool ItemDto.Completed is the derived `Status == Done` convenience.",
             "$ref": "#/components/schemas/ItemStatus"
           },
           "statusReason": {
@@ -4121,7 +4121,7 @@
             ]
           }
         },
-        "description": "An item's current snapshot. Clients nest by Guid? ItemResponse.ParentItemId."
+        "description": "An item's current snapshot. Clients nest by Guid? ItemDto.ParentItemId."
       },
       "ItemStatus": {
         "enum": [
@@ -4158,21 +4158,13 @@
           "lists": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/ListResponse"
+              "$ref": "#/components/schemas/ListDto"
             }
           }
         },
         "description": "Envelope for the caller's lists."
       },
-      "ListKind": {
-        "enum": [
-          "Todo",
-          "Shopping",
-          "Agent"
-        ],
-        "description": "Drives client UI affordances (e.g. shopping lists surface quantity/unit), and distinguishes\n            agent/system-owned lists from a user's own (ListKind.Agent) in queries and UI. A pure label set at\n            creation (carried by `ListCreated`); ownership/membership still govern access."
-      },
-      "ListResponse": {
+      "ListDto": {
         "required": [
           "id",
           "name",
@@ -4211,7 +4203,7 @@
             "$ref": "#/components/schemas/PersonRef"
           },
           "access": {
-            "description": "The caller's own role on this list — server-authoritative, so clients gate owner/editor\n            UI on this instead of matching themselves against IReadOnlyList&lt;MemberResponse&gt; ListResponse.Members.",
+            "description": "The caller's own role on this list — server-authoritative, so clients gate owner/editor\n            UI on this instead of matching themselves against IReadOnlyList&lt;MemberDto&gt; ListDto.Members.",
             "$ref": "#/components/schemas/ListRole"
           },
           "sortOrder": {
@@ -4229,7 +4221,7 @@
               "null",
               "string"
             ],
-            "description": "When the list was archived; null while active. Archived views sort on this rather than\n            DateTimeOffset ListResponse.UpdatedAt, which later edits bump.",
+            "description": "When the list was archived; null while active. Archived views sort on this rather than\n            DateTimeOffset ListDto.UpdatedAt, which later edits bump.",
             "format": "date-time"
           },
           "createdAt": {
@@ -4243,17 +4235,25 @@
           "tags": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/TagResponse"
+              "$ref": "#/components/schemas/TagDto"
             }
           },
           "members": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/MemberResponse"
+              "$ref": "#/components/schemas/MemberDto"
             }
           }
         },
         "description": "Full list metadata including members and tag definitions."
+      },
+      "ListKind": {
+        "enum": [
+          "Todo",
+          "Shopping",
+          "Agent"
+        ],
+        "description": "Drives client UI affordances (e.g. shopping lists surface quantity/unit), and distinguishes\n            agent/system-owned lists from a user's own (ListKind.Agent) in queries and UI. A pure label set at\n            creation (carried by `ListCreated`); ownership/membership still govern access."
       },
       "ListRole": {
         "enum": [
@@ -4263,7 +4263,7 @@
         ],
         "description": "A member's authority on a list. Ordered: Owner &gt; Editor &gt; Viewer."
       },
-      "MemberResponse": {
+      "MemberDto": {
         "required": [
           "principalId",
           "email",
@@ -4601,13 +4601,13 @@
           "shares": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/ShareResponse"
+              "$ref": "#/components/schemas/ShareDto"
             }
           }
         },
         "description": "Envelope for a list's active share links."
       },
-      "SharedItemResponse": {
+      "SharedItemDto": {
         "required": [
           "id",
           "title",
@@ -4717,19 +4717,19 @@
           "tags": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/SharedTagResponse"
+              "$ref": "#/components/schemas/SharedTagDto"
             }
           },
           "items": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/SharedItemResponse"
+              "$ref": "#/components/schemas/SharedItemDto"
             }
           }
         },
         "description": "The public, account-less view of a shared list. Deliberately TRIMMED: it carries no member\nlist, no owner email, and items carry no assignee/creator/completer emails — a public link must\nnot leak family emails. ShareAccess SharedListResponse.Access tells the client whether to show edit controls."
       },
-      "SharedTagResponse": {
+      "SharedTagDto": {
         "required": [
           "id",
           "label",
@@ -4750,7 +4750,7 @@
         },
         "description": "A tag definition as shown on a shared list (no sensitive data)."
       },
-      "ShareResponse": {
+      "ShareDto": {
         "required": [
           "shareId",
           "token",
@@ -4793,7 +4793,7 @@
             "type": "boolean"
           }
         },
-        "description": "A share link as the owner sees it, including the opaque string ShareResponse.Token and ready-to-copy string ShareResponse.Url."
+        "description": "A share link as the owner sees it, including the opaque string ShareDto.Token and ready-to-copy string ShareDto.Url."
       },
       "SyncResponse": {
         "required": [
@@ -4804,12 +4804,12 @@
         "type": "object",
         "properties": {
           "list": {
-            "$ref": "#/components/schemas/ListResponse"
+            "$ref": "#/components/schemas/ListDto"
           },
           "items": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/ItemResponse"
+              "$ref": "#/components/schemas/ItemDto"
             }
           },
           "nextCursor": {
@@ -4820,7 +4820,7 @@
         },
         "description": "A full re-derive of a list and its live items, for the offline delta-pull. v1 is\n\"simplest-correct\": the whole list + all non-deleted items are returned regardless of\nthe `since` cursor, and long SyncResponse.NextCursor is the high-water mark of the items'\nupdate timestamps (the client plumbs the cursor through but the server ignores it for now)."
       },
-      "TagResponse": {
+      "TagDto": {
         "required": [
           "id",
           "label",

@@ -10,7 +10,7 @@ namespace LupiraTasksApi.Core.Mappers;
 /// principal ids to <see cref="PersonRef"/> via a lookup built by the calling service.</summary>
 internal static class ItemMapper
 {
-    public static ItemResponse ToResponse(this Item item, IReadOnlyDictionary<Guid, Principal> principals) => new()
+    public static ItemDto ToResponse(this Item item, IReadOnlyDictionary<Guid, Principal> principals) => new()
     {
         Id = item.Id,
         ListId = item.ListId,

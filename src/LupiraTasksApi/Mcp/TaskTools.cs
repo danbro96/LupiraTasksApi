@@ -99,7 +99,7 @@ public sealed class TaskTools
     {
         var caller = await CallerAsync(ct);
 
-        var lists = new List<ListResponse>();
+        var lists = new List<ListDto>();
         if (listId is { } id)
         {
             var got = await _lists.GetAsync(caller, id, ct);
@@ -437,7 +437,7 @@ public sealed class TaskTools
 
     /// <summary>Resolve the task's list (bare lookup), run the mutation (which re-checks membership), and summarize.</summary>
     private async Task<TaskSummary> MutateAsync(
-        Guid taskId, Func<Caller, Guid, Task<OpResult<ItemResponse>>> op, CancellationToken ct)
+        Guid taskId, Func<Caller, Guid, Task<OpResult<ItemDto>>> op, CancellationToken ct)
     {
         var caller = await CallerAsync(ct);
         var listId = await ListOfAsync(taskId, ct);
@@ -450,7 +450,7 @@ public sealed class TaskTools
         await _items.FindListIdAsync(taskId, ct) ?? throw new McpException($"No task found with id {taskId}.");
 
     /// <summary>Every live task of a list, in sort order — the working set for the tree/sibling maths.</summary>
-    private async Task<IReadOnlyList<ItemResponse>> ItemsAsync(Caller caller, Guid listId, CancellationToken ct) =>
+    private async Task<IReadOnlyList<ItemDto>> ItemsAsync(Caller caller, Guid listId, CancellationToken ct) =>
         Require(await _items.ListAsync(caller, listId, new ItemFilter(null, null, null, null), ct)).Items;
 
     /// <summary>
@@ -459,7 +459,7 @@ public sealed class TaskTools
     /// child can arrive before its parent), so this online-only surface pre-flights it instead. Checked against
     /// the list's readable items, so it can't be used to probe for tasks the caller has no access to.
     /// </summary>
-    private async Task RequireInListAsync(IReadOnlyList<ItemResponse> items, Guid taskId, CancellationToken ct)
+    private async Task RequireInListAsync(IReadOnlyList<ItemDto> items, Guid taskId, CancellationToken ct)
     {
         if (items.Any(i => i.Id == taskId)) return;
         throw new McpException(await _items.FindListIdAsync(taskId, ct) is null
@@ -468,7 +468,7 @@ public sealed class TaskTools
     }
 
     /// <summary>All tasks below <paramref name="taskId"/> in the tree (children, grandchildren, …).</summary>
-    private static HashSet<Guid> Descendants(IReadOnlyList<ItemResponse> items, Guid taskId)
+    private static HashSet<Guid> Descendants(IReadOnlyList<ItemDto> items, Guid taskId)
     {
         var found = new HashSet<Guid>();
         var frontier = new Queue<Guid>([taskId]);
@@ -483,7 +483,7 @@ public sealed class TaskTools
 
     /// <summary>The sort key that puts a task at the requested position among <paramref name="siblings"/>
     /// (ordered, excluding the task itself): after a named one, first, or last.</summary>
-    private static string PositionKey(IReadOnlyList<ItemResponse> siblings, Guid? afterTaskId, bool atStart)
+    private static string PositionKey(IReadOnlyList<ItemDto> siblings, Guid? afterTaskId, bool atStart)
     {
         if (afterTaskId is { } after)
         {
@@ -504,28 +504,28 @@ public sealed class TaskTools
     /// <summary>The highest well-formed sort key among <paramref name="items"/>, or <c>null</c> when there is none.
     /// The DAV seam mints <c>'~'+guid</c> keys, which aren't fractional indices; they sort after every base-62 key,
     /// so skipping them appends to the end of the interleavable chain.</summary>
-    private static string? MaxSortKey(IEnumerable<ItemResponse> items) =>
+    private static string? MaxSortKey(IEnumerable<ItemDto> items) =>
         items.Select(i => i.SortOrder)
             .Where(FractionalIndex.IsValid)
             .OrderBy(s => s, StringComparer.Ordinal)
             .LastOrDefault();
 
-    private async Task<TaskSummary> ToTaskSummaryAsync(Caller caller, Guid listId, ItemResponse item, CancellationToken ct)
+    private async Task<TaskSummary> ToTaskSummaryAsync(Caller caller, Guid listId, ItemDto item, CancellationToken ct)
     {
         var listName = (await _lists.GetAsync(caller, listId, ct)).Value?.Name ?? string.Empty;
         return new TaskSummary(item.Id, listId, listName, item.ParentItemId, item.Title, item.Status, item.Completed, item.DueAt, item.Assignee?.Email, item.Priority, item.Metadata);
     }
 
-    private static TaskSummary Summarize(ListResponse list, ItemResponse item) =>
+    private static TaskSummary Summarize(ListDto list, ItemDto item) =>
         new(item.Id, list.Id, list.Name, item.ParentItemId, item.Title, item.Status, item.Completed, item.DueAt, item.Assignee?.Email, item.Priority, item.Metadata);
 
-    private static ShareLinkSummary ToShareSummary(ShareResponse s) =>
+    private static ShareLinkSummary ToShareSummary(ShareDto s) =>
         new(s.ShareId, s.Token, s.Url, s.Access, s.Label, s.ExpiresAt, s.Revoked);
 
-    private static ListSummary Summarize(Caller caller, ListResponse list) =>
+    private static ListSummary Summarize(Caller caller, ListDto list) =>
         new(list.Id, list.Name, list.Kind, RoleOf(caller, list), list.IsArchived, list.SimplePriority);
 
-    private static ListRole? RoleOf(Caller caller, ListResponse list) =>
+    private static ListRole? RoleOf(Caller caller, ListDto list) =>
         list.Members.FirstOrDefault(m => m.PrincipalId == caller.PrincipalId)?.Role;
 
     /// <summary>Unwrap a successful result or surface the failure to the agent as a tool error.</summary>

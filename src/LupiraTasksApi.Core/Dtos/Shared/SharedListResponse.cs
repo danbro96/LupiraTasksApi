@@ -19,7 +19,7 @@ public sealed class SharedListResponse
 
     public required ShareAccess Access { get; set; }
 
-    public required IReadOnlyList<SharedTagResponse> Tags { get; set; }
+    public required IReadOnlyList<SharedTagDto> Tags { get; set; }
 
-    public required IReadOnlyList<SharedItemResponse> Items { get; set; }
+    public required IReadOnlyList<SharedItemDto> Items { get; set; }
 }

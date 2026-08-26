@@ -16,7 +16,7 @@ public static class SharesEndpoints
             .WithIdempotencyKey()
             .WithSummary("Mint a public share link for a list (Owner).")
             .WithDescription("Body `{ access: 'Read' | 'ReadWrite', label?, expiresAt? }`. Returns the opaque token + a ready-to-copy URL. The link grants account-less access at `/shared/{token}` until revoked or expired.")
-            .Produces<ShareResponse>(StatusCodes.Status200OK)
+            .Produces<ShareDto>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status404NotFound)
             .WithName("CreateShare");

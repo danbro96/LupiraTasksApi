@@ -16,7 +16,7 @@ namespace LupiraTasksApi.Handlers;
 /// Adapter for the public <c>/shared/{token}</c> surface. The request was authenticated by
 /// <see cref="ShareTokenAuthHandler"/>, so the share grant is on the principal's claims; this turns
 /// it into a <c>Caller.ForShare(...)</c> and delegates to the SAME services as the app. Reads map to
-/// the trimmed <see cref="SharedListResponse"/>/<see cref="SharedItemResponse"/> (no emails); writes
+/// the trimmed <see cref="SharedListResponse"/>/<see cref="SharedItemDto"/> (no emails); writes
 /// reuse <see cref="ItemService"/> verbatim (idempotency + LWW) and are gated to read/write links.
 /// </summary>
 public sealed class SharedHandler
@@ -39,23 +39,23 @@ public sealed class SharedHandler
         return OpResultMap.OkNotFound(await _shares.GetSharedListAsync(caller, ct));
     }
 
-    public Task<Results<Ok<SharedItemResponse>, NotFound, ProblemHttpResult, UnauthorizedHttpResult>> AddItemAsync(
+    public Task<Results<Ok<SharedItemDto>, NotFound, ProblemHttpResult, UnauthorizedHttpResult>> AddItemAsync(
         HttpContext ctx, CreateItemRequest body, CancellationToken ct) =>
         WriteAsync(ctx, (caller, listId, cmdId) => _items.CreateAsync(caller, cmdId, listId, body, ct));
 
-    public Task<Results<Ok<SharedItemResponse>, NotFound, ProblemHttpResult, UnauthorizedHttpResult>> UpdateItemAsync(
+    public Task<Results<Ok<SharedItemDto>, NotFound, ProblemHttpResult, UnauthorizedHttpResult>> UpdateItemAsync(
         HttpContext ctx, Guid itemId, UpdateItemRequest body, CancellationToken ct) =>
         WriteAsync(ctx, (caller, listId, cmdId) => _items.UpdateAsync(caller, cmdId, listId, itemId, body, ct));
 
-    public Task<Results<Ok<SharedItemResponse>, NotFound, ProblemHttpResult, UnauthorizedHttpResult>> CompleteAsync(
+    public Task<Results<Ok<SharedItemDto>, NotFound, ProblemHttpResult, UnauthorizedHttpResult>> CompleteAsync(
         HttpContext ctx, Guid itemId, ItemTimestampRequest? body, CancellationToken ct) =>
         WriteAsync(ctx, (caller, listId, cmdId) => _items.CompleteAsync(caller, cmdId, listId, itemId, body?.OccurredAt, ct));
 
-    public Task<Results<Ok<SharedItemResponse>, NotFound, ProblemHttpResult, UnauthorizedHttpResult>> ReopenAsync(
+    public Task<Results<Ok<SharedItemDto>, NotFound, ProblemHttpResult, UnauthorizedHttpResult>> ReopenAsync(
         HttpContext ctx, Guid itemId, ItemTimestampRequest? body, CancellationToken ct) =>
         WriteAsync(ctx, (caller, listId, cmdId) => _items.ReopenAsync(caller, cmdId, listId, itemId, body?.OccurredAt, ct));
 
-    public Task<Results<Ok<SharedItemResponse>, NotFound, ProblemHttpResult, UnauthorizedHttpResult>> MoveAsync(
+    public Task<Results<Ok<SharedItemDto>, NotFound, ProblemHttpResult, UnauthorizedHttpResult>> MoveAsync(
         HttpContext ctx, Guid itemId, MoveItemRequest body, CancellationToken ct) =>
         WriteAsync(ctx, (caller, listId, cmdId) => _items.MoveAsync(caller, cmdId, listId, itemId, body, ct));
 
@@ -70,8 +70,8 @@ public sealed class SharedHandler
     }
 
     /// <summary>Shared item write: require an authenticated read/write share, run the op, trim the result.</summary>
-    private async Task<Results<Ok<SharedItemResponse>, NotFound, ProblemHttpResult, UnauthorizedHttpResult>> WriteAsync(
-        HttpContext ctx, Func<Caller, Guid, Guid?, Task<OpResult<ItemResponse>>> op)
+    private async Task<Results<Ok<SharedItemDto>, NotFound, ProblemHttpResult, UnauthorizedHttpResult>> WriteAsync(
+        HttpContext ctx, Func<Caller, Guid, Guid?, Task<OpResult<ItemDto>>> op)
     {
         var caller = ShareCaller();
         if (caller is null) return TypedResults.Unauthorized();

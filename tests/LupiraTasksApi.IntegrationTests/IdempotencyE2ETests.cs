@@ -18,8 +18,8 @@ public sealed class IdempotencyE2ETests(TasksApiTestFactory factory) : Integrati
         var key = Guid.CreateVersion7();
         var body = new CreateListRequest { Id = Guid.CreateVersion7(), Name = "Groceries", Kind = ListKind.Todo };
 
-        var first = await ReadAsync<ListResponse>(await SendJson(alice, HttpMethod.Post, "/lists", body, key));
-        var second = await ReadAsync<ListResponse>(await SendJson(alice, HttpMethod.Post, "/lists", body, key));
+        var first = await ReadAsync<ListDto>(await SendJson(alice, HttpMethod.Post, "/lists", body, key));
+        var second = await ReadAsync<ListDto>(await SendJson(alice, HttpMethod.Post, "/lists", body, key));
 
         Assert.Equal(first.Id, second.Id);
         var all = await ReadAsync<ListCollectionResponse>(await alice.GetAsync("/lists"));
@@ -32,9 +32,9 @@ public sealed class IdempotencyE2ETests(TasksApiTestFactory factory) : Integrati
         var alice = Factory.ApiClient("alice@x.test");
         var key = Guid.CreateVersion7();
 
-        var original = await ReadAsync<ListResponse>(await SendJson(alice, HttpMethod.Post, "/lists",
+        var original = await ReadAsync<ListDto>(await SendJson(alice, HttpMethod.Post, "/lists",
             new CreateListRequest { Id = Guid.CreateVersion7(), Name = "A", Kind = ListKind.Todo }, key));
-        var replay = await ReadAsync<ListResponse>(await SendJson(alice, HttpMethod.Post, "/lists",
+        var replay = await ReadAsync<ListDto>(await SendJson(alice, HttpMethod.Post, "/lists",
             new CreateListRequest { Id = Guid.CreateVersion7(), Name = "B", Kind = ListKind.Todo }, key));
 
         Assert.Equal(original.Id, replay.Id);   // the new body id is ignored on replay

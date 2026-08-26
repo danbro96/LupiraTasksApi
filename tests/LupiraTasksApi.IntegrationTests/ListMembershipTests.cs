@@ -11,8 +11,8 @@ namespace LupiraTasksApi.IntegrationTests;
 /// </summary>
 public sealed class ListMembershipTests(TasksApiTestFactory factory) : IntegrationTest(factory)
 {
-    private static async Task<ListResponse> Get(HttpClient api, Guid listId) =>
-        await ReadAsync<ListResponse>(await api.GetAsync($"/lists/{listId}"));
+    private static async Task<ListDto> Get(HttpClient api, Guid listId) =>
+        await ReadAsync<ListDto>(await api.GetAsync($"/lists/{listId}"));
 
     [Fact]
     public async Task Add_member_defaults_to_editor_then_role_change_sticks()

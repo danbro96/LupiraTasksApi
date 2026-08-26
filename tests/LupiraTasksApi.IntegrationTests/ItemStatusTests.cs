@@ -26,10 +26,10 @@ public sealed class ItemStatusTests(TasksApiTestFactory factory) : IntegrationTe
     private static readonly DateTimeOffset T0 = new(2026, 6, 6, 12, 0, 0, TimeSpan.Zero);
     private static DateTimeOffset At(int seconds) => T0.AddSeconds(seconds);
 
-    private static Task<ItemResponse> SetStatusAsync(HttpClient api, Guid listId, Guid itemId, ItemStatus status, string? reason = null, DateTimeOffset? at = null) =>
+    private static Task<ItemDto> SetStatusAsync(HttpClient api, Guid listId, Guid itemId, ItemStatus status, string? reason = null, DateTimeOffset? at = null) =>
         SendJson(api, HttpMethod.Post, $"/lists/{listId}/items/{itemId}/status",
             new SetStatusRequest { Status = status, Reason = reason, OccurredAt = at })
-            .ContinueWith(t => ReadAsync<ItemResponse>(t.Result.EnsureSuccessStatusCode())).Unwrap();
+            .ContinueWith(t => ReadAsync<ItemDto>(t.Result.EnsureSuccessStatusCode())).Unwrap();
 
     [Fact]
     public async Task Status_transition_with_reason_round_trips()
@@ -44,7 +44,7 @@ public sealed class ItemStatusTests(TasksApiTestFactory factory) : IntegrationTe
         Assert.Equal("waiting on vendor", blocked.StatusReason);
         Assert.False(blocked.Completed);
 
-        var reloaded = await ReadAsync<ItemResponse>(await api.GetAsync($"/lists/{list.Id}/items/{item.Id}"));
+        var reloaded = await ReadAsync<ItemDto>(await api.GetAsync($"/lists/{list.Id}/items/{item.Id}"));
         Assert.Equal(ItemStatus.Blocked, reloaded.Status);
         Assert.Equal("waiting on vendor", reloaded.StatusReason);
     }
@@ -56,13 +56,13 @@ public sealed class ItemStatusTests(TasksApiTestFactory factory) : IntegrationTe
         var list = await CreateListAsync(api);
         var item = await CreateItemAsync(api, list.Id);
 
-        var done = await ReadAsync<ItemResponse>(
+        var done = await ReadAsync<ItemDto>(
             (await SendJson(api, HttpMethod.Post, $"/lists/{list.Id}/items/{item.Id}/complete")).EnsureSuccessStatusCode());
         Assert.Equal(ItemStatus.Done, done.Status);
         Assert.True(done.Completed);
         Assert.Equal(Email, done.CompletedBy?.Email);
 
-        var reopened = await ReadAsync<ItemResponse>(
+        var reopened = await ReadAsync<ItemDto>(
             (await SendJson(api, HttpMethod.Post, $"/lists/{list.Id}/items/{item.Id}/reopen")).EnsureSuccessStatusCode());
         Assert.Equal(ItemStatus.Open, reopened.Status);
         Assert.False(reopened.Completed);

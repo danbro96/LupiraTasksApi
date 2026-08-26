@@ -14,14 +14,14 @@ public sealed class ItemLifecycleTests(TasksApiTestFactory factory) : Integratio
         var list = await CreateListAsync(alice);
         var item = await CreateItemAsync(alice, list.Id, "Buy milk");
 
-        var fetched = await ReadAsync<ItemResponse>(await alice.GetAsync($"/lists/{list.Id}/items/{item.Id}"));
+        var fetched = await ReadAsync<ItemDto>(await alice.GetAsync($"/lists/{list.Id}/items/{item.Id}"));
         Assert.False(fetched.Completed);
 
-        var completed = await ReadAsync<ItemResponse>(await SendJson(alice, HttpMethod.Post, $"/lists/{list.Id}/items/{item.Id}/complete"));
+        var completed = await ReadAsync<ItemDto>(await SendJson(alice, HttpMethod.Post, $"/lists/{list.Id}/items/{item.Id}/complete"));
         Assert.True(completed.Completed);
         Assert.Equal("alice@x.test", completed.CompletedBy?.Email);
 
-        var reopened = await ReadAsync<ItemResponse>(await SendJson(alice, HttpMethod.Post, $"/lists/{list.Id}/items/{item.Id}/reopen"));
+        var reopened = await ReadAsync<ItemDto>(await SendJson(alice, HttpMethod.Post, $"/lists/{list.Id}/items/{item.Id}/reopen"));
         Assert.False(reopened.Completed);
 
         var del = await SendJson(alice, HttpMethod.Delete, $"/lists/{list.Id}/items/{item.Id}");

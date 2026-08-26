@@ -24,14 +24,14 @@ public static class ListsEndpoints
             .WithSummary("Create a list; the caller becomes Owner.")
             .WithDescription("Body `{ id (GUIDv7), name, kind, color? }`. `kind` is `Todo`, `Shopping`, or `Agent` " +
                 "(agent/system-owned lists). Re-sending an existing id is an idempotent success.")
-            .Produces<ListResponse>(StatusCodes.Status200OK)
+            .Produces<ListDto>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .WithName("CreateList");
 
         group.MapGet("/{listId:guid}", (Guid listId, ListsHandler h, CancellationToken ct) =>
                 h.GetAsync(listId, ct))
             .WithSummary("Get a list with its members and tags (Viewer+).")
-            .Produces<ListResponse>(StatusCodes.Status200OK)
+            .Produces<ListDto>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status404NotFound)
             .WithName("GetList");
 
@@ -40,7 +40,7 @@ public static class ListsEndpoints
             .WithIdempotencyKey()
             .WithSummary("Rename / recolor a list, or set its priority mode (Editor+).")
             .WithDescription("Each provided field emits its own event. Set `colorProvided` to apply `color` (incl. clearing it). Send `simplePriority` (bool) to switch between simple on/off and the full 0..9 scale.")
-            .Produces<ListResponse>(StatusCodes.Status200OK)
+            .Produces<ListDto>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status404NotFound)
             .WithName("UpdateList");
@@ -49,7 +49,7 @@ public static class ListsEndpoints
                 h.ArchiveAsync(ctx, listId, ct))
             .WithIdempotencyKey()
             .WithSummary("Archive a list (Owner). Soft — items retained.")
-            .Produces<ListResponse>(StatusCodes.Status200OK)
+            .Produces<ListDto>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status404NotFound)
             .WithName("ArchiveList");
 
@@ -57,7 +57,7 @@ public static class ListsEndpoints
                 h.RestoreAsync(ctx, listId, ct))
             .WithIdempotencyKey()
             .WithSummary("Restore an archived list (Owner).")
-            .Produces<ListResponse>(StatusCodes.Status200OK)
+            .Produces<ListDto>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status404NotFound)
             .WithName("RestoreList");
 
@@ -67,9 +67,9 @@ public static class ListsEndpoints
             .WithSummary("Set the caller's own position for this list (Viewer+).")
             .WithDescription("Body `{ sortOrder }` — a fractional-index key generated between the neighbours " +
                 "the list was dropped between. Per-user: other members' ordering is untouched, and this does " +
-                "not count as a change to the list. Returned as `sortOrder` on the caller's `ListResponse`; " +
+                "not count as a change to the list. Returned as `sortOrder` on the caller's `ListDto`; " +
                 "lists the caller has never ordered come back null and sort by name after the ordered ones.")
-            .Produces<ListResponse>(StatusCodes.Status200OK)
+            .Produces<ListDto>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status404NotFound)
             .WithName("ReorderListItems");
@@ -89,7 +89,7 @@ public static class ListsEndpoints
             .WithDescription("Body `{ email, role? }`. Direct-add, no invite/accept. An unseen email provisions a " +
                 "placeholder principal (its `sub` is upgraded when the person first logs in). Members are returned " +
                 "with their `principalId`; use that for role change / removal.")
-            .Produces<ListResponse>(StatusCodes.Status200OK)
+            .Produces<ListDto>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status404NotFound)
             .WithName("AddListMember");
@@ -98,7 +98,7 @@ public static class ListsEndpoints
                 h.ChangeMemberRoleAsync(ctx, listId, principalId, body, ct))
             .WithIdempotencyKey()
             .WithSummary("Change a member's role by principal id (Owner only).")
-            .Produces<ListResponse>(StatusCodes.Status200OK)
+            .Produces<ListDto>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status403Forbidden)
             .ProducesProblem(StatusCodes.Status404NotFound)

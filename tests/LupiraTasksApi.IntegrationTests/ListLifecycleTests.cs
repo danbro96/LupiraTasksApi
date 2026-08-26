@@ -15,7 +15,7 @@ public sealed class ListLifecycleTests(TasksApiTestFactory factory) : Integratio
         var list = await CreateListAsync(agent, name: "Assistant backlog", kind: ListKind.Agent);
         Assert.Equal(ListKind.Agent, list.Kind);
 
-        var byId = await ReadAsync<ListResponse>(await agent.GetAsync($"/lists/{list.Id}"));
+        var byId = await ReadAsync<ListDto>(await agent.GetAsync($"/lists/{list.Id}"));
         Assert.Equal(ListKind.Agent, byId.Kind);
 
         var collection = await ReadAsync<ListCollectionResponse>(await agent.GetAsync("/lists"));
@@ -35,11 +35,11 @@ public sealed class ListLifecycleTests(TasksApiTestFactory factory) : Integratio
         var list = await CreateListAsync(alice);
         Assert.True(list.SimplePriority);
 
-        var updated = await ReadAsync<ListResponse>(await SendJson(alice, HttpMethod.Patch, $"/lists/{list.Id}",
+        var updated = await ReadAsync<ListDto>(await SendJson(alice, HttpMethod.Patch, $"/lists/{list.Id}",
             new UpdateListRequest { SimplePriority = false }));
         Assert.False(updated.SimplePriority);
 
-        var reloaded = await ReadAsync<ListResponse>(await alice.GetAsync($"/lists/{list.Id}"));
+        var reloaded = await ReadAsync<ListDto>(await alice.GetAsync($"/lists/{list.Id}"));
         Assert.False(reloaded.SimplePriority);
     }
 

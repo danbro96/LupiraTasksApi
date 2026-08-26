@@ -34,7 +34,7 @@ public sealed class ListsHandler
         return OpResultMap.OkOnly(await _lists.ListAsync(caller, archived, ct));
     }
 
-    public async Task<Results<Ok<ListResponse>, ProblemHttpResult, UnauthorizedHttpResult>> CreateAsync(
+    public async Task<Results<Ok<ListDto>, ProblemHttpResult, UnauthorizedHttpResult>> CreateAsync(
         HttpContext ctx,
         CreateListRequest request,
         CancellationToken ct)
@@ -44,7 +44,7 @@ public sealed class ListsHandler
         return OpResultMap.OkProblem(await _lists.CreateAsync(caller, IdempotencyKey.From(ctx), request, ct));
     }
 
-    public async Task<Results<Ok<ListResponse>, NotFound, UnauthorizedHttpResult>> GetAsync(
+    public async Task<Results<Ok<ListDto>, NotFound, UnauthorizedHttpResult>> GetAsync(
         Guid listId,
         CancellationToken ct)
     {
@@ -53,7 +53,7 @@ public sealed class ListsHandler
         return OpResultMap.OkNotFound(await _lists.GetAsync(caller, listId, ct));
     }
 
-    public async Task<Results<Ok<ListResponse>, NotFound, ProblemHttpResult, UnauthorizedHttpResult>> UpdateAsync(
+    public async Task<Results<Ok<ListDto>, NotFound, ProblemHttpResult, UnauthorizedHttpResult>> UpdateAsync(
         HttpContext ctx,
         Guid listId,
         UpdateListRequest request,
@@ -64,7 +64,7 @@ public sealed class ListsHandler
         return OpResultMap.OkNotFoundProblem(await _lists.UpdateAsync(caller, IdempotencyKey.From(ctx), listId, request, ct));
     }
 
-    public async Task<Results<Ok<ListResponse>, NotFound, ProblemHttpResult, UnauthorizedHttpResult>> ArchiveAsync(
+    public async Task<Results<Ok<ListDto>, NotFound, ProblemHttpResult, UnauthorizedHttpResult>> ArchiveAsync(
         HttpContext ctx, Guid listId, CancellationToken ct)
     {
         var caller = await _callers.MemberAsync(ct);
@@ -72,7 +72,7 @@ public sealed class ListsHandler
         return OpResultMap.OkNotFoundProblem(await _lists.ArchiveAsync(caller, IdempotencyKey.From(ctx), listId, ct));
     }
 
-    public async Task<Results<Ok<ListResponse>, NotFound, ProblemHttpResult, UnauthorizedHttpResult>> RestoreAsync(
+    public async Task<Results<Ok<ListDto>, NotFound, ProblemHttpResult, UnauthorizedHttpResult>> RestoreAsync(
         HttpContext ctx, Guid listId, CancellationToken ct)
     {
         var caller = await _callers.MemberAsync(ct);
@@ -88,7 +88,7 @@ public sealed class ListsHandler
         return OpResultMap.NoContentNotFound(await _lists.DeleteAsync(caller, IdempotencyKey.From(ctx), listId, ct));
     }
 
-    public async Task<Results<Ok<ListResponse>, NotFound, ProblemHttpResult, UnauthorizedHttpResult>> AddMemberAsync(
+    public async Task<Results<Ok<ListDto>, NotFound, ProblemHttpResult, UnauthorizedHttpResult>> AddMemberAsync(
         HttpContext ctx,
         Guid listId,
         AddMemberRequest request,
@@ -99,7 +99,7 @@ public sealed class ListsHandler
         return OpResultMap.OkNotFoundProblem(await _lists.AddMemberAsync(caller, IdempotencyKey.From(ctx), listId, request, ct));
     }
 
-    public async Task<Results<Ok<ListResponse>, NotFound, ProblemHttpResult, UnauthorizedHttpResult>> ChangeMemberRoleAsync(
+    public async Task<Results<Ok<ListDto>, NotFound, ProblemHttpResult, UnauthorizedHttpResult>> ChangeMemberRoleAsync(
         HttpContext ctx,
         Guid listId,
         Guid principalId,
@@ -112,7 +112,7 @@ public sealed class ListsHandler
             await _lists.ChangeMemberRoleAsync(caller, IdempotencyKey.From(ctx), listId, principalId, request, ct));
     }
 
-    public async Task<Results<Ok<ListResponse>, NotFound, ProblemHttpResult, UnauthorizedHttpResult>> SetOrderAsync(
+    public async Task<Results<Ok<ListDto>, NotFound, ProblemHttpResult, UnauthorizedHttpResult>> SetOrderAsync(
         HttpContext ctx,
         Guid listId,
         SetListOrderRequest request,
