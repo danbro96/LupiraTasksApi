@@ -6,11 +6,18 @@ namespace LupiraTasksApi.Core.Dtos.Shares;
 public sealed class ShareResponse
 {
     public required Guid ShareId { get; set; }
+
     public required string Token { get; set; }
+
     public required string Url { get; set; }
+
     public required ShareAccess Access { get; set; }
+
     public required string Label { get; set; }
+
     public required DateTimeOffset CreatedAt { get; set; }
+
     public DateTimeOffset? ExpiresAt { get; set; }
+
     public required bool Revoked { get; set; }
 }

@@ -89,9 +89,13 @@ public static class VtodoMapper
 
         // Preserve unmodeled properties (PRIORITY, RRULE, X-*…) from the last DAV PUT.
         if (TryLoadTodo(sourceRaw, out var src) && src is not null)
+        {
             foreach (var p in src.Properties)
+            {
                 if (!ModeledProps.Contains(p.Name) && p.Value is { } value)
                     todo.Properties.Add(new CalendarProperty(p.Name, value));
+            }
+        }
 
         var cal = new IcalCalendar();
         cal.Todos.Add(todo);
@@ -116,7 +120,7 @@ public static class VtodoMapper
         // PRIORITY is defined 0..9; clamp defensively so a stray client value can't fail the sync.
         var priority = Math.Clamp(todo.Priority, 0, 9);
 
-        return new VtodoFields(todo.Summary ?? "", todo.Description, dueAt, status, completedAt, categories, priority);
+        return new VtodoFields(todo.Summary ?? string.Empty, todo.Description, dueAt, status, completedAt, categories, priority);
     }
 
     /// <summary>
@@ -136,7 +140,7 @@ public static class VtodoMapper
         if (!string.IsNullOrWhiteSpace(x) && Enum.TryParse<ItemStatus>(x, ignoreCase: true, out var parsed) && parsed != ItemStatus.Done)
             return parsed;
 
-        return (todo.Status ?? "").ToUpperInvariant() switch
+        return (todo.Status ?? string.Empty).ToUpperInvariant() switch
         {
             "CANCELLED" => ItemStatus.Cancelled,
             "IN-PROCESS" => ItemStatus.InProgress,

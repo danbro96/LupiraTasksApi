@@ -23,8 +23,8 @@ public class RelationTests
     }
 
     [Theory]
-    [InlineData("url", "ref-1", "monitors")]       // differing toKind
-    [InlineData("cal-item", "ref-2", "monitors")]  // differing toRef
+    [InlineData("url", "ref-1", "monitors")] // differing toKind
+    [InlineData("cal-item", "ref-2", "monitors")] // differing toRef
     [InlineData("cal-item", "ref-1", "relates-to")] // differing relationType
     public void DeterministicId_differs_when_any_component_differs(string toKind, string toRef, string relationType)
     {

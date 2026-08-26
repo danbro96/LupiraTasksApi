@@ -20,7 +20,7 @@ internal static class ListMapper
         Color = list.Color,
         SimplePriority = list.SimplePriority,
         Owner = PersonRef.From(list.OwnerPrincipalId, principals)
-            ?? new PersonRef { PrincipalId = list.OwnerPrincipalId, Email = "" },
+            ?? new PersonRef { PrincipalId = list.OwnerPrincipalId, Email = string.Empty },
         Access = list.Members.Find(m => m.PrincipalId == callerPrincipalId)?.Role ?? ListRole.Viewer,
         // The caller's own screen position — never another member's (MemberResponse omits it).
         SortOrder = list.Members.Find(m => m.PrincipalId == callerPrincipalId)?.SortOrder,
@@ -35,7 +35,7 @@ internal static class ListMapper
             .Select(m => new MemberResponse
             {
                 PrincipalId = m.PrincipalId,
-                Email = principals.TryGetValue(m.PrincipalId, out var p) ? p.Email : "",
+                Email = principals.TryGetValue(m.PrincipalId, out var p) ? p.Email : string.Empty,
                 DisplayName = principals.TryGetValue(m.PrincipalId, out var d) ? d.DisplayName : null,
                 Role = m.Role,
                 AddedAt = m.AddedAt,

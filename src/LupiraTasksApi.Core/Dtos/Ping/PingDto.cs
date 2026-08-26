@@ -6,6 +6,8 @@ namespace LupiraTasksApi.Core.Dtos.Ping;
 public sealed class PingDto
 {
     public required string Subject { get; set; }
+
     public required IReadOnlyList<string> Audiences { get; set; }
+
     public string? Email { get; set; }
 }

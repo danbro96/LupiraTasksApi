@@ -93,9 +93,12 @@ public sealed class ItemService
         if (completed is { } c) filtered = filtered.Where(i => i.Completed == c);
         if (status is { } st) filtered = filtered.Where(i => i.Status == st);
         if (dueFrom is not null || dueTo is not null)
+        {
             filtered = filtered.Where(i => i.DueAt is { } d
                 && (dueFrom is null || d >= dueFrom)
                 && (dueTo is null || d < dueTo));
+        }
+
         if (!string.IsNullOrWhiteSpace(query))
             filtered = filtered.Where(i => i.Title.Contains(query, StringComparison.OrdinalIgnoreCase));
 
@@ -154,8 +157,10 @@ public sealed class ItemService
             if (request.Priority != 0)
                 seed.Add(new ItemPrioritySet(request.Id, request.Priority, occurredAt, commandId));
             if (request.TagIds is { Count: > 0 })
+            {
                 foreach (var tagId in request.TagIds.Distinct())
                     seed.Add(new ItemTagAdded(request.Id, tagId, occurredAt, commandId));
+            }
 
             // StartStream + the dedup-ledger Insert commit together: the stream-id collision
             // OR the duplicate command-id both roll back the whole transaction, so a concurrent
@@ -240,11 +245,16 @@ public sealed class ItemService
         }
 
         if (request.AddTagIds is { Count: > 0 })
+        {
             foreach (var tagId in request.AddTagIds.Distinct())
                 events.Add(new ItemTagAdded(itemId, tagId, occurredAt, commandId));
+        }
+
         if (request.RemoveTagIds is { Count: > 0 })
+        {
             foreach (var tagId in request.RemoveTagIds.Distinct())
                 events.Add(new ItemTagRemoved(itemId, tagId, occurredAt, commandId));
+        }
 
         if (events.Count == 0) return OpResult<ItemResponse>.Ok(await ToResponseAsync(item, ct));
 

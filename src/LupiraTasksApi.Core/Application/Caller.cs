@@ -28,7 +28,9 @@ public sealed record Caller
     /// <summary>Share-link grant. <c>null</c> for a member caller.</summary>
     public ShareGrant? Share { get; private init; }
 
-    private Caller() { }
+    private Caller()
+    {
+    }
 
     public static Caller Member(Guid principalId, string email, IReadOnlyList<string> groups) =>
         new() { PrincipalId = principalId, Email = email, Groups = groups };

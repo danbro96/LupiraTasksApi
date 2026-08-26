@@ -16,6 +16,7 @@ public class ItemVtodoLwwTests
     private static readonly Guid ListId = Guid.Parse("0190a000-0000-7000-8000-000000000102");
     private static readonly Guid Cmd = Guid.Parse("0190a000-0000-7000-8000-0000000001c0");
     private static readonly DateTimeOffset T0 = new(2026, 6, 6, 12, 0, 0, TimeSpan.Zero);
+
     private static DateTimeOffset At(int s) => T0.AddSeconds(s);
 
     private static ItemVtodoPut Put(

@@ -11,7 +11,7 @@ public static class PingEndpoints
         // UserProfile or bumps LastSeenAt. Consumers poll this from /depz to verify the auth seam.
         app.MapGet("/pingz", (ClaimsPrincipal user) => TypedResults.Ok(new PingDto
         {
-            Subject = user.FindFirstValue("sub") ?? user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "",
+            Subject = user.FindFirstValue("sub") ?? user.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty,
             Audiences = user.FindAll("aud").Select(c => c.Value).ToArray(),
             Email = user.FindFirstValue("email") ?? user.FindFirstValue(ClaimTypes.Email),
         }))

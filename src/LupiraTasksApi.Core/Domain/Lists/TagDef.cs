@@ -4,6 +4,8 @@ namespace LupiraTasksApi.Core.Domain.Lists;
 public sealed class TagDef
 {
     public Guid Id { get; set; }
-    public string Label { get; set; } = "";
-    public string Color { get; set; } = "";
+
+    public string Label { get; set; } = string.Empty;
+
+    public string Color { get; set; } = string.Empty;
 }

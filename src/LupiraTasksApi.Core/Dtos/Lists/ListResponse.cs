@@ -6,11 +6,17 @@ namespace LupiraTasksApi.Core.Dtos.Lists;
 public sealed class ListResponse
 {
     public required Guid Id { get; set; }
+
     public required string Name { get; set; }
+
     public required ListKind Kind { get; set; }
+
     public string? Color { get; set; }
+
     public required bool SimplePriority { get; set; }
+
     public required PersonRef Owner { get; set; }
+
     /// <summary>The caller's own role on this list — server-authoritative, so clients gate owner/editor
     /// UI on this instead of matching themselves against <see cref="Members"/>.</summary>
     public required ListRole Access { get; set; }
@@ -27,7 +33,10 @@ public sealed class ListResponse
     public DateTimeOffset? ArchivedAt { get; set; }
 
     public required DateTimeOffset CreatedAt { get; set; }
+
     public required DateTimeOffset UpdatedAt { get; set; }
+
     public required IReadOnlyList<TagResponse> Tags { get; set; }
+
     public required IReadOnlyList<MemberResponse> Members { get; set; }
 }

@@ -9,23 +9,30 @@ namespace LupiraTasksApi.Core.Dtos.Items;
 public sealed class UpdateItemRequest
 {
     public string? Title { get; set; }
+
     public bool TitleProvided { get; set; }
 
     public string? Notes { get; set; }
+
     public bool NotesProvided { get; set; }
 
     public DateTimeOffset? DueAt { get; set; }
+
     public bool DueAtProvided { get; set; }
 
     public string? AssigneeEmail { get; set; }
+
     public bool AssigneeEmailProvided { get; set; }
 
     public decimal? Quantity { get; set; }
+
     public string? Unit { get; set; }
+
     public bool QuantityProvided { get; set; }
 
     /// <summary>Standard iCalendar priority, 0..9 (0 = none). Only applied when <see cref="PriorityProvided"/> is true.</summary>
     public int Priority { get; set; }
+
     public bool PriorityProvided { get; set; }
 
     /// <summary>Tag ids to add (commutative delta).</summary>

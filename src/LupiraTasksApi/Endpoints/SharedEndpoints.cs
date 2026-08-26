@@ -18,7 +18,7 @@ public static class SharedEndpoints
             .RequireAuthorization(ShareTokenAuthHandler.SchemeName)
             .WithTags("Shared");
 
-        group.MapGet("", (SharedHandler h, CancellationToken ct) => h.GetListAsync(ct))
+        group.MapGet(string.Empty, (SharedHandler h, CancellationToken ct) => h.GetListAsync(ct))
             .WithSummary("View a shared list by token (no account needed).")
             .WithDescription("Returns the list + items, trimmed of all emails. `access` indicates read vs read/write.")
             .Produces<SharedListResponse>(StatusCodes.Status200OK)

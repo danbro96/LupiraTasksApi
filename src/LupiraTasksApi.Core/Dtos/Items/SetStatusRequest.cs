@@ -6,6 +6,7 @@ namespace LupiraTasksApi.Core.Dtos.Items;
 public sealed class SetStatusRequest
 {
     public required ItemStatus Status { get; set; }
+
     public string? Reason { get; set; }
 
     /// <summary>Client wall-clock for LWW; defaults to server now when omitted.</summary>

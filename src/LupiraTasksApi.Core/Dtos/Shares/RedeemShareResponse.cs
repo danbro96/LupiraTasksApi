@@ -6,5 +6,6 @@ namespace LupiraTasksApi.Core.Dtos.Shares;
 public sealed class RedeemShareResponse
 {
     public required Guid ListId { get; set; }
+
     public required ListRole Role { get; set; }
 }

@@ -14,10 +14,10 @@ public sealed class Principal
 
     /// <summary>The immutable Authentik subject. A DAV-first (email-only) login gets an <c>email|{email}</c>
     /// placeholder, upgraded to the real <c>sub</c> when the OIDC login first arrives.</summary>
-    public string AuthentikSub { get; set; } = "";
+    public string AuthentikSub { get; set; } = string.Empty;
 
     /// <summary>The current login email (mutable). Indexed; the join key for OIDC/DAV logins and invites.</summary>
-    public string Email { get; set; } = "";
+    public string Email { get; set; } = string.Empty;
 
     public string? DisplayName { get; set; }
 

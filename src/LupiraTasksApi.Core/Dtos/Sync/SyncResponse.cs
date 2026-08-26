@@ -12,6 +12,7 @@ namespace LupiraTasksApi.Core.Dtos.Sync;
 public sealed class SyncResponse
 {
     public required ListResponse List { get; set; }
+
     public required IReadOnlyList<ItemResponse> Items { get; set; }
 
     /// <summary>Opaque cursor to pass as <c>?since=</c> on the next pull.</summary>

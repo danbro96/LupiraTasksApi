@@ -13,19 +13,27 @@ namespace LupiraTasksApi.Core.Domain.Shares;
 public sealed class ShareLink
 {
     public Guid Id { get; set; }
+
     public int Version { get; set; }
 
     public Guid ListId { get; set; }
-    public string Token { get; set; } = "";
+
+    public string Token { get; set; } = string.Empty;
+
     public ShareAccess Access { get; set; }
-    public string Label { get; set; } = "";
+
+    public string Label { get; set; } = string.Empty;
 
     public string? CreatedBy { get; set; }
+
     public DateTimeOffset CreatedAt { get; set; }
+
     public DateTimeOffset? ExpiresAt { get; set; }
 
     public bool Revoked { get; set; }
+
     public DateTimeOffset? RevokedAt { get; set; }
+
     public string? RevokedBy { get; set; }
 
     /// <summary>True when the link can currently be used (not revoked, not past expiry).</summary>

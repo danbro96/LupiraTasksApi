@@ -17,12 +17,18 @@ public sealed class Relation
     public const string TaskKind = "task";
 
     public Guid Id { get; set; }
+
     public string FromKind { get; set; } = TaskKind;
+
     public Guid FromId { get; set; }
-    public string ToKind { get; set; } = "";       // e.g. "cal-item" | "url"
-    public string ToRef { get; set; } = "";
-    public string RelationType { get; set; } = ""; // e.g. "monitors" | "spawned-by" | "produced" | "blocked-by" | "relates-to"
-    public string? Metadata { get; set; }          // free-form JSON
+
+    public string ToKind { get; set; } = string.Empty;       // e.g. "cal-item" | "url"
+
+    public string ToRef { get; set; } = string.Empty;
+
+    public string RelationType { get; set; } = string.Empty; // e.g. "monitors" | "spawned-by" | "produced" | "blocked-by" | "relates-to"
+
+    public string? Metadata { get; set; } // free-form JSON
 
     /// <summary>
     /// The document identity, derived from the edge tuple so the same link always maps to the same id: re-adding is a

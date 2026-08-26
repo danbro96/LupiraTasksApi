@@ -72,8 +72,14 @@ public sealed class TaskDavService
             return OpResult<DavWriteResult>.Conflict("ETag mismatch.");
 
         VtodoFields f;
-        try { f = VtodoMapper.Parse(rawVtodo); }
-        catch (FormatException ex) { return OpResult<DavWriteResult>.Invalid(ex.Message); }
+        try
+        {
+            f = VtodoMapper.Parse(rawVtodo);
+        }
+        catch (FormatException ex)
+        {
+            return OpResult<DavWriteResult>.Invalid(ex.Message);
+        }
 
         var tagIds = MapCategoriesToTags(acc.List!, f.Categories);
         var occurredAt = DateTimeOffset.UtcNow;   // DAV carries no client wall-clock; the server clock orders LWW.

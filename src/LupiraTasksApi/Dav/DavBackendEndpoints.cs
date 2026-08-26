@@ -17,26 +17,32 @@ public static class DavBackendEndpoints
             .DisableRateLimiting()
             .ExcludeFromDescription();
 
-        group.MapGet("/collections",
+        group.MapGet(
+            "/collections",
             (string email, DavBackendHandler h, CancellationToken ct) => h.CollectionsAsync(email, ct));
 
-        group.MapPost("/collections/{collectionId:guid}/query",
+        group.MapPost(
+            "/collections/{collectionId:guid}/query",
             (string email, Guid collectionId, DavQueryRequest body, DavBackendHandler h, CancellationToken ct) =>
                 h.QueryAsync(email, collectionId, body, ct));
 
-        group.MapGet("/collections/{collectionId:guid}/resources/{uid}",
+        group.MapGet(
+            "/collections/{collectionId:guid}/resources/{uid}",
             (string email, Guid collectionId, string uid, DavBackendHandler h, HttpContext ctx, CancellationToken ct) =>
                 h.GetResourceAsync(email, collectionId, uid, ctx, ct));
 
-        group.MapPut("/collections/{collectionId:guid}/resources/{uid}",
+        group.MapPut(
+            "/collections/{collectionId:guid}/resources/{uid}",
             (string email, Guid collectionId, string uid, DavBackendHandler h, HttpContext ctx, CancellationToken ct) =>
                 h.PutResourceAsync(email, collectionId, uid, ctx, ct));
 
-        group.MapDelete("/collections/{collectionId:guid}/resources/{uid}",
+        group.MapDelete(
+            "/collections/{collectionId:guid}/resources/{uid}",
             (string email, Guid collectionId, string uid, DavBackendHandler h, HttpContext ctx, CancellationToken ct) =>
                 h.DeleteResourceAsync(email, collectionId, uid, ctx, ct));
 
-        group.MapGet("/collections/{collectionId:guid}/changes",
+        group.MapGet(
+            "/collections/{collectionId:guid}/changes",
             (string email, Guid collectionId, string? since, DavBackendHandler h, CancellationToken ct) =>
                 h.ChangesAsync(email, collectionId, since, ct));
 

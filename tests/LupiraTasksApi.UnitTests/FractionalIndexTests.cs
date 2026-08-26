@@ -75,8 +75,8 @@ public class FractionalIndexTests
     [InlineData("a0V", true)]
     [InlineData("Zz", true)]
     [InlineData("~0190a00000007000800000000000000f", false)] // the DAV seam's scheme, not an order key
-    [InlineData("zz", false)]                               // integer part shorter than its head declares
-    [InlineData("a00", false)]                              // trailing zero in the fraction
+    [InlineData("zz", false)] // integer part shorter than its head declares
+    [InlineData("a00", false)] // trailing zero in the fraction
     [InlineData("0", false)]
     [InlineData("", false)]
     [InlineData(null, false)]

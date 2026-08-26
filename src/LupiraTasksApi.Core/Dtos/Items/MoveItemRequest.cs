@@ -7,6 +7,7 @@ namespace LupiraTasksApi.Core.Dtos.Items;
 public sealed class MoveItemRequest
 {
     public Guid? ParentItemId { get; set; }
+
     public required string SortOrder { get; set; }
 
     /// <summary>Client wall-clock at the moment of the change (LWW key). Defaults to server now.</summary>

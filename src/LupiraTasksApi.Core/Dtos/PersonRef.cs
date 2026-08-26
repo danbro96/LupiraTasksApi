@@ -12,7 +12,9 @@ namespace LupiraTasksApi.Core.Dtos;
 public sealed class PersonRef
 {
     public required Guid PrincipalId { get; set; }
+
     public required string Email { get; set; }
+
     public string? DisplayName { get; set; }
 
     public static PersonRef From(Principal p) => new()

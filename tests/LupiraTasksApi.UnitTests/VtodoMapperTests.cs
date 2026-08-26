@@ -33,7 +33,11 @@ public class VtodoMapperTests
     [Fact]
     public void Modeled_fields_round_trip()
     {
-        var item = ItemWith(s => { s.Notes = "2 litres"; s.DueAt = Due; });
+        var item = ItemWith(s =>
+        {
+            s.Notes = "2 litres";
+            s.DueAt = Due;
+        });
 
         var raw = VtodoMapper.ToVtodo(item, [], sourceRaw: null);
         var parsed = VtodoMapper.Parse(raw);
@@ -48,7 +52,11 @@ public class VtodoMapperTests
     public void Completed_item_serializes_as_completed_and_parses_back()
     {
         var completedAt = new DateTimeOffset(2026, 6, 3, 8, 0, 0, TimeSpan.Zero);
-        var item = ItemWith(s => { s.Status = ItemStatus.Done; s.CompletedAt = completedAt; });
+        var item = ItemWith(s =>
+        {
+            s.Status = ItemStatus.Done;
+            s.CompletedAt = completedAt;
+        });
 
         var raw = VtodoMapper.ToVtodo(item, [], sourceRaw: null);
 
@@ -125,7 +133,11 @@ public class VtodoMapperTests
             "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//phone//EN\r\n" +
             "BEGIN:VTODO\r\nUID:task-uid-1\r\nSUMMARY:stale title\r\nPRIORITY:1\r\nRRULE:FREQ=DAILY\r\n" +
             "END:VTODO\r\nEND:VCALENDAR\r\n";
-        var item = ItemWith(s => { s.Title = "current title"; s.Priority = 6; });
+        var item = ItemWith(s =>
+        {
+            s.Title = "current title";
+            s.Priority = 6;
+        });
 
         var raw = VtodoMapper.ToVtodo(item, [], sourceRaw: source);
 

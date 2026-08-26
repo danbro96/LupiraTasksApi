@@ -24,44 +24,81 @@ public sealed class Item
 
     // --- Read-through snapshot fields (top-level for serialization/querying) ---
     public Guid ListId => State.ListId;
+
     public Guid? ParentItemId => State.ParentItemId;
+
     public string Title => State.Title;
+
     public string? Notes => State.Notes;
+
     public ItemStatus Status => State.Status;
+
     public string? StatusReason => State.StatusReason;
+
     /// <summary>Derived from the single lifecycle field: an item is completed iff its status is <see cref="ItemStatus.Done"/>.</summary>
     public bool Completed => State.Status == ItemStatus.Done;
+
     public DateTimeOffset? CompletedAt => State.CompletedAt;
+
     public string? CompletedBy => State.CompletedBy;
+
     public Guid? AssignedToPrincipalId => State.AssignedToPrincipalId;
+
     public DateTimeOffset? DueAt => State.DueAt;
+
     public decimal? Quantity => State.Quantity;
+
     public string? Unit => State.Unit;
+
     public int Priority => State.Priority;
+
     public IReadOnlyList<Guid> Tags => State.Tags;
+
     public string SortOrder => State.SortOrder;
+
     public string Uid => State.Uid;
+
     public string? SourceVtodo => State.SourceVtodo;
+
     public string? CreatedBy => State.CreatedBy;
+
     public DateTimeOffset CreatedAt => State.CreatedAt;
+
     public DateTimeOffset UpdatedAt => State.UpdatedAt;
+
     public string? Metadata => State.Metadata;
+
     public bool Deleted => State.Deleted;
 
     public void Apply(IEvent<ItemAdded> e) => ItemLww.ApplyAdded(State, e.Data, EventActor.Of(e));
+
     public void Apply(IEvent<ItemRenamed> e) => ItemLww.ApplyRenamed(State, e.Data);
+
     public void Apply(IEvent<ItemNotesEdited> e) => ItemLww.ApplyNotesEdited(State, e.Data);
+
     public void Apply(IEvent<ItemAssigned> e) => ItemLww.ApplyAssigned(State, e.Data);
+
     public void Apply(IEvent<ItemDueDateSet> e) => ItemLww.ApplyDueDateSet(State, e.Data);
+
     public void Apply(IEvent<ItemTagAdded> e) => ItemLww.ApplyTagAdded(State, e.Data);
+
     public void Apply(IEvent<ItemTagRemoved> e) => ItemLww.ApplyTagRemoved(State, e.Data);
+
     public void Apply(IEvent<ItemQuantitySet> e) => ItemLww.ApplyQuantitySet(State, e.Data);
+
     public void Apply(IEvent<ItemPrioritySet> e) => ItemLww.ApplyPrioritySet(State, e.Data);
+
     public void Apply(IEvent<ItemCompleted> e) => ItemLww.ApplyCompleted(State, e.Data, EventActor.Of(e));
+
     public void Apply(IEvent<ItemReopened> e) => ItemLww.ApplyReopened(State, e.Data);
+
     public void Apply(IEvent<ItemStatusChanged> e) => ItemLww.ApplyStatusChanged(State, e.Data, EventActor.Of(e));
+
     public void Apply(IEvent<ItemMoved> e) => ItemLww.ApplyMoved(State, e.Data);
+
     public void Apply(IEvent<ItemMetadataSet> e) => ItemLww.ApplyMetadataSet(State, e.Data);
+
     public void Apply(IEvent<ItemDeleted> e) => ItemLww.ApplyDeleted(State, e.Data);
+
     public void Apply(IEvent<ItemVtodoPut> e) => ItemLww.ApplyVtodoPut(State, e.Data, EventActor.Of(e));
 }

@@ -12,10 +12,12 @@ namespace LupiraTasksApi.Core.Auth;
 public readonly struct AccessResult
 {
     public TodoList? List { get; init; }
+
     public ListRole Role { get; init; }
 
     public bool Allowed => List is not null;
 
     public static AccessResult Denied => new() { List = null };
+
     public static AccessResult Granted(TodoList list, ListRole role) => new() { List = list, Role = role };
 }

@@ -12,10 +12,13 @@ namespace LupiraTasksApi.Core.Domain.Lists;
 public sealed class TodoList
 {
     public Guid Id { get; set; }
+
     public int Version { get; set; }
 
-    public string Name { get; set; } = "";
+    public string Name { get; set; } = string.Empty;
+
     public ListKind Kind { get; set; }
+
     public string? Color { get; set; }
 
     /// <summary>Whether priority is treated as a simple on/off (default) rather than the full 0..9 scale.
@@ -26,6 +29,7 @@ public sealed class TodoList
     public Guid OwnerPrincipalId { get; set; }
 
     public bool IsArchived { get; set; }
+
     public bool IsDeleted { get; set; }
 
     /// <summary>When the list was archived; null while active. Distinct from <see cref="UpdatedAt"/>,
@@ -34,9 +38,11 @@ public sealed class TodoList
     public DateTimeOffset? ArchivedAt { get; set; }
 
     public DateTimeOffset CreatedAt { get; set; }
+
     public DateTimeOffset UpdatedAt { get; set; }
 
     public List<TagDef> Tags { get; set; } = [];
+
     public List<Member> Members { get; set; } = [];
 
     public void Apply(IEvent<ListCreated> e)

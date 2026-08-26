@@ -10,6 +10,8 @@ namespace LupiraTasksApi.Core.Dtos.Shares;
 public sealed class CreateShareRequest
 {
     public required ShareAccess Access { get; set; }
+
     public string? Label { get; set; }
+
     public DateTimeOffset? ExpiresAt { get; set; }
 }

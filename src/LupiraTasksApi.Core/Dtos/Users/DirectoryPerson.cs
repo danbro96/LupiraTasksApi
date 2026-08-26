@@ -4,6 +4,8 @@ namespace LupiraTasksApi.Core.Dtos.Users;
 public sealed class DirectoryPerson
 {
     public required Guid PrincipalId { get; set; }
+
     public required string Email { get; set; }
+
     public string? DisplayName { get; set; }
 }

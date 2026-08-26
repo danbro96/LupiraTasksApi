@@ -425,8 +425,14 @@ public sealed class TaskTools
     private static JsonNode? ParseMetadata(string? json)
     {
         if (string.IsNullOrWhiteSpace(json)) return null;
-        try { return JsonNode.Parse(json); }
-        catch (JsonException ex) { throw new McpException($"`metadata` must be valid JSON: {ex.Message}"); }
+        try
+        {
+            return JsonNode.Parse(json);
+        }
+        catch (JsonException ex)
+        {
+            throw new McpException($"`metadata` must be valid JSON: {ex.Message}");
+        }
     }
 
     /// <summary>Resolve the task's list (bare lookup), run the mutation (which re-checks membership), and summarize.</summary>
@@ -467,8 +473,11 @@ public sealed class TaskTools
         var found = new HashSet<Guid>();
         var frontier = new Queue<Guid>([taskId]);
         while (frontier.TryDequeue(out var id))
+        {
             foreach (var child in items.Where(i => i.ParentItemId == id).Select(i => i.Id))
                 if (found.Add(child)) frontier.Enqueue(child);
+        }
+
         return found;
     }
 

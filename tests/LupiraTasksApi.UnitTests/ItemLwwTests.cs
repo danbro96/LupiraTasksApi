@@ -24,6 +24,7 @@ public class ItemLwwTests
 
     // A fixed timeline of strictly-increasing instants.
     private static readonly DateTimeOffset T0 = new(2026, 6, 6, 12, 0, 0, TimeSpan.Zero);
+
     private static DateTimeOffset At(int seconds) => T0.AddSeconds(seconds);
 
     private static ItemState NewItem(int createdAtSeconds = 0, string? actor = "alice@x.test")
@@ -636,7 +637,11 @@ public class ItemLwwTests
 
     private static IEnumerable<T[]> Permutations<T>(T[] items)
     {
-        if (items.Length <= 1) { yield return items; yield break; }
+        if (items.Length <= 1)
+        {
+            yield return items;
+            yield break;
+        }
 
         for (var i = 0; i < items.Length; i++)
         {

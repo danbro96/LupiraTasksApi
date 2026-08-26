@@ -8,15 +8,26 @@ namespace LupiraTasksApi.Core.Dtos.Shared;
 public sealed class SharedItemResponse
 {
     public required Guid Id { get; set; }
+
     public Guid? ParentItemId { get; set; }
+
     public required string Title { get; set; }
+
     public string? Notes { get; set; }
+
     public required bool Completed { get; set; }
+
     public DateTimeOffset? CompletedAt { get; set; }
+
     public DateTimeOffset? DueAt { get; set; }
+
     public decimal? Quantity { get; set; }
+
     public string? Unit { get; set; }
+
     public required int Priority { get; set; }
+
     public required IReadOnlyList<Guid> Tags { get; set; }
+
     public required string SortOrder { get; set; }
 }

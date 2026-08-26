@@ -4,6 +4,8 @@ namespace LupiraTasksApi.Core.Dtos.Lists;
 public sealed class TagResponse
 {
     public required Guid Id { get; set; }
+
     public required string Label { get; set; }
+
     public required string Color { get; set; }
 }

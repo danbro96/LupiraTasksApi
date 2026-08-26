@@ -11,10 +11,13 @@ namespace LupiraTasksApi.Core.Domain.Items;
 public sealed class ItemState
 {
     public Guid Id { get; set; }
+
     public Guid ListId { get; set; }
+
     public Guid? ParentItemId { get; set; }
 
-    public string Title { get; set; } = "";
+    public string Title { get; set; } = string.Empty;
+
     public string? Notes { get; set; }
 
     /// <summary>The lifecycle position — the single source of truth for done-ness. <c>Completed</c> is derived
@@ -29,13 +32,16 @@ public sealed class ItemState
 
     /// <summary>When the item entered a completed (Done) state, and by whom — attribution, not a separate guard.</summary>
     public DateTimeOffset? CompletedAt { get; set; }
+
     public string? CompletedBy { get; set; }
 
     /// <summary>The assignee's internal principal id (null = unassigned). Resolved to a person on read.</summary>
     public Guid? AssignedToPrincipalId { get; set; }
+
     public DateTimeOffset? DueAt { get; set; }
 
     public decimal? Quantity { get; set; }
+
     public string? Unit { get; set; }
 
     /// <summary>Standard iCalendar VTODO priority: 0 = none/undefined, 1..9 in range. Defaults to 0.</summary>
@@ -43,7 +49,7 @@ public sealed class ItemState
 
     public List<Guid> Tags { get; set; } = [];
 
-    public string SortOrder { get; set; } = "";
+    public string SortOrder { get; set; } = string.Empty;
 
     /// <summary>
     /// The stable external identifier used as the CalDAV resource name (<c>{Uid}.ics</c>).
@@ -52,7 +58,7 @@ public sealed class ItemState
     /// <see cref="ItemLww.ApplyAdded"/>). Must round-trip verbatim so a DAV client's local
     /// resource URL stays valid across syncs.
     /// </summary>
-    public string Uid { get; set; } = "";
+    public string Uid { get; set; } = string.Empty;
 
     /// <summary>
     /// The raw VTODO blob from the last CalDAV PUT, kept so properties this model doesn't
@@ -62,7 +68,9 @@ public sealed class ItemState
     public string? SourceVtodo { get; set; }
 
     public string? CreatedBy { get; set; }
+
     public DateTimeOffset CreatedAt { get; set; }
+
     public DateTimeOffset UpdatedAt { get; set; }
 
     /// <summary>Free-form JSON for agent/server bookkeeping (source-alert id, check count, last-result summary).
@@ -77,30 +85,46 @@ public sealed class ItemState
     // exact OccurredAt tie, so concurrent same-field edits converge identically on the
     // server snapshot and the offline client reducer regardless of apply order.
     public DateTimeOffset NameTs { get; set; }
+
     public Guid NameCmd { get; set; }
+
     public DateTimeOffset NotesTs { get; set; }
+
     public Guid NotesCmd { get; set; }
+
     public DateTimeOffset AssigneeTs { get; set; }
+
     public Guid AssigneeCmd { get; set; }
+
     public DateTimeOffset DueTs { get; set; }
+
     public Guid DueCmd { get; set; }
+
     public DateTimeOffset QtyTs { get; set; }
+
     public Guid QtyCmd { get; set; }
+
     public DateTimeOffset PriorityTs { get; set; }
+
     public Guid PriorityCmd { get; set; }
 
     /// <summary>The one lifecycle guard, shared by complete/reopen/status-change/VTODO so they resolve as a single field.</summary>
     public DateTimeOffset StatusTs { get; set; }
+
     public Guid StatusCmd { get; set; }
+
     public DateTimeOffset MoveTs { get; set; }
+
     public Guid MoveCmd { get; set; }
 
     /// <summary>Guard for the raw <see cref="SourceVtodo"/> blob written by a CalDAV PUT.</summary>
     public DateTimeOffset VtodoTs { get; set; }
+
     public Guid VtodoCmd { get; set; }
 
     /// <summary>Guard for the whole-field <see cref="Metadata"/> JSON.</summary>
     public DateTimeOffset MetadataTs { get; set; }
+
     public Guid MetadataCmd { get; set; }
 
     /// <summary>
@@ -109,5 +133,6 @@ public sealed class ItemState
     /// (OccurredAt, CommandId) — a commutative set op.
     /// </summary>
     public Dictionary<Guid, DateTimeOffset> TagTs { get; set; } = [];
+
     public Dictionary<Guid, Guid> TagCmd { get; set; } = [];
 }

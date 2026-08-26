@@ -10,7 +10,10 @@ namespace LupiraTasksApi.Core.Dtos.Lists;
 public sealed class CreateListRequest
 {
     public required Guid Id { get; set; }
+
     public required string Name { get; set; }
+
     public required ListKind Kind { get; set; }
+
     public string? Color { get; set; }
 }

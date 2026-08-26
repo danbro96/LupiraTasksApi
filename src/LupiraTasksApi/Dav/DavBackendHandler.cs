@@ -60,6 +60,7 @@ public sealed class DavBackendHandler(IQuerySession session, TaskDavService dav,
             var set = uids.ToHashSet(StringComparer.Ordinal);
             selected = live.Where(i => set.Contains(i.Uid));
         }
+
         // Start/End: DAVx5 doesn't time-range VTODOs — the window is ignored in v1 (full listing).
 
         var selectedList = selected.ToList();
@@ -156,7 +157,7 @@ public sealed class DavBackendHandler(IQuerySession session, TaskDavService dav,
         string? ifMatch = null;
         var im = ifMatchHeader?.Trim();
         if (!string.IsNullOrEmpty(im) && im != "*") ifMatch = im.Trim('"');
-        var inm = ifNoneMatchHeader?.Trim() ?? "";
+        var inm = ifNoneMatchHeader?.Trim() ?? string.Empty;
         return (ifMatch, inm == "*");
     }
 

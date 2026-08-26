@@ -130,7 +130,7 @@ builder.Services.AddOpenApi("v1", options =>
         // The "/shared/{token}" group carries the token in the path template, but the handlers read
         // it from the authenticated principal (ShareToken scheme) rather than binding a route arg —
         // so the generator omits the parameter and emits an invalid path. Declare it explicitly.
-        if ((context.Description.RelativePath ?? "").Contains("{token}", StringComparison.OrdinalIgnoreCase)
+        if ((context.Description.RelativePath ?? string.Empty).Contains("{token}", StringComparison.OrdinalIgnoreCase)
             && !(operation.Parameters?.Any(p => p.Name == "token" && p.In == ParameterLocation.Path) ?? false))
         {
             operation.Parameters ??= [];
@@ -182,9 +182,7 @@ builder.Services.AddOpenApi("v1", options =>
         // UnauthorizedHttpResult). UseStatusCodePages fills them at runtime, so declare the shape.
 
         foreach (var code in operation.Responses?.Keys.ToList() ?? [])
-
         {
-
             if (code.Length != 3 || code[0] is not ('4' or '5')) continue;
 
             var existing = operation.Responses![code];
@@ -192,9 +190,7 @@ builder.Services.AddOpenApi("v1", options =>
             if (existing.Content is { Count: > 0 }) continue;
 
             operation.Responses[code] = new OpenApiResponse
-
             { Description = existing.Description, Content = ProblemContent(context.Document) };
-
         }
 
         return Task.CompletedTask;
@@ -214,7 +210,7 @@ static void AddProblem(OpenApiOperation operation, OpenApiDocument document, int
     operation.Responses[code] = new OpenApiResponse { Description = description, Content = ProblemContent(document) };
 }
 
-/// RFC 9457. Declared here because nothing returns the CLR type directly, so the generator never emits it.
+// RFC 9457. Declared here because nothing returns the CLR type directly, so the generator never emits it.
 static OpenApiSchema ProblemDetailsSchema() => new()
 {
     Type = JsonSchemaType.Object,
@@ -240,6 +236,7 @@ if (!isOpenApiBuild && string.IsNullOrWhiteSpace(oidc.Audience))
 {
     throw new InvalidOperationException("Auth:Oidc:Audience is required.");
 }
+
 // In Development a policy scheme is the default: it forwards to the dev-header handler when
 // X-Dev-User is present, else to the real JWT bearer (so real Authentik tokens still work in
 // dev). In every other environment the default is plain JWT bearer and the dev handler below
@@ -287,6 +284,7 @@ authBuilder.AddJwtBearer(opts =>
                 ctx.Response.Headers.WWWAuthenticate =
                     $"Bearer resource_metadata=\"{McpResourceMetadata.ResourceMetadataUrl(ctx.Request)}\"";
             }
+
             return Task.CompletedTask;
         },
     };
