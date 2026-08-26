@@ -19,7 +19,6 @@ public static class RelationsEndpoints
                 "`produced`, `blocked-by`, `relates-to`. Idempotent: re-linking the same edge is a no-op.")
             .Produces<RelationDto>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest)
-            .Produces(StatusCodes.Status401Unauthorized)
             .Produces(StatusCodes.Status404NotFound)
             .WithName("CreateRelation");
 
@@ -27,7 +26,6 @@ public static class RelationsEndpoints
                 h.ListAsync(listId, itemId, ct))
             .WithSummary("List a task's relations (Viewer+).")
             .Produces<List<RelationDto>>(StatusCodes.Status200OK)
-            .Produces(StatusCodes.Status401Unauthorized)
             .Produces(StatusCodes.Status404NotFound)
             .WithName("ListRelations");
 
@@ -38,7 +36,6 @@ public static class RelationsEndpoints
                 "isn't there is a no-op (204).")
             .Produces(StatusCodes.Status204NoContent)
             .ProducesProblem(StatusCodes.Status400BadRequest)
-            .Produces(StatusCodes.Status401Unauthorized)
             .Produces(StatusCodes.Status404NotFound)
             .WithName("DeleteRelation");
 

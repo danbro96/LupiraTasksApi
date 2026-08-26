@@ -20,7 +20,6 @@ public static class SyncEndpoints
                 outbox rows.
                 """)
             .Produces<SyncResponse>(StatusCodes.Status200OK)
-            .Produces(StatusCodes.Status401Unauthorized)
             .Produces(StatusCodes.Status404NotFound)
             .WithName("SyncList");
 

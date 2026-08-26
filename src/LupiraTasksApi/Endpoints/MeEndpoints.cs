@@ -20,7 +20,6 @@ public static class MeEndpoints
                 returns `{ email, displayName, isAdmin }`. Call on app cold start.
                 """)
             .Produces<MeResponse>(StatusCodes.Status200OK)
-            .Produces(StatusCodes.Status401Unauthorized)
             .WithName("GetMe");
 
         return app;

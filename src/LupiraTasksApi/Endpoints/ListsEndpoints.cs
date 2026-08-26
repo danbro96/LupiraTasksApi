@@ -16,7 +16,6 @@ public static class ListsEndpoints
             .WithSummary("List the lists the caller is a member of.")
             .WithDescription("`?archived=true` returns the caller's archived lists instead of the active ones.")
             .Produces<ListCollectionResponse>(StatusCodes.Status200OK)
-            .Produces(StatusCodes.Status401Unauthorized)
             .WithName("ListLists");
 
         group.MapPost("/", (HttpContext ctx, CreateListRequest body, ListsHandler h, CancellationToken ct) =>
@@ -27,14 +26,12 @@ public static class ListsEndpoints
                 "(agent/system-owned lists). Re-sending an existing id is an idempotent success.")
             .Produces<ListResponse>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest)
-            .Produces(StatusCodes.Status401Unauthorized)
             .WithName("CreateList");
 
         group.MapGet("/{listId:guid}", (Guid listId, ListsHandler h, CancellationToken ct) =>
                 h.GetAsync(listId, ct))
             .WithSummary("Get a list with its members and tags (Viewer+).")
             .Produces<ListResponse>(StatusCodes.Status200OK)
-            .Produces(StatusCodes.Status401Unauthorized)
             .Produces(StatusCodes.Status404NotFound)
             .WithName("GetList");
 
@@ -45,7 +42,6 @@ public static class ListsEndpoints
             .WithDescription("Each provided field emits its own event. Set `colorProvided` to apply `color` (incl. clearing it). Send `simplePriority` (bool) to switch between simple on/off and the full 0..9 scale.")
             .Produces<ListResponse>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest)
-            .Produces(StatusCodes.Status401Unauthorized)
             .Produces(StatusCodes.Status404NotFound)
             .WithName("UpdateList");
 
@@ -54,7 +50,6 @@ public static class ListsEndpoints
             .WithIdempotencyKey()
             .WithSummary("Archive a list (Owner). Soft — items retained.")
             .Produces<ListResponse>(StatusCodes.Status200OK)
-            .Produces(StatusCodes.Status401Unauthorized)
             .Produces(StatusCodes.Status404NotFound)
             .WithName("ArchiveList");
 
@@ -63,7 +58,6 @@ public static class ListsEndpoints
             .WithIdempotencyKey()
             .WithSummary("Restore an archived list (Owner).")
             .Produces<ListResponse>(StatusCodes.Status200OK)
-            .Produces(StatusCodes.Status401Unauthorized)
             .Produces(StatusCodes.Status404NotFound)
             .WithName("RestoreList");
 
@@ -77,7 +71,6 @@ public static class ListsEndpoints
                 "lists the caller has never ordered come back null and sort by name after the ordered ones.")
             .Produces<ListResponse>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest)
-            .Produces(StatusCodes.Status401Unauthorized)
             .Produces(StatusCodes.Status404NotFound)
             .WithName("ReorderListItems");
 
@@ -86,7 +79,6 @@ public static class ListsEndpoints
             .WithIdempotencyKey()
             .WithSummary("Delete a list (Owner). Tombstone — stream retained.")
             .Produces(StatusCodes.Status204NoContent)
-            .Produces(StatusCodes.Status401Unauthorized)
             .Produces(StatusCodes.Status404NotFound)
             .WithName("DeleteList");
 
@@ -99,7 +91,6 @@ public static class ListsEndpoints
                 "with their `principalId`; use that for role change / removal.")
             .Produces<ListResponse>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest)
-            .Produces(StatusCodes.Status401Unauthorized)
             .Produces(StatusCodes.Status404NotFound)
             .WithName("AddListMember");
 
@@ -110,7 +101,6 @@ public static class ListsEndpoints
             .Produces<ListResponse>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status403Forbidden)
-            .Produces(StatusCodes.Status401Unauthorized)
             .Produces(StatusCodes.Status404NotFound)
             .WithName("UpdateListMember");
 
@@ -121,7 +111,6 @@ public static class ListsEndpoints
             .Produces(StatusCodes.Status204NoContent)
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status403Forbidden)
-            .Produces(StatusCodes.Status401Unauthorized)
             .Produces(StatusCodes.Status404NotFound)
             .WithName("RemoveListMember");
 

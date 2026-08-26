@@ -20,7 +20,6 @@ public static class PingEndpoints
             .WithName("Ping")
             .WithSummary("Authenticated claims echo for dependency probes; resolves nothing, writes nothing.")
             .Produces<PingDto>(StatusCodes.Status200OK)
-            .Produces(StatusCodes.Status401Unauthorized)
             .DisableHttpMetrics()
             .WithName("Ping");
         return app;

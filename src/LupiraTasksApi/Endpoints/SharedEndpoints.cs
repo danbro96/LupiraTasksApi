@@ -22,7 +22,6 @@ public static class SharedEndpoints
             .WithSummary("View a shared list by token (no account needed).")
             .WithDescription("Returns the list + items, trimmed of all emails. `access` indicates read vs read/write.")
             .Produces<SharedListResponse>(StatusCodes.Status200OK)
-            .Produces(StatusCodes.Status401Unauthorized)
             .Produces(StatusCodes.Status404NotFound)
             .WithName("GetSharedList");
 
@@ -33,7 +32,6 @@ public static class SharedEndpoints
             .Produces<SharedItemResponse>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status403Forbidden)
-            .Produces(StatusCodes.Status401Unauthorized)
             .Produces(StatusCodes.Status404NotFound)
             .WithName("CreateSharedItem");
 
@@ -44,7 +42,6 @@ public static class SharedEndpoints
             .Produces<SharedItemResponse>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status403Forbidden)
-            .Produces(StatusCodes.Status401Unauthorized)
             .Produces(StatusCodes.Status404NotFound)
             .WithName("UpdateSharedItem");
 
@@ -54,7 +51,6 @@ public static class SharedEndpoints
             .WithSummary("Mark an item complete via a read/write share link.")
             .Produces<SharedItemResponse>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status403Forbidden)
-            .Produces(StatusCodes.Status401Unauthorized)
             .Produces(StatusCodes.Status404NotFound)
             .WithName("CompleteSharedItem");
 
@@ -64,7 +60,6 @@ public static class SharedEndpoints
             .WithSummary("Reopen a completed item via a read/write share link.")
             .Produces<SharedItemResponse>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status403Forbidden)
-            .Produces(StatusCodes.Status401Unauthorized)
             .Produces(StatusCodes.Status404NotFound)
             .WithName("ReopenSharedItem");
 
@@ -75,7 +70,6 @@ public static class SharedEndpoints
             .Produces<SharedItemResponse>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status403Forbidden)
-            .Produces(StatusCodes.Status401Unauthorized)
             .Produces(StatusCodes.Status404NotFound)
             .WithName("MoveSharedItem");
 
@@ -85,7 +79,6 @@ public static class SharedEndpoints
             .WithSummary("Delete an item via a read/write share link.")
             .Produces(StatusCodes.Status204NoContent)
             .ProducesProblem(StatusCodes.Status403Forbidden)
-            .Produces(StatusCodes.Status401Unauthorized)
             .Produces(StatusCodes.Status404NotFound)
             .WithName("DeleteSharedItem");
 
