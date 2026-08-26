@@ -27,13 +27,13 @@ public sealed class ItemHierarchyMcpTests(TasksApiTestFactory factory) : Integra
         Assert.Null(dish.ParentTaskId);
         Assert.Equal(dish.Id, ingredient.ParentTaskId);
 
-        var all = await AsAgent(Agent, tools => tools.FindTasks(listId));
+        var all = await AsAgent(Agent, tools => tools.SearchTasks(listId));
         Assert.Equal([dish.Id, ingredient.Id], all.Select(t => t.Id));
 
-        var roots = await AsAgent(Agent, tools => tools.FindTasks(listId, rootsOnly: true));
+        var roots = await AsAgent(Agent, tools => tools.SearchTasks(listId, rootsOnly: true));
         Assert.Equal([dish.Id], roots.Select(t => t.Id));
 
-        var children = await AsAgent(Agent, tools => tools.FindTasks(listId, parentTaskId: dish.Id));
+        var children = await AsAgent(Agent, tools => tools.SearchTasks(listId, parentTaskId: dish.Id));
         Assert.Equal([ingredient.Id], children.Select(t => t.Id));
     }
 
@@ -84,7 +84,7 @@ public sealed class ItemHierarchyMcpTests(TasksApiTestFactory factory) : Integra
         Assert.Contains("cycle", cycle.Message);
 
         // The subtree is untouched by the rejected moves.
-        var tree = await AsAgent(Agent, tools => tools.FindTasks(parent.ListId));
+        var tree = await AsAgent(Agent, tools => tools.SearchTasks(parent.ListId));
         Assert.Equal(child.Id, tree.Single(t => t.Id == grandchild.Id).ParentTaskId);
         Assert.Null(tree.Single(t => t.Id == parent.Id).ParentTaskId);
     }
@@ -107,11 +107,11 @@ public sealed class ItemHierarchyMcpTests(TasksApiTestFactory factory) : Integra
 
         var promoted = await AsAgent(Agent, tools => tools.MoveTask(third.Id, afterTaskId: first.Id));
         Assert.Null(promoted.ParentTaskId);
-        Assert.Equal([first.Id, third.Id, second.Id], (await AsAgent(Agent, tools => tools.FindTasks(listId))).Select(t => t.Id));
+        Assert.Equal([first.Id, third.Id, second.Id], (await AsAgent(Agent, tools => tools.SearchTasks(listId))).Select(t => t.Id));
 
         var moved = await AsAgent(Agent, tools => tools.MoveTask(second.Id, atStart: true));
         Assert.Null(moved.ParentTaskId);
-        Assert.Equal([second.Id, first.Id, third.Id], (await AsAgent(Agent, tools => tools.FindTasks(listId))).Select(t => t.Id));
+        Assert.Equal([second.Id, first.Id, third.Id], (await AsAgent(Agent, tools => tools.SearchTasks(listId))).Select(t => t.Id));
     }
 
     [Fact]
@@ -157,7 +157,7 @@ public sealed class ItemHierarchyMcpTests(TasksApiTestFactory factory) : Integra
 
         // Read back and rebuild the tree the way a client does — group by parent, each group in
         // sortOrder (the read side's ordering), depth first. It must be the input, unchanged.
-        var read = await AsAgent(Agent, tools => tools.FindTasks(listId));
+        var read = await AsAgent(Agent, tools => tools.SearchTasks(listId));
         var rebuilt = Rebuild(read, null);
         Assert.Equal(Flatten(input), rebuilt);
     }
@@ -173,7 +173,7 @@ public sealed class ItemHierarchyMcpTests(TasksApiTestFactory factory) : Integra
 
         await AsAgent(Agent, tools => tools.AddTasksBatch(listId, [new TaskNode { Title = "Added later" }]));
 
-        var read = await AsAgent(Agent, tools => tools.FindTasks(listId));
+        var read = await AsAgent(Agent, tools => tools.SearchTasks(listId));
         Assert.Equal(["Already here", "Added later"], read.Select(t => t.Title));
         Assert.Equal(existing.Id, read[0].Id);
     }

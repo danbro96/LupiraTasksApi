@@ -83,11 +83,11 @@ public sealed class TaskTools
         return Summarize(caller, created);
     }
 
-    [McpServerTool(Name = "find_tasks")]
+    [McpServerTool(Name = "search_tasks")]
     [Description("Find tasks across the user's lists. Optionally scope to one list, or filter by a title substring, " +
         "completion state, assignee, lifecycle status (e.g. Blocked/Waiting to see what's stuck), or position in the " +
         "task tree. Every result carries its parentTaskId, so a whole nested list can be reconstructed from one call.")]
-    public async Task<IReadOnlyList<TaskSummary>> FindTasks(
+    public async Task<IReadOnlyList<TaskSummary>> SearchTasks(
         [Description("Restrict to a single list id (optional; searches all the user's lists when omitted).")] Guid? listId = null,
         [Description("Case-insensitive substring to match in the task title (optional).")] string? query = null,
         [Description("Filter by completion state (optional).")] bool? completed = null,
