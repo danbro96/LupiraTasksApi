@@ -4,36 +4,36 @@ namespace LupiraTasksApi.Domain.Lists;
 // is always the aggregate id. The acting user is carried out-of-band as a Marten
 // event-metadata header ("actor"), not as an event field.
 
-public record ListCreated(Guid ListId, string Name, ListKind Kind, string? Color, Guid OwnerPrincipalId);
+public sealed record ListCreated(Guid ListId, string Name, ListKind Kind, string? Color, Guid OwnerPrincipalId);
 
-public record ListRenamed(Guid ListId, string Name);
+public sealed record ListRenamed(Guid ListId, string Name);
 
-public record ListRecolored(Guid ListId, string? Color);
+public sealed record ListRecolored(Guid ListId, string? Color);
 
 /// <summary>Sets whether the list treats priority as a simple on/off (true) or the full 0..9 scale (false).</summary>
-public record ListSimplePrioritySet(Guid ListId, bool SimplePriority);
+public sealed record ListSimplePrioritySet(Guid ListId, bool SimplePriority);
 
-public record ListArchived(Guid ListId);
+public sealed record ListArchived(Guid ListId);
 
-public record ListRestored(Guid ListId);
+public sealed record ListRestored(Guid ListId);
 
 /// <summary>Tombstone. Auto-emitted when the last owner leaves the list.</summary>
-public record ListDeleted(Guid ListId, string Reason);
+public sealed record ListDeleted(Guid ListId, string Reason);
 
 // --- Tag definitions (list-scoped) ---
 
-public record TagDefined(Guid ListId, Guid TagId, string Label, string Color);
+public sealed record TagDefined(Guid ListId, Guid TagId, string Label, string Color);
 
-public record TagRecolored(Guid ListId, Guid TagId, string Color);
+public sealed record TagRecolored(Guid ListId, Guid TagId, string Color);
 
-public record TagRemoved(Guid ListId, Guid TagId);
+public sealed record TagRemoved(Guid ListId, Guid TagId);
 
-public record MemberAdded(Guid ListId, Guid PrincipalId, ListRole Role);
+public sealed record MemberAdded(Guid ListId, Guid PrincipalId, ListRole Role);
 
-public record MemberRoleChanged(Guid ListId, Guid PrincipalId, ListRole Role);
+public sealed record MemberRoleChanged(Guid ListId, Guid PrincipalId, ListRole Role);
 
-public record MemberRemoved(Guid ListId, Guid PrincipalId);
+public sealed record MemberRemoved(Guid ListId, Guid PrincipalId);
 
 /// <summary>One member's own position for this list in their lists screen (a fractional-index key).
 /// Per-member: reordering never moves the list for anyone else.</summary>
-public record MemberListOrderSet(Guid ListId, Guid PrincipalId, string SortOrder);
+public sealed record MemberListOrderSet(Guid ListId, Guid PrincipalId, string SortOrder);

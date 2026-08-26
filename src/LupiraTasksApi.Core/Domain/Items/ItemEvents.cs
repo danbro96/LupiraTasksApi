@@ -11,7 +11,7 @@ namespace LupiraTasksApi.Domain.Items;
 // the same winner regardless of apply order. The acting user is carried out-of-band
 // as a Marten event-metadata header ("actor").
 
-public record ItemAdded(
+public sealed record ItemAdded(
     Guid ItemId,
     Guid ListId,
     Guid? ParentItemId,
@@ -24,44 +24,44 @@ public record ItemAdded(
     // existing positional call sites are unchanged.
     string? Uid = null);
 
-public record ItemRenamed(Guid ItemId, string Title, DateTimeOffset OccurredAt, Guid CommandId);
+public sealed record ItemRenamed(Guid ItemId, string Title, DateTimeOffset OccurredAt, Guid CommandId);
 
-public record ItemNotesEdited(Guid ItemId, string? Notes, DateTimeOffset OccurredAt, Guid CommandId);
+public sealed record ItemNotesEdited(Guid ItemId, string? Notes, DateTimeOffset OccurredAt, Guid CommandId);
 
-public record ItemAssigned(Guid ItemId, Guid? AssigneePrincipalId, DateTimeOffset OccurredAt, Guid CommandId);
+public sealed record ItemAssigned(Guid ItemId, Guid? AssigneePrincipalId, DateTimeOffset OccurredAt, Guid CommandId);
 
-public record ItemDueDateSet(Guid ItemId, DateTimeOffset? DueAt, DateTimeOffset OccurredAt, Guid CommandId);
+public sealed record ItemDueDateSet(Guid ItemId, DateTimeOffset? DueAt, DateTimeOffset OccurredAt, Guid CommandId);
 
 /// <summary>Commutative add delta — resolved against <see cref="ItemTagRemoved"/> by per-tag (OccurredAt, CommandId).</summary>
-public record ItemTagAdded(Guid ItemId, Guid TagId, DateTimeOffset OccurredAt, Guid CommandId);
+public sealed record ItemTagAdded(Guid ItemId, Guid TagId, DateTimeOffset OccurredAt, Guid CommandId);
 
 /// <summary>Commutative remove delta — resolved against <see cref="ItemTagAdded"/> by per-tag (OccurredAt, CommandId).</summary>
-public record ItemTagRemoved(Guid ItemId, Guid TagId, DateTimeOffset OccurredAt, Guid CommandId);
+public sealed record ItemTagRemoved(Guid ItemId, Guid TagId, DateTimeOffset OccurredAt, Guid CommandId);
 
-public record ItemQuantitySet(Guid ItemId, decimal? Quantity, string? Unit, DateTimeOffset OccurredAt, Guid CommandId);
+public sealed record ItemQuantitySet(Guid ItemId, decimal? Quantity, string? Unit, DateTimeOffset OccurredAt, Guid CommandId);
 
 /// <summary>Sets the standard iCalendar priority (0 = none, 1..9 in range).</summary>
-public record ItemPrioritySet(Guid ItemId, int Priority, DateTimeOffset OccurredAt, Guid CommandId);
+public sealed record ItemPrioritySet(Guid ItemId, int Priority, DateTimeOffset OccurredAt, Guid CommandId);
 
-public record ItemCompleted(Guid ItemId, DateTimeOffset OccurredAt, Guid CommandId);
+public sealed record ItemCompleted(Guid ItemId, DateTimeOffset OccurredAt, Guid CommandId);
 
-public record ItemReopened(Guid ItemId, DateTimeOffset OccurredAt, Guid CommandId);
+public sealed record ItemReopened(Guid ItemId, DateTimeOffset OccurredAt, Guid CommandId);
 
 /// <summary>
 /// Sets the item's lifecycle <see cref="ItemStatus"/> (and optional reason). The general lifecycle setter:
 /// <see cref="ItemCompleted"/>/<see cref="ItemReopened"/> are intent-revealing shorthands that project onto the
 /// same single status guard, so a status change and a complete/reopen converge as one field by (OccurredAt, CommandId).
 /// </summary>
-public record ItemStatusChanged(Guid ItemId, ItemStatus Status, string? Reason, DateTimeOffset OccurredAt, Guid CommandId);
+public sealed record ItemStatusChanged(Guid ItemId, ItemStatus Status, string? Reason, DateTimeOffset OccurredAt, Guid CommandId);
 
 /// <summary>Reparent and/or reorder. SortOrder is a fractional-index string.</summary>
-public record ItemMoved(Guid ItemId, Guid? ParentItemId, string SortOrder, DateTimeOffset OccurredAt, Guid CommandId);
+public sealed record ItemMoved(Guid ItemId, Guid? ParentItemId, string SortOrder, DateTimeOffset OccurredAt, Guid CommandId);
 
 /// <summary>Sets the whole <see cref="ItemState.Metadata"/> JSON blob (server-side bookkeeping). Whole-field LWW.</summary>
-public record ItemMetadataSet(Guid ItemId, string? Metadata, DateTimeOffset OccurredAt, Guid CommandId);
+public sealed record ItemMetadataSet(Guid ItemId, string? Metadata, DateTimeOffset OccurredAt, Guid CommandId);
 
 /// <summary>Tombstone (stream retained). Once applied, later field events are ignored.</summary>
-public record ItemDeleted(Guid ItemId, DateTimeOffset OccurredAt, Guid CommandId);
+public sealed record ItemDeleted(Guid ItemId, DateTimeOffset OccurredAt, Guid CommandId);
 
 /// <summary>
 /// A whole-VTODO write from the CalDAV surface (a DAVx5 PUT). Carries the parsed modeled
@@ -71,7 +71,7 @@ public record ItemDeleted(Guid ItemId, DateTimeOffset OccurredAt, Guid CommandId
 /// a concurrent REST edit converge field-by-field. When it is the first event on a stream it
 /// also establishes ListId / Uid / CreatedAt (DAV-created item).
 /// </summary>
-public record ItemVtodoPut(
+public sealed record ItemVtodoPut(
     Guid ItemId,
     Guid ListId,
     string Uid,
