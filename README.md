@@ -29,7 +29,7 @@ REST and MCP are the primary surfaces; share links and the DAV seam are secondar
 | Group | Tools |
 | --- | --- |
 | Lists | `list_my_lists`, `create_list` |
-| Tasks | `find_tasks`, `add_task`, `add_tasks_batch`, `update_task`, `move_task`, `complete_task`, `reopen_task`, `set_task_status`, `set_task_metadata` |
+| Tasks | `search_tasks`, `add_task`, `add_tasks_batch`, `update_task`, `move_task`, `complete_task`, `reopen_task`, `set_task_status`, `set_task_metadata` |
 | Cross-API links | `link_task`, `list_task_relations`, `unlink_task` |
 | Sharing | `share_list`, `create_share_link`, `list_share_links`, `revoke_share_link` |
 
