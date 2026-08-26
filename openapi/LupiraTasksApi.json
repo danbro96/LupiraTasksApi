@@ -25,7 +25,24 @@
             }
           },
           "401": {
-            "description": "Unauthorized"
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -73,10 +90,34 @@
             }
           },
           "404": {
-            "description": "Not Found"
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           },
           "401": {
-            "description": "Unauthorized"
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -126,7 +167,14 @@
             }
           },
           "404": {
-            "description": "Not Found"
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           },
           "400": {
             "description": "Bad Request",
@@ -139,7 +187,24 @@
             }
           },
           "401": {
-            "description": "Unauthorized"
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -168,7 +233,24 @@
             }
           },
           "401": {
-            "description": "Unauthorized"
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -206,7 +288,24 @@
             }
           },
           "401": {
-            "description": "Unauthorized"
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -244,7 +343,24 @@
             }
           },
           "401": {
-            "description": "Unauthorized"
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -302,7 +418,24 @@
             }
           },
           "401": {
-            "description": "Unauthorized"
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -341,10 +474,34 @@
             }
           },
           "404": {
-            "description": "Not Found"
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           },
           "401": {
-            "description": "Unauthorized"
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -401,7 +558,14 @@
             }
           },
           "404": {
-            "description": "Not Found"
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           },
           "400": {
             "description": "Bad Request",
@@ -414,7 +578,24 @@
             }
           },
           "401": {
-            "description": "Unauthorized"
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -453,10 +634,34 @@
             "description": "No Content"
           },
           "404": {
-            "description": "Not Found"
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           },
           "401": {
-            "description": "Unauthorized"
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -504,10 +709,34 @@
             }
           },
           "404": {
-            "description": "Not Found"
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           },
           "401": {
-            "description": "Unauthorized"
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -555,10 +784,34 @@
             }
           },
           "404": {
-            "description": "Not Found"
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           },
           "401": {
-            "description": "Unauthorized"
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -617,7 +870,14 @@
             }
           },
           "404": {
-            "description": "Not Found"
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           },
           "400": {
             "description": "Bad Request",
@@ -630,7 +890,24 @@
             }
           },
           "401": {
-            "description": "Unauthorized"
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -689,7 +966,14 @@
             }
           },
           "404": {
-            "description": "Not Found"
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           },
           "400": {
             "description": "Bad Request",
@@ -702,7 +986,24 @@
             }
           },
           "401": {
-            "description": "Unauthorized"
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -769,7 +1070,14 @@
             }
           },
           "404": {
-            "description": "Not Found"
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           },
           "400": {
             "description": "Bad Request",
@@ -792,7 +1100,24 @@
             }
           },
           "401": {
-            "description": "Unauthorized"
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -840,7 +1165,14 @@
             "description": "No Content"
           },
           "404": {
-            "description": "Not Found"
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           },
           "400": {
             "description": "Bad Request",
@@ -863,7 +1195,24 @@
             }
           },
           "401": {
-            "description": "Unauthorized"
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -931,7 +1280,24 @@
             }
           },
           "401": {
-            "description": "Unauthorized"
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -990,7 +1356,14 @@
             }
           },
           "404": {
-            "description": "Not Found"
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           },
           "400": {
             "description": "Bad Request",
@@ -1003,7 +1376,24 @@
             }
           },
           "401": {
-            "description": "Unauthorized"
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -1062,7 +1452,14 @@
             }
           },
           "404": {
-            "description": "Not Found"
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           },
           "400": {
             "description": "Bad Request",
@@ -1075,7 +1472,24 @@
             }
           },
           "401": {
-            "description": "Unauthorized"
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -1152,10 +1566,34 @@
             }
           },
           "404": {
-            "description": "Not Found"
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           },
           "401": {
-            "description": "Unauthorized"
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -1212,7 +1650,14 @@
             }
           },
           "404": {
-            "description": "Not Found"
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           },
           "400": {
             "description": "Bad Request",
@@ -1225,7 +1670,24 @@
             }
           },
           "401": {
-            "description": "Unauthorized"
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -1273,10 +1735,34 @@
             }
           },
           "404": {
-            "description": "Not Found"
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           },
           "401": {
-            "description": "Unauthorized"
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -1342,7 +1828,14 @@
             }
           },
           "404": {
-            "description": "Not Found"
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           },
           "400": {
             "description": "Bad Request",
@@ -1355,7 +1848,24 @@
             }
           },
           "401": {
-            "description": "Unauthorized"
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -1412,10 +1922,34 @@
             "description": "No Content"
           },
           "404": {
-            "description": "Not Found"
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           },
           "401": {
-            "description": "Unauthorized"
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -1488,10 +2022,34 @@
             }
           },
           "404": {
-            "description": "Not Found"
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           },
           "401": {
-            "description": "Unauthorized"
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -1564,10 +2122,34 @@
             }
           },
           "404": {
-            "description": "Not Found"
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           },
           "401": {
-            "description": "Unauthorized"
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -1635,7 +2217,14 @@
             }
           },
           "404": {
-            "description": "Not Found"
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           },
           "400": {
             "description": "Bad Request",
@@ -1648,7 +2237,24 @@
             }
           },
           "401": {
-            "description": "Unauthorized"
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -1716,7 +2322,14 @@
             }
           },
           "404": {
-            "description": "Not Found"
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           },
           "400": {
             "description": "Bad Request",
@@ -1729,7 +2342,24 @@
             }
           },
           "401": {
-            "description": "Unauthorized"
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -1797,7 +2427,14 @@
             }
           },
           "404": {
-            "description": "Not Found"
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           },
           "400": {
             "description": "Bad Request",
@@ -1810,7 +2447,24 @@
             }
           },
           "401": {
-            "description": "Unauthorized"
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -1869,7 +2523,14 @@
             }
           },
           "404": {
-            "description": "Not Found"
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           },
           "400": {
             "description": "Bad Request",
@@ -1882,7 +2543,24 @@
             }
           },
           "401": {
-            "description": "Unauthorized"
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -1931,10 +2609,34 @@
             }
           },
           "404": {
-            "description": "Not Found"
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           },
           "401": {
-            "description": "Unauthorized"
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -1998,7 +2700,14 @@
             "description": "No Content"
           },
           "404": {
-            "description": "Not Found"
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           },
           "400": {
             "description": "Bad Request",
@@ -2011,7 +2720,24 @@
             }
           },
           "401": {
-            "description": "Unauthorized"
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -2070,7 +2796,14 @@
             }
           },
           "404": {
-            "description": "Not Found"
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           },
           "400": {
             "description": "Bad Request",
@@ -2083,7 +2816,24 @@
             }
           },
           "401": {
-            "description": "Unauthorized"
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -2120,10 +2870,34 @@
             }
           },
           "404": {
-            "description": "Not Found"
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           },
           "401": {
-            "description": "Unauthorized"
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -2173,10 +2947,34 @@
             "description": "No Content"
           },
           "404": {
-            "description": "Not Found"
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           },
           "401": {
-            "description": "Unauthorized"
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -2216,10 +3014,34 @@
             }
           },
           "404": {
-            "description": "Not Found"
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           },
           "401": {
-            "description": "Unauthorized"
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -2277,7 +3099,14 @@
             }
           },
           "404": {
-            "description": "Not Found"
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           },
           "400": {
             "description": "Bad Request",
@@ -2300,7 +3129,24 @@
             }
           },
           "401": {
-            "description": "Unauthorized"
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -2367,7 +3213,14 @@
             }
           },
           "404": {
-            "description": "Not Found"
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           },
           "400": {
             "description": "Bad Request",
@@ -2390,7 +3243,24 @@
             }
           },
           "401": {
-            "description": "Unauthorized"
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -2446,7 +3316,14 @@
             "description": "No Content"
           },
           "404": {
-            "description": "Not Found"
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           },
           "403": {
             "description": "Forbidden",
@@ -2459,7 +3336,24 @@
             }
           },
           "401": {
-            "description": "Unauthorized"
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -2532,7 +3426,14 @@
             }
           },
           "404": {
-            "description": "Not Found"
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           },
           "403": {
             "description": "Forbidden",
@@ -2545,7 +3446,24 @@
             }
           },
           "401": {
-            "description": "Unauthorized"
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -2618,7 +3536,14 @@
             }
           },
           "404": {
-            "description": "Not Found"
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           },
           "403": {
             "description": "Forbidden",
@@ -2631,7 +3556,24 @@
             }
           },
           "401": {
-            "description": "Unauthorized"
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -2698,7 +3640,14 @@
             }
           },
           "404": {
-            "description": "Not Found"
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           },
           "400": {
             "description": "Bad Request",
@@ -2721,7 +3670,24 @@
             }
           },
           "401": {
-            "description": "Unauthorized"
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -2749,11 +3715,13 @@
                 "type": "null"
               },
               {
+                "description": "Role to grant. Defaults to Editor when null.",
                 "$ref": "#/components/schemas/ListRole"
               }
             ]
           }
-        }
+        },
+        "description": "Add a member to a list by email. Any member may add someone; the role defaults to\nListRole.Editor when omitted. Only a real Authentik user can ever use the\nmembership (provisioned on first login), so a wrong email is simply inert."
       },
       "CreateItemRequest": {
         "required": [
@@ -2805,6 +3773,7 @@
           },
           "priority": {
             "type": "integer",
+            "description": "Standard iCalendar priority, 0..9 (0 = none). Defaults to 0.",
             "format": "int32"
           },
           "tagIds": {
@@ -2825,9 +3794,11 @@
               "null",
               "string"
             ],
+            "description": "Client wall-clock at the moment of the change (LWW key). Defaults to server now.",
             "format": "date-time"
           }
-        }
+        },
+        "description": "Add an item. The client supplies a GUIDv7 Guid CreateItemRequest.Id (idempotent create) and a\nfractional-index string CreateItemRequest.SortOrder string. DateTimeOffset? CreateItemRequest.OccurredAt is the\nclient wall-clock used for last-writer-wins; when omitted the server stamps now."
       },
       "CreateListRequest": {
         "required": [
@@ -2853,7 +3824,8 @@
               "string"
             ]
           }
-        }
+        },
+        "description": "Create a list. The client supplies a GUIDv7 Guid CreateListRequest.Id so the create is\nidempotent on replay (an existing stream is treated as success). The caller\nbecomes the Owner."
       },
       "CreateRelationRequest": {
         "required": [
@@ -2906,7 +3878,8 @@
             ],
             "format": "date-time"
           }
-        }
+        },
+        "description": "Mint a share link for a list. ShareAccess CreateShareRequest.Access picks read vs read/write; an optional\nDateTimeOffset? CreateShareRequest.ExpiresAt auto-expires the link; string? CreateShareRequest.Label is a human name used for\nattribution of writes (`share:{label}`) and shown in the owner's list of links."
       },
       "DirectoryPerson": {
         "required": [
@@ -2928,7 +3901,8 @@
               "string"
             ]
           }
-        }
+        },
+        "description": "A person the caller has seen across their shared lists (for adding members)."
       },
       "DirectoryResponse": {
         "required": [
@@ -2942,7 +3916,8 @@
               "$ref": "#/components/schemas/DirectoryPerson"
             }
           }
-        }
+        },
+        "description": "The distinct people across the caller's lists, for member-add autocomplete."
       },
       "ItemCollectionResponse": {
         "required": [
@@ -2956,7 +3931,8 @@
               "$ref": "#/components/schemas/ItemResponse"
             }
           }
-        }
+        },
+        "description": "Envelope for a list's items."
       },
       "ItemResponse": {
         "required": [
@@ -2998,6 +3974,7 @@
             ]
           },
           "status": {
+            "description": "The lifecycle status; bool ItemResponse.Completed is the derived `Status == Done` convenience.",
             "$ref": "#/components/schemas/ItemStatus"
           },
           "statusReason": {
@@ -3022,6 +3999,7 @@
                 "type": "null"
               },
               {
+                "description": "Who completed it; `null` if open, or a share-link/unresolved actor.",
                 "$ref": "#/components/schemas/PersonRef"
               }
             ]
@@ -3032,6 +4010,7 @@
                 "type": "null"
               },
               {
+                "description": "The assignee; `null` if unassigned.",
                 "$ref": "#/components/schemas/PersonRef"
               }
             ]
@@ -3076,6 +4055,7 @@
                 "type": "null"
               },
               {
+                "description": "Who created it; `null` for a share-link/unresolved actor.",
                 "$ref": "#/components/schemas/PersonRef"
               }
             ]
@@ -3094,11 +4074,13 @@
                 "type": "null"
               },
               {
+                "description": "Free-form JSON for agent/server bookkeeping. Server-side only — never in VTODO or the public share DTO.",
                 "$ref": "#/components/schemas/JsonNode"
               }
             ]
           }
-        }
+        },
+        "description": "An item's current snapshot. Clients nest by Guid? ItemResponse.ParentItemId."
       },
       "ItemStatus": {
         "enum": [
@@ -3108,7 +4090,8 @@
           "Waiting",
           "Done",
           "Cancelled"
-        ]
+        ],
+        "description": "An item's lifecycle position — one state machine, not two flags. ItemStatus.Open, ItemStatus.InProgress,\nItemStatus.Blocked, and ItemStatus.Waiting are open; ItemStatus.Done and ItemStatus.Cancelled are\nclosed. `Completed` is derived (`Status == Done`). The value is LWW-guarded by one\n(OccurredAt, CommandId) guard shared by every lifecycle event, so done-ness and the open sub-state can never\ndisagree. Lets the assistant answer \"what's blocked / waiting on me?\"."
       },
       "ItemTimestampRequest": {
         "type": "object",
@@ -3118,9 +4101,11 @@
               "null",
               "string"
             ],
+            "description": "Client wall-clock at the moment of the change (LWW key). Defaults to server now.",
             "format": "date-time"
           }
-        }
+        },
+        "description": "Body for complete/reopen/delete. Carries only the LWW timestamp; the item id is in\nthe route. DateTimeOffset? ItemTimestampRequest.OccurredAt defaults to server now when omitted."
       },
       "JsonNode": { },
       "ListCollectionResponse": {
@@ -3135,14 +4120,16 @@
               "$ref": "#/components/schemas/ListResponse"
             }
           }
-        }
+        },
+        "description": "Envelope for the caller's lists."
       },
       "ListKind": {
         "enum": [
           "Todo",
           "Shopping",
           "Agent"
-        ]
+        ],
+        "description": "Drives client UI affordances (e.g. shopping lists surface quantity/unit), and distinguishes\n            agent/system-owned lists from a user's own (ListKind.Agent) in queries and UI. A pure label set at\n            creation (carried by `ListCreated`); ownership/membership still govern access."
       },
       "ListResponse": {
         "required": [
@@ -3183,13 +4170,15 @@
             "$ref": "#/components/schemas/PersonRef"
           },
           "access": {
+            "description": "The caller's own role on this list — server-authoritative, so clients gate owner/editor\n            UI on this instead of matching themselves against IReadOnlyList&lt;MemberResponse&gt; ListResponse.Members.",
             "$ref": "#/components/schemas/ListRole"
           },
           "sortOrder": {
             "type": [
               "null",
               "string"
-            ]
+            ],
+            "description": "The caller's own position for this list (fractional-index key), or null if they have\n            never reordered it — clients sort those by name, after the keyed ones. Nobody else's ordering\n            is exposed."
           },
           "isArchived": {
             "type": "boolean"
@@ -3199,6 +4188,7 @@
               "null",
               "string"
             ],
+            "description": "When the list was archived; null while active. Archived views sort on this rather than\n            DateTimeOffset ListResponse.UpdatedAt, which later edits bump.",
             "format": "date-time"
           },
           "createdAt": {
@@ -3221,14 +4211,16 @@
               "$ref": "#/components/schemas/MemberResponse"
             }
           }
-        }
+        },
+        "description": "Full list metadata including members and tag definitions."
       },
       "ListRole": {
         "enum": [
           "Owner",
           "Editor",
           "Viewer"
-        ]
+        ],
+        "description": "A member's authority on a list. Ordered: Owner &gt; Editor &gt; Viewer."
       },
       "MemberResponse": {
         "required": [
@@ -3265,11 +4257,13 @@
                 "type": "null"
               },
               {
+                "description": "Who added them; `null` for a share-link add or an unresolved actor.",
                 "$ref": "#/components/schemas/PersonRef"
               }
             ]
           }
-        }
+        },
+        "description": "A member of a list: the stable `PrincipalId` plus resolved `Email`/`DisplayName`."
       },
       "MeResponse": {
         "required": [
@@ -3295,7 +4289,8 @@
           "isAdmin": {
             "type": "boolean"
           }
-        }
+        },
+        "description": "The caller's provisioned identity, returned by `GET /me`. Guid MeResponse.PrincipalId is\n            the stable internal id a client stores and matches against list members (and uses as its offline\n            actor); email/displayName are for display."
       },
       "MoveItemRequest": {
         "required": [
@@ -3318,9 +4313,11 @@
               "null",
               "string"
             ],
+            "description": "Client wall-clock at the moment of the change (LWW key). Defaults to server now.",
             "format": "date-time"
           }
-        }
+        },
+        "description": "Reparent and/or reorder an item. string MoveItemRequest.SortOrder is a fractional-index\nstring so concurrent inserts get distinct keys without renumbering siblings."
       },
       "PersonRef": {
         "required": [
@@ -3342,7 +4339,8 @@
               "string"
             ]
           }
-        }
+        },
+        "description": "The canonical identity projection on the read boundary: the stable Guid PersonRef.PrincipalId (the\nkey a client should store/compare) plus the current string PersonRef.Email and string? PersonRef.DisplayName\nfor display. Every identity slot the API returns (owner, member, assignee, creator, completer,\ndirectory person) is a `PersonRef`; identity <em>inputs</em> stay email (invite/assign). Built\nfrom a resolved Principal."
       },
       "PingDto": {
         "required": [
@@ -3366,7 +4364,8 @@
               "string"
             ]
           }
-        }
+        },
+        "description": "The claims a caller's token resolved to, echoed for cross-service auth-seam probes.\n            Returning the audiences (not a bare 200) lets a failing consumer see which half of the seam\n            is misconfigured."
       },
       "ProblemDetails": {
         "type": "object",
@@ -3401,8 +4400,15 @@
               "null",
               "string"
             ]
+          },
+          "traceId": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
-        }
+        },
+        "description": "RFC 9457 problem details."
       },
       "RedeemShareRequest": {
         "required": [
@@ -3413,7 +4419,8 @@
           "token": {
             "type": "string"
           }
-        }
+        },
+        "description": "Redeem a share link as the authenticated caller (the token, not in the URL path here)."
       },
       "RedeemShareResponse": {
         "required": [
@@ -3429,7 +4436,8 @@
           "role": {
             "$ref": "#/components/schemas/ListRole"
           }
-        }
+        },
+        "description": "The list the caller joined and the role they now hold on it."
       },
       "RelationDto": {
         "required": [
@@ -3483,7 +4491,8 @@
           "sortOrder": {
             "type": "string"
           }
-        }
+        },
+        "description": "Set the caller's own position for a list in their lists screen. string SetListOrderRequest.SortOrder is a\nfractional-index string (same scheme as item ordering) generated client-side between the\nneighbours it was dropped between. Per-user: other members are unaffected."
       },
       "SetMetadataRequest": {
         "type": "object",
@@ -3503,9 +4512,11 @@
               "null",
               "string"
             ],
+            "description": "Client wall-clock for LWW; defaults to server now when omitted.",
             "format": "date-time"
           }
-        }
+        },
+        "description": "Sets an item's free-form JSON metadata (whole-field). Send `null` to clear it."
       },
       "SetStatusRequest": {
         "required": [
@@ -3527,15 +4538,18 @@
               "null",
               "string"
             ],
+            "description": "Client wall-clock for LWW; defaults to server now when omitted.",
             "format": "date-time"
           }
-        }
+        },
+        "description": "Sets an item's lifecycle status, with an optional reason (e.g. why it's Blocked/Waiting)."
       },
       "ShareAccess": {
         "enum": [
           "Read",
           "ReadWrite"
-        ]
+        ],
+        "description": "What a public share link permits."
       },
       "ShareCollectionResponse": {
         "required": [
@@ -3549,7 +4563,8 @@
               "$ref": "#/components/schemas/ShareResponse"
             }
           }
-        }
+        },
+        "description": "Envelope for a list's active share links."
       },
       "SharedItemResponse": {
         "required": [
@@ -3626,7 +4641,8 @@
           "sortOrder": {
             "type": "string"
           }
-        }
+        },
+        "description": "An item as shown to a share-link recipient. Mirrors the fields a viewer/editor needs but\nOMITS every email field (`assignedTo`, `completedBy`, `createdBy`) so a public\nlink never leaks family emails."
       },
       "SharedListResponse": {
         "required": [
@@ -3669,7 +4685,8 @@
               "$ref": "#/components/schemas/SharedItemResponse"
             }
           }
-        }
+        },
+        "description": "The public, account-less view of a shared list. Deliberately TRIMMED: it carries no member\nlist, no owner email, and items carry no assignee/creator/completer emails — a public link must\nnot leak family emails. ShareAccess SharedListResponse.Access tells the client whether to show edit controls."
       },
       "SharedTagResponse": {
         "required": [
@@ -3689,7 +4706,8 @@
           "color": {
             "type": "string"
           }
-        }
+        },
+        "description": "A tag definition as shown on a shared list (no sensitive data)."
       },
       "ShareResponse": {
         "required": [
@@ -3733,7 +4751,8 @@
           "revoked": {
             "type": "boolean"
           }
-        }
+        },
+        "description": "A share link as the owner sees it, including the opaque string ShareResponse.Token and ready-to-copy string ShareResponse.Url."
       },
       "SyncResponse": {
         "required": [
@@ -3754,9 +4773,11 @@
           },
           "nextCursor": {
             "type": "integer",
+            "description": "Opaque cursor to pass as `?since=` on the next pull.",
             "format": "int64"
           }
-        }
+        },
+        "description": "A full re-derive of a list and its live items, for the offline delta-pull. v1 is\n\"simplest-correct\": the whole list + all non-deleted items are returned regardless of\nthe `since` cursor, and long SyncResponse.NextCursor is the high-water mark of the items'\nupdate timestamps (the client plumbs the cursor through but the server ignores it for now)."
       },
       "TagResponse": {
         "required": [
@@ -3776,7 +4797,8 @@
           "color": {
             "type": "string"
           }
-        }
+        },
+        "description": "A tag definition on a list."
       },
       "UpdateItemRequest": {
         "type": "object",
@@ -3836,6 +4858,7 @@
           },
           "priority": {
             "type": "integer",
+            "description": "Standard iCalendar priority, 0..9 (0 = none). Only applied when bool UpdateItemRequest.PriorityProvided is true.",
             "format": "int32"
           },
           "priorityProvided": {
@@ -3849,7 +4872,8 @@
             "items": {
               "type": "string",
               "format": "uuid"
-            }
+            },
+            "description": "Tag ids to add (commutative delta)."
           },
           "removeTagIds": {
             "type": [
@@ -3859,16 +4883,19 @@
             "items": {
               "type": "string",
               "format": "uuid"
-            }
+            },
+            "description": "Tag ids to remove (commutative delta)."
           },
           "occurredAt": {
             "type": [
               "null",
               "string"
             ],
+            "description": "Client wall-clock at the moment of the change (LWW key). Defaults to server now.",
             "format": "date-time"
           }
-        }
+        },
+        "description": "Patch an item. Emits exactly one event per changed field. A field changes only when\nits `*Provided` flag is true, so a `null` value can be sent intentionally\n(e.g. unassign, clear due date) without being confused with \"leave unchanged\".\nDateTimeOffset? UpdateItemRequest.OccurredAt is the client wall-clock used for per-field LWW."
       },
       "UpdateListRequest": {
         "type": "object",
@@ -3883,18 +4910,22 @@
             "type": [
               "null",
               "string"
-            ]
+            ],
+            "description": "The new color. Honored only when bool UpdateListRequest.ColorProvided is true."
           },
           "colorProvided": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "Set true to apply string? UpdateListRequest.Color (including clearing it to null)."
           },
           "simplePriority": {
             "type": [
               "null",
               "boolean"
-            ]
+            ],
+            "description": "Whether priority is a simple on/off (true) or the full 0..9 scale (false). Null leaves it unchanged."
           }
-        }
+        },
+        "description": "Patch a list's metadata. Each non-null field emits its own event; omit a field\n(leave it `null`) to leave it unchanged. To clear the color, send\nbool UpdateListRequest.ColorProvided = `true` with string? UpdateListRequest.Color = `null`."
       },
       "UpdateMemberRoleRequest": {
         "required": [
@@ -3905,7 +4936,8 @@
           "role": {
             "$ref": "#/components/schemas/ListRole"
           }
-        }
+        },
+        "description": "Change a member's role on a list (Owner only)."
       }
     },
     "securitySchemes": {
