@@ -1,7 +1,7 @@
 using System.Text.Json.Nodes;
-using LupiraTasksApi.Domain;
+using LupiraTasksApi.Core.Domain;
 
-namespace LupiraTasksApi.Dtos.Items;
+namespace LupiraTasksApi.Core.Dtos.Items;
 
 /// <summary>An item's current snapshot. Clients nest by <see cref="ParentItemId"/>.</summary>
 public sealed class ItemResponse

@@ -1,6 +1,6 @@
-using LupiraTasksApi.Domain.Identity;
+using LupiraTasksApi.Core.Domain.Identity;
 
-namespace LupiraTasksApi.Dtos;
+namespace LupiraTasksApi.Core.Dtos;
 
 /// <summary>
 /// The canonical identity projection on the read boundary: the stable <see cref="PrincipalId"/> (the

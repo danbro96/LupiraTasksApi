@@ -1,6 +1,6 @@
 using JasperFx.Events;
 
-namespace LupiraTasksApi.Domain.Lists;
+namespace LupiraTasksApi.Core.Domain.Lists;
 
 /// <summary>A tag definition scoped to a single list.</summary>
 public sealed class TagDef

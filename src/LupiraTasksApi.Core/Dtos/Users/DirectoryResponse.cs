@@ -1,4 +1,4 @@
-namespace LupiraTasksApi.Dtos.Users;
+namespace LupiraTasksApi.Core.Dtos.Users;
 
 /// <summary>A person the caller has seen across their shared lists (for adding members).</summary>
 public sealed class DirectoryPerson

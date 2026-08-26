@@ -1,10 +1,10 @@
 using System.Text.Json.Nodes;
-using LupiraTasksApi.Domain.Identity;
-using LupiraTasksApi.Domain.Items;
-using LupiraTasksApi.Dtos;
-using LupiraTasksApi.Dtos.Items;
+using LupiraTasksApi.Core.Domain.Identity;
+using LupiraTasksApi.Core.Domain.Items;
+using LupiraTasksApi.Core.Dtos;
+using LupiraTasksApi.Core.Dtos.Items;
 
-namespace LupiraTasksApi.Mappers;
+namespace LupiraTasksApi.Core.Mappers;
 
 /// <summary>Maps the <see cref="Item"/> snapshot to its response DTO, resolving assignee + attribution
 /// principal ids to <see cref="PersonRef"/> via a lookup built by the calling service.</summary>

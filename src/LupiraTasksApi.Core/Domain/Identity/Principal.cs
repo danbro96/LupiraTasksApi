@@ -1,4 +1,4 @@
-namespace LupiraTasksApi.Domain.Identity;
+namespace LupiraTasksApi.Core.Domain.Identity;
 
 /// <summary>
 /// A user identity (plain Marten document, JIT-provisioned from Authentik). <see cref="AuthentikSub"/>

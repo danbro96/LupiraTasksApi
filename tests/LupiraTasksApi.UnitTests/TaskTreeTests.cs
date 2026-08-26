@@ -1,4 +1,4 @@
-using LupiraTasksApi.Domain.Items;
+using LupiraTasksApi.Core.Domain.Items;
 using LupiraTasksApi.Mcp;
 using ModelContextProtocol;
 using ModelContextProtocol.Server;

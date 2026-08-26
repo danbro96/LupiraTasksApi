@@ -1,15 +1,15 @@
 using JasperFx;
-using LupiraTasksApi.Auth;
-using LupiraTasksApi.Data;
-using LupiraTasksApi.Domain;
-using LupiraTasksApi.Domain.Items;
-using LupiraTasksApi.Domain.Lists;
-using LupiraTasksApi.Dtos.Items;
-using LupiraTasksApi.Mappers;
+using LupiraTasksApi.Core.Auth;
+using LupiraTasksApi.Core.Data;
+using LupiraTasksApi.Core.Domain;
+using LupiraTasksApi.Core.Domain.Items;
+using LupiraTasksApi.Core.Domain.Lists;
+using LupiraTasksApi.Core.Dtos.Items;
+using LupiraTasksApi.Core.Mappers;
 using Marten;
 using Marten.Exceptions;
 
-namespace LupiraTasksApi.Application;
+namespace LupiraTasksApi.Core.Application;
 
 /// <summary>
 /// Transport-neutral item operations over the <c>Item</c> event stream, scoped to a list.

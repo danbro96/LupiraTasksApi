@@ -1,5 +1,5 @@
 using LupiraTasksApi.Dav;
-using LupiraTasksApi.Dtos.Items;
+using LupiraTasksApi.Core.Dtos.Items;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text;

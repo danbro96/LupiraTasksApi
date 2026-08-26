@@ -1,6 +1,6 @@
-using LupiraTasksApi.Domain;
+using LupiraTasksApi.Core.Domain;
 
-namespace LupiraTasksApi.Dtos.Shares;
+namespace LupiraTasksApi.Core.Dtos.Shares;
 
 /// <summary>A share link as the owner sees it, including the opaque <see cref="Token"/> and ready-to-copy <see cref="Url"/>.</summary>
 public sealed class ShareResponse

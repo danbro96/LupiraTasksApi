@@ -1,6 +1,6 @@
-using LupiraTasksApi.Domain;
+using LupiraTasksApi.Core.Domain;
 
-namespace LupiraTasksApi.Dtos.Shared;
+namespace LupiraTasksApi.Core.Dtos.Shared;
 
 /// <summary>A tag definition as shown on a shared list (no sensitive data).</summary>
 public sealed class SharedTagResponse

@@ -1,5 +1,5 @@
-using LupiraTasksApi.Domain;
-using LupiraTasksApi.Domain.Items;
+using LupiraTasksApi.Core.Domain;
+using LupiraTasksApi.Core.Domain.Items;
 using Xunit;
 
 namespace LupiraTasksApi.UnitTests;

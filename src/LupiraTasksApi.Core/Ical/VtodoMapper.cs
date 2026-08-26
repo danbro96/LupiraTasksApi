@@ -3,12 +3,12 @@ using Ical.Net;
 using Ical.Net.CalendarComponents;
 using Ical.Net.DataTypes;
 using Ical.Net.Serialization;
-using LupiraTasksApi.Domain;
-using LupiraTasksApi.Domain.Items;
-using LupiraTasksApi.Domain.Lists;
+using LupiraTasksApi.Core.Domain;
+using LupiraTasksApi.Core.Domain.Items;
+using LupiraTasksApi.Core.Domain.Lists;
 using IcalCalendar = Ical.Net.Calendar;
 
-namespace LupiraTasksApi.Ical;
+namespace LupiraTasksApi.Core.Ical;
 
 /// <summary>The modeled fields lifted out of an inbound VTODO. Everything else (RRULE, X-*…)
 /// is preserved opaquely in the raw blob and re-emitted by <see cref="VtodoMapper.ToVtodo"/>.</summary>

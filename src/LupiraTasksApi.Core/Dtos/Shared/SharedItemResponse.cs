@@ -1,4 +1,4 @@
-namespace LupiraTasksApi.Dtos.Shared;
+namespace LupiraTasksApi.Core.Dtos.Shared;
 
 /// <summary>
 /// An item as shown to a share-link recipient. Mirrors the fields a viewer/editor needs but

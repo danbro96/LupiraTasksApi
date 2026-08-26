@@ -1,4 +1,4 @@
-namespace LupiraTasksApi.Domain;
+namespace LupiraTasksApi.Core.Domain;
 
 /// <summary>Drives client UI affordances (e.g. shopping lists surface quantity/unit), and distinguishes
 /// agent/system-owned lists from a user's own (<see cref="Agent"/>) in queries and UI. A pure label set at

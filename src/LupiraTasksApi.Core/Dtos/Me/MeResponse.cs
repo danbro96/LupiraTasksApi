@@ -1,4 +1,4 @@
-namespace LupiraTasksApi.Dtos.Me;
+namespace LupiraTasksApi.Core.Dtos.Me;
 
 /// <summary>The caller's provisioned identity, returned by <c>GET /me</c>. <see cref="PrincipalId"/> is
 /// the stable internal id a client stores and matches against list members (and uses as its offline

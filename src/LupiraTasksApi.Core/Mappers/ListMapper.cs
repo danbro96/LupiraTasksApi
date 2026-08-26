@@ -1,10 +1,10 @@
-using LupiraTasksApi.Domain;
-using LupiraTasksApi.Domain.Identity;
-using LupiraTasksApi.Domain.Lists;
-using LupiraTasksApi.Dtos;
-using LupiraTasksApi.Dtos.Lists;
+using LupiraTasksApi.Core.Domain;
+using LupiraTasksApi.Core.Domain.Identity;
+using LupiraTasksApi.Core.Domain.Lists;
+using LupiraTasksApi.Core.Dtos;
+using LupiraTasksApi.Core.Dtos.Lists;
 
-namespace LupiraTasksApi.Mappers;
+namespace LupiraTasksApi.Core.Mappers;
 
 /// <summary>Maps the <see cref="TodoList"/> snapshot to its response DTO, resolving owner + member
 /// principal ids to <see cref="PersonRef"/> via a lookup built by the calling service.

@@ -1,4 +1,4 @@
-namespace LupiraTasksApi.Domain.Lists;
+namespace LupiraTasksApi.Core.Domain.Lists;
 
 // TodoList event stream (stream id = ListId). Positional records; the first field
 // is always the aggregate id. The acting user is carried out-of-band as a Marten

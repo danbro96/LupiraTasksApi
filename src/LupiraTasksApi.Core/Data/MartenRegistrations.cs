@@ -1,12 +1,12 @@
 using JasperFx.Events.Projections;
-using LupiraTasksApi.Domain;
-using LupiraTasksApi.Domain.Identity;
-using LupiraTasksApi.Domain.Items;
-using LupiraTasksApi.Domain.Lists;
-using LupiraTasksApi.Domain.Shares;
+using LupiraTasksApi.Core.Domain;
+using LupiraTasksApi.Core.Domain.Identity;
+using LupiraTasksApi.Core.Domain.Items;
+using LupiraTasksApi.Core.Domain.Lists;
+using LupiraTasksApi.Core.Domain.Shares;
 using Marten;
 
-namespace LupiraTasksApi.Data;
+namespace LupiraTasksApi.Core.Data;
 
 public static class MartenRegistrations
 {

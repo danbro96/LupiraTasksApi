@@ -1,4 +1,4 @@
-namespace LupiraTasksApi.Dtos.Lists;
+namespace LupiraTasksApi.Core.Dtos.Lists;
 
 /// <summary>
 /// Patch a list's metadata. Each non-null field emits its own event; omit a field

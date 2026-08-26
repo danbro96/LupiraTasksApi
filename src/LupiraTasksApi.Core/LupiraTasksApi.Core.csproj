@@ -4,8 +4,6 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <!-- Keep the LupiraTasksApi.* namespaces unchanged across the project split. -->
-    <RootNamespace>LupiraTasksApi</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>

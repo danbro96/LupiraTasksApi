@@ -1,4 +1,4 @@
-namespace LupiraTasksApi.Application;
+namespace LupiraTasksApi.Core.Application;
 
 /// <summary>Configuration for share links (bound from the <c>Share</c> section).</summary>
 public sealed class ShareLinkOptions

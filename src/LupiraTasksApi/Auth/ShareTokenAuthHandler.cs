@@ -1,8 +1,8 @@
 using System.Security.Claims;
 using System.Text.Encodings.Web;
-using LupiraTasksApi.Application;
-using LupiraTasksApi.Domain;
-using LupiraTasksApi.Domain.Shares;
+using LupiraTasksApi.Core.Application;
+using LupiraTasksApi.Core.Domain;
+using LupiraTasksApi.Core.Domain.Shares;
 using Marten;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Options;

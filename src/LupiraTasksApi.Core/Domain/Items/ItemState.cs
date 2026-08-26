@@ -1,4 +1,4 @@
-namespace LupiraTasksApi.Domain.Items;
+namespace LupiraTasksApi.Core.Domain.Items;
 
 /// <summary>
 /// The mutable per-field state of an item, plus the last-writer-wins (LWW) guard

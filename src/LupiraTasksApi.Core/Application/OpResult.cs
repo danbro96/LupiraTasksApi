@@ -1,4 +1,4 @@
-namespace LupiraTasksApi.Application;
+namespace LupiraTasksApi.Core.Application;
 
 /// <summary>
 /// The transport-neutral outcome of a service operation. Each surface's adapter maps it to

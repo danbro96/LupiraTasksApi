@@ -1,19 +1,19 @@
 using System.Security.Cryptography;
 using JasperFx;
-using LupiraTasksApi.Auth;
-using LupiraTasksApi.Data;
-using LupiraTasksApi.Domain;
-using LupiraTasksApi.Domain.Items;
-using LupiraTasksApi.Domain.Lists;
-using LupiraTasksApi.Domain.Shares;
-using LupiraTasksApi.Dtos.Shared;
-using LupiraTasksApi.Dtos.Shares;
-using LupiraTasksApi.Mappers;
+using LupiraTasksApi.Core.Auth;
+using LupiraTasksApi.Core.Data;
+using LupiraTasksApi.Core.Domain;
+using LupiraTasksApi.Core.Domain.Items;
+using LupiraTasksApi.Core.Domain.Lists;
+using LupiraTasksApi.Core.Domain.Shares;
+using LupiraTasksApi.Core.Dtos.Shared;
+using LupiraTasksApi.Core.Dtos.Shares;
+using LupiraTasksApi.Core.Mappers;
 using Marten;
 using Marten.Exceptions;
 using Microsoft.Extensions.Options;
 
-namespace LupiraTasksApi.Application;
+namespace LupiraTasksApi.Core.Application;
 
 /// <summary>
 /// Owner-side management of share links over the <c>ShareLink</c> event stream: mint (read or

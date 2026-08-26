@@ -1,6 +1,6 @@
 using System.Text.Json.Nodes;
-using LupiraTasksApi.Domain;
-using LupiraTasksApi.Dtos.Items;
+using LupiraTasksApi.Core.Domain;
+using LupiraTasksApi.Core.Dtos.Items;
 using Xunit;
 
 namespace LupiraTasksApi.IntegrationTests;

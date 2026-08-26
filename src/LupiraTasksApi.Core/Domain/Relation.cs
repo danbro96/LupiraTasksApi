@@ -1,7 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 
-namespace LupiraTasksApi.Domain;
+namespace LupiraTasksApi.Core.Domain;
 
 /// <summary>
 /// The single cross-API edge (plain Marten document, indexed by <see cref="FromId"/>): a by-reference link from a

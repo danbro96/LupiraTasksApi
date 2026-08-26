@@ -1,6 +1,6 @@
-using LupiraTasksApi.Domain;
+using LupiraTasksApi.Core.Domain;
 
-namespace LupiraTasksApi.Dtos.Items;
+namespace LupiraTasksApi.Core.Dtos.Items;
 
 /// <summary>Sets an item's lifecycle status, with an optional reason (e.g. why it's Blocked/Waiting).</summary>
 public sealed class SetStatusRequest

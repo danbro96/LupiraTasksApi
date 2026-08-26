@@ -1,6 +1,6 @@
 using JasperFx.Events;
 
-namespace LupiraTasksApi.Domain.Items;
+namespace LupiraTasksApi.Core.Domain.Items;
 
 /// <summary>
 /// Inline Marten snapshot for the <c>Item</c> stream (stream id = ItemId). All

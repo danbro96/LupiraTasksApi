@@ -1,15 +1,15 @@
 using JasperFx;
-using LupiraTasksApi.Auth;
-using LupiraTasksApi.Data;
-using LupiraTasksApi.Domain;
-using LupiraTasksApi.Domain.Lists;
-using LupiraTasksApi.Domain.Shares;
-using LupiraTasksApi.Dtos.Lists;
-using LupiraTasksApi.Mappers;
+using LupiraTasksApi.Core.Auth;
+using LupiraTasksApi.Core.Data;
+using LupiraTasksApi.Core.Domain;
+using LupiraTasksApi.Core.Domain.Lists;
+using LupiraTasksApi.Core.Domain.Shares;
+using LupiraTasksApi.Core.Dtos.Lists;
+using LupiraTasksApi.Core.Mappers;
 using Marten;
 using Marten.Exceptions;
 
-namespace LupiraTasksApi.Application;
+namespace LupiraTasksApi.Core.Application;
 
 /// <summary>
 /// Transport-neutral list operations over the <c>TodoList</c> event stream — the single

@@ -1,5 +1,5 @@
 using System.Net;
-using LupiraTasksApi.Dtos.Items;
+using LupiraTasksApi.Core.Dtos.Items;
 using Xunit;
 
 namespace LupiraTasksApi.IntegrationTests;

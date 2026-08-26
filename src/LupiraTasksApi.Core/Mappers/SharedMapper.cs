@@ -1,10 +1,10 @@
-using LupiraTasksApi.Domain;
-using LupiraTasksApi.Domain.Items;
-using LupiraTasksApi.Domain.Lists;
-using LupiraTasksApi.Dtos.Items;
-using LupiraTasksApi.Dtos.Shared;
+using LupiraTasksApi.Core.Domain;
+using LupiraTasksApi.Core.Domain.Items;
+using LupiraTasksApi.Core.Domain.Lists;
+using LupiraTasksApi.Core.Dtos.Items;
+using LupiraTasksApi.Core.Dtos.Shared;
 
-namespace LupiraTasksApi.Mappers;
+namespace LupiraTasksApi.Core.Mappers;
 
 /// <summary>
 /// Maps domain snapshots to the TRIMMED public share DTOs — the single place that decides what a

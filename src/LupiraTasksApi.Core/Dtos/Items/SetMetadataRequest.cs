@@ -1,6 +1,6 @@
 using System.Text.Json.Nodes;
 
-namespace LupiraTasksApi.Dtos.Items;
+namespace LupiraTasksApi.Core.Dtos.Items;
 
 /// <summary>Sets an item's free-form JSON metadata (whole-field). Send <c>null</c> to clear it.</summary>
 public sealed class SetMetadataRequest

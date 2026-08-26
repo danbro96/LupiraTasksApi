@@ -1,4 +1,4 @@
-using LupiraTasksApi.Domain;
+using LupiraTasksApi.Core.Domain;
 using Xunit;
 
 namespace LupiraTasksApi.UnitTests;

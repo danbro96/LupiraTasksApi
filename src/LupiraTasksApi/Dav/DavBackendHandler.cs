@@ -1,8 +1,8 @@
-using LupiraTasksApi.Application;
-using LupiraTasksApi.Domain.Identity;
-using LupiraTasksApi.Domain.Items;
-using LupiraTasksApi.Domain.Lists;
-using LupiraTasksApi.Ical;
+using LupiraTasksApi.Core.Application;
+using LupiraTasksApi.Core.Domain.Identity;
+using LupiraTasksApi.Core.Domain.Items;
+using LupiraTasksApi.Core.Domain.Lists;
+using LupiraTasksApi.Core.Ical;
 using Marten;
 
 namespace LupiraTasksApi.Dav;

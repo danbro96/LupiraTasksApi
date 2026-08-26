@@ -1,9 +1,9 @@
-using LupiraTasksApi.Application;
-using LupiraTasksApi.Domain;
-using LupiraTasksApi.Domain.Lists;
+using LupiraTasksApi.Core.Application;
+using LupiraTasksApi.Core.Domain;
+using LupiraTasksApi.Core.Domain.Lists;
 using Marten;
 
-namespace LupiraTasksApi.Auth;
+namespace LupiraTasksApi.Core.Auth;
 
 /// <summary>
 /// The outcome of a membership check. On success <see cref="List"/> and

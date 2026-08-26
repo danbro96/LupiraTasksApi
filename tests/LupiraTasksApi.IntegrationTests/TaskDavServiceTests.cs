@@ -1,8 +1,8 @@
-using LupiraTasksApi.Application;
-using LupiraTasksApi.Auth;
-using LupiraTasksApi.Domain;
-using LupiraTasksApi.Domain.Items;
-using LupiraTasksApi.Domain.Lists;
+using LupiraTasksApi.Core.Application;
+using LupiraTasksApi.Core.Auth;
+using LupiraTasksApi.Core.Domain;
+using LupiraTasksApi.Core.Domain.Items;
+using LupiraTasksApi.Core.Domain.Lists;
 using Marten;
 using Xunit;
 

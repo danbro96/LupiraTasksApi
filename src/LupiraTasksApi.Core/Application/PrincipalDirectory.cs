@@ -1,8 +1,8 @@
-using LupiraTasksApi.Domain.Identity;
+using LupiraTasksApi.Core.Domain.Identity;
 using Marten;
 using Npgsql;
 
-namespace LupiraTasksApi.Application;
+namespace LupiraTasksApi.Core.Application;
 
 /// <summary>
 /// Resolves an authenticated login (OIDC <c>sub</c> + email, or a DAV email) to a local

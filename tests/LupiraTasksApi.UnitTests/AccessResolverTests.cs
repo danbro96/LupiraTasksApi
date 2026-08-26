@@ -1,5 +1,5 @@
-using LupiraTasksApi.Auth;
-using LupiraTasksApi.Domain;
+using LupiraTasksApi.Core.Auth;
+using LupiraTasksApi.Core.Domain;
 using Xunit;
 
 namespace LupiraTasksApi.UnitTests;

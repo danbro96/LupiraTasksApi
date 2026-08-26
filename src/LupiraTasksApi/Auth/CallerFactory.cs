@@ -1,11 +1,11 @@
-using LupiraTasksApi.Application;
+using LupiraTasksApi.Core.Application;
 
 namespace LupiraTasksApi.Auth;
 
 /// <summary>
 /// The single funnel from a JWT principal to an application <see cref="Caller"/>: reads the
 /// <c>sub</c>/<c>email</c>/<c>name</c> claims via <see cref="CurrentUser"/>, resolves (and JIT-provisions)
-/// the internal <see cref="LupiraTasksApi.Domain.Identity.Principal"/> via <see cref="PrincipalDirectory"/>,
+/// the internal <see cref="LupiraTasksApi.Core.Domain.Identity.Principal"/> via <see cref="PrincipalDirectory"/>,
 /// and returns a member caller keyed by the stable principal id. Every member surface (REST handlers, MCP
 /// tools) builds its caller here so identity resolution lives in one place.
 /// </summary>

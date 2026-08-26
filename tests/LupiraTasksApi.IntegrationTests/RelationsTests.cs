@@ -1,7 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json.Nodes;
-using LupiraTasksApi.Dtos.Relations;
+using LupiraTasksApi.Core.Dtos.Relations;
 using Xunit;
 
 namespace LupiraTasksApi.IntegrationTests;

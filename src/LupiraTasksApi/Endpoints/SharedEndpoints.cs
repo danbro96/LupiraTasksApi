@@ -1,6 +1,6 @@
 using LupiraTasksApi.Auth;
-using LupiraTasksApi.Dtos.Items;
-using LupiraTasksApi.Dtos.Shared;
+using LupiraTasksApi.Core.Dtos.Items;
+using LupiraTasksApi.Core.Dtos.Shared;
 using LupiraTasksApi.Handlers;
 
 namespace LupiraTasksApi.Endpoints;

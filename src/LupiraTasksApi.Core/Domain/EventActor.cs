@@ -2,7 +2,7 @@ using System.Diagnostics;
 using JasperFx.Events;
 using Marten;
 
-namespace LupiraTasksApi.Domain;
+namespace LupiraTasksApi.Core.Domain;
 
 /// <summary>
 /// Reads and stamps event provenance. The acting principal rides the <c>actor</c> header

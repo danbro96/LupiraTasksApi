@@ -1,7 +1,7 @@
-using LupiraTasksApi.Domain;
-using LupiraTasksApi.Dtos.Lists;
-using LupiraTasksApi.Dtos.Me;
-using LupiraTasksApi.Dtos.Users;
+using LupiraTasksApi.Core.Domain;
+using LupiraTasksApi.Core.Dtos.Lists;
+using LupiraTasksApi.Core.Dtos.Me;
+using LupiraTasksApi.Core.Dtos.Users;
 using Xunit;
 
 namespace LupiraTasksApi.IntegrationTests;

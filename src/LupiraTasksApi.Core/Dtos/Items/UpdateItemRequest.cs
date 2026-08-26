@@ -1,4 +1,4 @@
-namespace LupiraTasksApi.Dtos.Items;
+namespace LupiraTasksApi.Core.Dtos.Items;
 
 /// <summary>
 /// Patch an item. Emits exactly one event per changed field. A field changes only when

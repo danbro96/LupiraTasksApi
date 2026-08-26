@@ -1,8 +1,8 @@
 using JasperFx;
-using LupiraTasksApi.Domain;
+using LupiraTasksApi.Core.Domain;
 using Marten;
 
-namespace LupiraTasksApi.Data;
+namespace LupiraTasksApi.Core.Data;
 
 /// <summary>
 /// Offline-first idempotency gate. A mutation may carry an <c>Idempotency-Key</c> header (a client-minted GUIDv7

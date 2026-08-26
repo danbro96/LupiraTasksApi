@@ -1,14 +1,14 @@
 using System.ComponentModel;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using LupiraTasksApi.Application;
+using LupiraTasksApi.Core.Application;
 using LupiraTasksApi.Auth;
-using LupiraTasksApi.Domain;
-using LupiraTasksApi.Domain.Items;
-using LupiraTasksApi.Dtos.Items;
-using LupiraTasksApi.Dtos.Lists;
-using LupiraTasksApi.Dtos.Relations;
-using LupiraTasksApi.Dtos.Shares;
+using LupiraTasksApi.Core.Domain;
+using LupiraTasksApi.Core.Domain.Items;
+using LupiraTasksApi.Core.Dtos.Items;
+using LupiraTasksApi.Core.Dtos.Lists;
+using LupiraTasksApi.Core.Dtos.Relations;
+using LupiraTasksApi.Core.Dtos.Shares;
 using ModelContextProtocol;
 using ModelContextProtocol.Server;
 

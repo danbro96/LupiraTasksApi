@@ -1,7 +1,7 @@
-using LupiraTasksApi.Dtos.Items;
-using LupiraTasksApi.Dtos.Lists;
+using LupiraTasksApi.Core.Dtos.Items;
+using LupiraTasksApi.Core.Dtos.Lists;
 
-namespace LupiraTasksApi.Dtos.Sync;
+namespace LupiraTasksApi.Core.Dtos.Sync;
 
 /// <summary>
 /// A full re-derive of a list and its live items, for the offline delta-pull. v1 is

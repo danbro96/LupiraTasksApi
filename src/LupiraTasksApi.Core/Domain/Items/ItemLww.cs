@@ -1,4 +1,4 @@
-namespace LupiraTasksApi.Domain.Items;
+namespace LupiraTasksApi.Core.Domain.Items;
 
 /// <summary>
 /// Pure, DB-free conflict-resolution rules for an item: every method mutates an <see cref="ItemState"/> in place

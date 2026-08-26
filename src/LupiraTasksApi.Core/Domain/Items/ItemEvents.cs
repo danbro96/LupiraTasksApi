@@ -1,4 +1,4 @@
-namespace LupiraTasksApi.Domain.Items;
+namespace LupiraTasksApi.Core.Domain.Items;
 
 // Item event stream (stream id = ItemId). Positional records; the first field is
 // always the aggregate id. Every event carries OccurredAt — the client wall-clock

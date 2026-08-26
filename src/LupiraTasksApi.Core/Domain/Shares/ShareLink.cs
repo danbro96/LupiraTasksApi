@@ -1,6 +1,6 @@
 using JasperFx.Events;
 
-namespace LupiraTasksApi.Domain.Shares;
+namespace LupiraTasksApi.Core.Domain.Shares;
 
 /// <summary>
 /// Inline Marten snapshot for the <c>ShareLink</c> stream (stream id = <see cref="Id"/>, a

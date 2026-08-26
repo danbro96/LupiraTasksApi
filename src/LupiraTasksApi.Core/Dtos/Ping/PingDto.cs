@@ -1,4 +1,4 @@
-namespace LupiraTasksApi.Dtos.Ping;
+namespace LupiraTasksApi.Core.Dtos.Ping;
 
 /// <summary>The claims a caller's token resolved to, echoed for cross-service auth-seam probes.
 /// Returning the audiences (not a bare 200) lets a failing consumer see which half of the seam

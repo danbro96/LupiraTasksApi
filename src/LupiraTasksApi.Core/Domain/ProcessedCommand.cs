@@ -1,4 +1,4 @@
-namespace LupiraTasksApi.Domain;
+namespace LupiraTasksApi.Core.Domain;
 
 /// <summary>
 /// Idempotency record: marks a command as already processed so a redelivered

@@ -1,7 +1,7 @@
-using LupiraTasksApi.Application;
+using LupiraTasksApi.Core.Application;
 using LupiraTasksApi.Auth;
-using LupiraTasksApi.Domain.Lists;
-using LupiraTasksApi.Dtos.Users;
+using LupiraTasksApi.Core.Domain.Lists;
+using LupiraTasksApi.Core.Dtos.Users;
 using Marten;
 using Microsoft.AspNetCore.Http.HttpResults;
 

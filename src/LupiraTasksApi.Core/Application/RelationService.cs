@@ -1,11 +1,11 @@
-using LupiraTasksApi.Auth;
-using LupiraTasksApi.Domain;
-using LupiraTasksApi.Domain.Items;
-using LupiraTasksApi.Dtos.Relations;
-using LupiraTasksApi.Mappers;
+using LupiraTasksApi.Core.Auth;
+using LupiraTasksApi.Core.Domain;
+using LupiraTasksApi.Core.Domain.Items;
+using LupiraTasksApi.Core.Dtos.Relations;
+using LupiraTasksApi.Core.Mappers;
 using Marten;
 
-namespace LupiraTasksApi.Application;
+namespace LupiraTasksApi.Core.Application;
 
 /// <summary>
 /// Cross-API relations: a by-reference link from a task to a cal-api Prompt heartbeat or an external ref

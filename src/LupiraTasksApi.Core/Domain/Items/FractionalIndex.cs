@@ -1,4 +1,4 @@
-namespace LupiraTasksApi.Domain.Items;
+namespace LupiraTasksApi.Core.Domain.Items;
 
 /// <summary>
 /// Order-key arithmetic for <see cref="ItemState.SortOrder"/>: a wire-compatible port of the

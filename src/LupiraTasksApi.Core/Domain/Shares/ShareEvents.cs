@@ -1,4 +1,4 @@
-namespace LupiraTasksApi.Domain.Shares;
+namespace LupiraTasksApi.Core.Domain.Shares;
 
 /// <summary>
 /// A public share link was minted for a list. The <see cref="Token"/> is the opaque secret a

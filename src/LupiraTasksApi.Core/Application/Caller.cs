@@ -1,6 +1,6 @@
-using LupiraTasksApi.Domain;
+using LupiraTasksApi.Core.Domain;
 
-namespace LupiraTasksApi.Application;
+namespace LupiraTasksApi.Core.Application;
 
 /// <summary>
 /// The authenticated caller, reduced to the transport-neutral facts the service layer needs. Two shapes:

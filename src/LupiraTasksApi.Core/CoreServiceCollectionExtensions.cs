@@ -1,6 +1,6 @@
-using LupiraTasksApi.Application;
-using LupiraTasksApi.Auth;
-using LupiraTasksApi.Data;
+using LupiraTasksApi.Core.Application;
+using LupiraTasksApi.Core.Auth;
+using LupiraTasksApi.Core.Data;
 
 namespace Microsoft.Extensions.DependencyInjection;
 

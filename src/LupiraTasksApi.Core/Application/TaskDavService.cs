@@ -1,13 +1,13 @@
 using System.Security.Cryptography;
 using System.Text.Json;
-using LupiraTasksApi.Auth;
-using LupiraTasksApi.Domain;
-using LupiraTasksApi.Domain.Items;
-using LupiraTasksApi.Domain.Lists;
-using LupiraTasksApi.Ical;
+using LupiraTasksApi.Core.Auth;
+using LupiraTasksApi.Core.Domain;
+using LupiraTasksApi.Core.Domain.Items;
+using LupiraTasksApi.Core.Domain.Lists;
+using LupiraTasksApi.Core.Ical;
 using Marten;
 
-namespace LupiraTasksApi.Application;
+namespace LupiraTasksApi.Core.Application;
 
 /// <summary>
 /// The CalDAV (VTODO) core: enumerates and mutates items for the <c>/dav</c> surface, reusing the

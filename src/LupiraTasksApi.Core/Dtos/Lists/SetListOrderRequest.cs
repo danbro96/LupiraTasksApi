@@ -1,4 +1,4 @@
-namespace LupiraTasksApi.Dtos.Lists;
+namespace LupiraTasksApi.Core.Dtos.Lists;
 
 /// <summary>
 /// Set the caller's own position for a list in their lists screen. <see cref="SortOrder"/> is a

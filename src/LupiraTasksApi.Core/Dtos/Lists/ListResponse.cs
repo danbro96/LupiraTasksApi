@@ -1,6 +1,6 @@
-using LupiraTasksApi.Domain;
+using LupiraTasksApi.Core.Domain;
 
-namespace LupiraTasksApi.Dtos.Lists;
+namespace LupiraTasksApi.Core.Dtos.Lists;
 
 /// <summary>A tag definition on a list.</summary>
 public sealed class TagResponse

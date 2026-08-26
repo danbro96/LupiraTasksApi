@@ -1,6 +1,6 @@
 using System.Text.Json.Nodes;
 
-namespace LupiraTasksApi.Dtos.Relations;
+namespace LupiraTasksApi.Core.Dtos.Relations;
 
 public sealed class RelationDto
 {

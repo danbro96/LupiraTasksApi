@@ -1,6 +1,6 @@
-using LupiraTasksApi.Domain;
-using LupiraTasksApi.Dtos.Items;
-using LupiraTasksApi.Dtos.Lists;
+using LupiraTasksApi.Core.Domain;
+using LupiraTasksApi.Core.Dtos.Items;
+using LupiraTasksApi.Core.Dtos.Lists;
 using Xunit;
 
 namespace LupiraTasksApi.IntegrationTests;

@@ -1,5 +1,5 @@
-using LupiraTasksApi.Domain;
-using LupiraTasksApi.Dtos.Items;
+using LupiraTasksApi.Core.Domain;
+using LupiraTasksApi.Core.Dtos.Items;
 using LupiraTasksApi.Handlers;
 
 namespace LupiraTasksApi.Endpoints;

@@ -1,8 +1,8 @@
 using System.Linq;
 using System.Net;
-using LupiraTasksApi.Domain;
-using LupiraTasksApi.Dtos.Lists;
-using LupiraTasksApi.Dtos.Shares;
+using LupiraTasksApi.Core.Domain;
+using LupiraTasksApi.Core.Dtos.Lists;
+using LupiraTasksApi.Core.Dtos.Shares;
 using Xunit;
 
 namespace LupiraTasksApi.IntegrationTests;

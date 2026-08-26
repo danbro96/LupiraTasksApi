@@ -1,12 +1,12 @@
-using LupiraTasksApi.Application;
+using LupiraTasksApi.Core.Application;
 using LupiraTasksApi.Auth;
-using LupiraTasksApi.Dtos.Me;
+using LupiraTasksApi.Core.Dtos.Me;
 using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace LupiraTasksApi.Handlers;
 
 /// <summary>
-/// Identity provisioning. <c>GET /me</c> resolves the caller's <see cref="LupiraTasksApi.Domain.Identity.Principal"/>
+/// Identity provisioning. <c>GET /me</c> resolves the caller's <see cref="LupiraTasksApi.Core.Domain.Identity.Principal"/>
 /// from the bearer token via <see cref="PrincipalDirectory"/> (create on first login, else refresh
 /// email/displayName/last-seen), and returns the stable principal id plus display fields. The display
 /// name is owned by the identity provider (Authentik) and is never client-editable; <c>IsAdmin</c> is

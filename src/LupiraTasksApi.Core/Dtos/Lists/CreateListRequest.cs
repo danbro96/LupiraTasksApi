@@ -1,6 +1,6 @@
-using LupiraTasksApi.Domain;
+using LupiraTasksApi.Core.Domain;
 
-namespace LupiraTasksApi.Dtos.Lists;
+namespace LupiraTasksApi.Core.Dtos.Lists;
 
 /// <summary>
 /// Create a list. The client supplies a GUIDv7 <see cref="Id"/> so the create is
