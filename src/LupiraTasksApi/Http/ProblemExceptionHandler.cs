@@ -11,6 +11,18 @@ internal sealed class ProblemExceptionHandler(ILogger<ProblemExceptionHandler> l
 {
     public async ValueTask<bool> TryHandleAsync(HttpContext context, Exception exception, CancellationToken ct)
     {
+        // A malformed body or bad route value surfaces as BadHttpRequestException carrying its own
+        // status — the caller's mistake, not a fault, and not a 500.
+        if (exception is BadHttpRequestException bad)
+        {
+            await Results.Problem(
+                title: "Bad request",
+                detail: bad.Message,
+                statusCode: bad.StatusCode,
+                type: $"https://httpstatuses.com/{bad.StatusCode}").ExecuteAsync(context);
+            return true;
+        }
+
         log.LogError(exception, "Unhandled request exception on {Method} {Path}", context.Request.Method, context.Request.Path);
 
         await Results.Problem(
