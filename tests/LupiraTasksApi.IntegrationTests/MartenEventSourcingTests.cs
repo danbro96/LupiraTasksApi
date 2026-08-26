@@ -1,9 +1,9 @@
 using JasperFx;
 using LupiraTasksApi.Core.Domain;
 using LupiraTasksApi.Core.Domain.Items;
+using LupiraTasksApi.Core.Domain.Items.Events;
 using Marten;
 using Xunit;
-using LupiraTasksApi.Core.Domain.Items.Events;
 
 namespace LupiraTasksApi.IntegrationTests;
 
@@ -67,7 +67,7 @@ public sealed class MartenEventSourcingTests(TasksApiTestFactory factory) : Inte
         await using var cmd = conn.CreateCommand();
         cmd.CommandText = "select data::text from tasks.mt_events where stream_id = @id and type = 'item_status_changed'";
         cmd.Parameters.AddWithValue("id", itemId);
-        var json = (string?)await cmd.ExecuteScalarAsync();
+        var json = (string?) await cmd.ExecuteScalarAsync();
 
         Assert.NotNull(json);
         Assert.Contains("\"Blocked\"", json);   // string name; an int-stored enum would never contain this

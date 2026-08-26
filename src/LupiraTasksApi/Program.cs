@@ -177,7 +177,6 @@ builder.Services.AddOpenApi("v1", options =>
 
         AddProblem(operation, context.Document, StatusCodes.Status500InternalServerError, "Internal server error");
 
-
         // Bodyless 4xx/5xx come from the non-generic arms of the typed-result unions (NotFound,
 
         // UnauthorizedHttpResult). UseStatusCodePages fills them at runtime, so declare the shape.
@@ -197,7 +196,6 @@ builder.Services.AddOpenApi("v1", options =>
             { Description = existing.Description, Content = ProblemContent(context.Document) };
 
         }
-
 
         return Task.CompletedTask;
     });

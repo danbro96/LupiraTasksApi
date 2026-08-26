@@ -3,10 +3,10 @@ using LupiraTasksApi.Core.Auth;
 using LupiraTasksApi.Core.Domain;
 using LupiraTasksApi.Core.Domain.Items;
 using LupiraTasksApi.Core.Domain.Lists;
+using LupiraTasksApi.Core.Domain.Lists.Events;
 using LupiraTasksApi.Core.Dtos.Items;
 using Marten;
 using Xunit;
-using LupiraTasksApi.Core.Domain.Lists.Events;
 
 namespace LupiraTasksApi.IntegrationTests;
 
