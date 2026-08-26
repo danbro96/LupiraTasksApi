@@ -19,14 +19,16 @@ public static class SharesEndpoints
             .Produces<ShareResponse>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status401Unauthorized)
-            .Produces(StatusCodes.Status404NotFound);
+            .Produces(StatusCodes.Status404NotFound)
+            .WithName("CreateShare");
 
         group.MapGet("/", (Guid listId, SharesHandler h, CancellationToken ct) =>
                 h.ListAsync(listId, ct))
             .WithSummary("List a list's active share links (Owner).")
             .Produces<ShareCollectionResponse>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status401Unauthorized)
-            .Produces(StatusCodes.Status404NotFound);
+            .Produces(StatusCodes.Status404NotFound)
+            .WithName("ListShares");
 
         group.MapDelete("/{shareId:guid}", (HttpContext ctx, Guid listId, Guid shareId, SharesHandler h, CancellationToken ct) =>
                 h.RevokeAsync(ctx, listId, shareId, ct))
@@ -34,7 +36,8 @@ public static class SharesEndpoints
             .WithSummary("Revoke a share link (Owner). The token is rejected on its next use.")
             .Produces(StatusCodes.Status204NoContent)
             .Produces(StatusCodes.Status401Unauthorized)
-            .Produces(StatusCodes.Status404NotFound);
+            .Produces(StatusCodes.Status404NotFound)
+            .WithName("DeleteShare");
 
         // Member-side redemption: an authenticated caller "cashes in" a share token to join the list.
         // JWT-authed (the default scheme) — distinct from the account-less ShareToken `/shared/{token}`
@@ -49,7 +52,8 @@ public static class SharesEndpoints
             .Produces<RedeemShareResponse>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status401Unauthorized)
-            .Produces(StatusCodes.Status404NotFound);
+            .Produces(StatusCodes.Status404NotFound)
+            .WithName("RedeemShare");
 
         return app;
     }

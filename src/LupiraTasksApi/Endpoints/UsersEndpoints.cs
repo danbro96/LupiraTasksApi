@@ -16,7 +16,8 @@ public static class UsersEndpoints
             .WithSummary("People seen across the caller's shared lists (for adding members).")
             .WithDescription("`?q=` filters the distinct member emails (case-insensitive substring).")
             .Produces<DirectoryResponse>(StatusCodes.Status200OK)
-            .Produces(StatusCodes.Status401Unauthorized);
+            .Produces(StatusCodes.Status401Unauthorized)
+            .WithName("GetUserDirectory");
 
         return app;
     }

@@ -1,3 +1,5 @@
+using LupiraTasksApi.Core.Domain.Items.Events;
+
 namespace LupiraTasksApi.Core.Domain.Items;
 
 /// <summary>

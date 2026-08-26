@@ -1,28 +1,7 @@
 using JasperFx.Events;
+using LupiraTasksApi.Core.Domain.Lists.Events;
 
 namespace LupiraTasksApi.Core.Domain.Lists;
-
-/// <summary>A tag definition scoped to a single list.</summary>
-public sealed class TagDef
-{
-    public Guid Id { get; set; }
-    public string Label { get; set; } = "";
-    public string Color { get; set; } = "";
-}
-
-/// <summary>A user's membership of a list, keyed by the internal principal id.</summary>
-public sealed class Member
-{
-    public Guid PrincipalId { get; set; }
-    public ListRole Role { get; set; }
-    public DateTimeOffset AddedAt { get; set; }
-    /// <summary>The actor who added them (a principal id, or <c>share:{label}</c>).</summary>
-    public string? AddedBy { get; set; }
-
-    /// <summary>This member's own position for the list in their lists screen (fractional-index key).
-    /// Null until they first reorder; the clients sort those by name.</summary>
-    public string? SortOrder { get; set; }
-}
 
 /// <summary>
 /// Inline Marten snapshot for the <c>TodoList</c> stream (stream id = ListId).

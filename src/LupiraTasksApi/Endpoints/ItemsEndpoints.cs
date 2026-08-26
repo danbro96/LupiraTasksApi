@@ -16,7 +16,8 @@ public static class ItemsEndpoints
             .WithSummary("Search items across the caller's lists (Viewer+).")
             .WithDescription("Case-insensitive `query` title substring, optional `completed`/`status`. `dueFrom`/`dueTo` bound `dueAt` half-open `[from, to)`; either bound implies `dueAt` is set. Spans every list the caller is a member of (archived included).")
             .Produces<ItemCollectionResponse>(StatusCodes.Status200OK)
-            .Produces(StatusCodes.Status401Unauthorized);
+            .Produces(StatusCodes.Status401Unauthorized)
+            .WithName("ListItems");
 
         top.MapPatch("/{itemId:guid}", (HttpContext ctx, Guid itemId, UpdateItemRequest body, ItemsHandler h, CancellationToken ct) =>
                 h.UpdateByIdAsync(ctx, itemId, body, ct))
@@ -26,7 +27,8 @@ public static class ItemsEndpoints
             .Produces<ItemResponse>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status401Unauthorized)
-            .Produces(StatusCodes.Status404NotFound);
+            .Produces(StatusCodes.Status404NotFound)
+            .WithName("UpdateItem");
 
         top.MapPost("/{itemId:guid}/metadata", (HttpContext ctx, Guid itemId, SetMetadataRequest body, ItemsHandler h, CancellationToken ct) =>
                 h.SetMetadataByIdAsync(ctx, itemId, body, ct))
@@ -36,7 +38,8 @@ public static class ItemsEndpoints
             .Produces<ItemResponse>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status401Unauthorized)
-            .Produces(StatusCodes.Status404NotFound);
+            .Produces(StatusCodes.Status404NotFound)
+            .WithName("SetItemMetadata");
 
         var group = app.MapGroup("/lists/{listId:guid}/items")
             .RequireAuthorization()
@@ -56,7 +59,8 @@ public static class ItemsEndpoints
             .WithDescription("Excludes deleted items; ordered by `sortOrder`. Filters: `completed`, `tagId`, `parentItemId`, `assignedTo`, `status`.")
             .Produces<ItemCollectionResponse>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status401Unauthorized)
-            .Produces(StatusCodes.Status404NotFound);
+            .Produces(StatusCodes.Status404NotFound)
+            .WithName("ListListItems");
 
         group.MapPost("/", (HttpContext ctx, Guid listId, CreateItemRequest body, ItemsHandler h, CancellationToken ct) =>
                 h.CreateAsync(ctx, listId, body, ct))
@@ -66,14 +70,16 @@ public static class ItemsEndpoints
             .Produces<ItemResponse>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status401Unauthorized)
-            .Produces(StatusCodes.Status404NotFound);
+            .Produces(StatusCodes.Status404NotFound)
+            .WithName("CreateListItem");
 
         group.MapGet("/{itemId:guid}", (Guid listId, Guid itemId, ItemsHandler h, CancellationToken ct) =>
                 h.GetAsync(listId, itemId, ct))
             .WithSummary("Get a single item (Viewer+).")
             .Produces<ItemResponse>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status401Unauthorized)
-            .Produces(StatusCodes.Status404NotFound);
+            .Produces(StatusCodes.Status404NotFound)
+            .WithName("GetItem");
 
         group.MapPatch("/{itemId:guid}", (HttpContext ctx, Guid listId, Guid itemId, UpdateItemRequest body, ItemsHandler h, CancellationToken ct) =>
                 h.UpdateAsync(ctx, listId, itemId, body, ct))
@@ -83,7 +89,8 @@ public static class ItemsEndpoints
             .Produces<ItemResponse>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status401Unauthorized)
-            .Produces(StatusCodes.Status404NotFound);
+            .Produces(StatusCodes.Status404NotFound)
+            .WithName("UpdateListItem");
 
         group.MapPost("/{itemId:guid}/complete", (HttpContext ctx, Guid listId, Guid itemId, ItemTimestampRequest? body, ItemsHandler h, CancellationToken ct) =>
                 h.CompleteAsync(ctx, listId, itemId, body, ct))
@@ -91,7 +98,8 @@ public static class ItemsEndpoints
             .WithSummary("Mark an item complete (Editor+).")
             .Produces<ItemResponse>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status401Unauthorized)
-            .Produces(StatusCodes.Status404NotFound);
+            .Produces(StatusCodes.Status404NotFound)
+            .WithName("CompleteItem");
 
         group.MapPost("/{itemId:guid}/reopen", (HttpContext ctx, Guid listId, Guid itemId, ItemTimestampRequest? body, ItemsHandler h, CancellationToken ct) =>
                 h.ReopenAsync(ctx, listId, itemId, body, ct))
@@ -99,7 +107,8 @@ public static class ItemsEndpoints
             .WithSummary("Reopen a completed item (Editor+).")
             .Produces<ItemResponse>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status401Unauthorized)
-            .Produces(StatusCodes.Status404NotFound);
+            .Produces(StatusCodes.Status404NotFound)
+            .WithName("ReopenItem");
 
         group.MapPost("/{itemId:guid}/status", (HttpContext ctx, Guid listId, Guid itemId, SetStatusRequest body, ItemsHandler h, CancellationToken ct) =>
                 h.SetStatusAsync(ctx, listId, itemId, body, ct))
@@ -110,7 +119,8 @@ public static class ItemsEndpoints
             .Produces<ItemResponse>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status401Unauthorized)
-            .Produces(StatusCodes.Status404NotFound);
+            .Produces(StatusCodes.Status404NotFound)
+            .WithName("SetItemStatus");
 
         group.MapPost("/{itemId:guid}/metadata", (HttpContext ctx, Guid listId, Guid itemId, SetMetadataRequest body, ItemsHandler h, CancellationToken ct) =>
                 h.SetMetadataAsync(ctx, listId, itemId, body, ct))
@@ -120,7 +130,8 @@ public static class ItemsEndpoints
             .Produces<ItemResponse>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status401Unauthorized)
-            .Produces(StatusCodes.Status404NotFound);
+            .Produces(StatusCodes.Status404NotFound)
+            .WithName("SetListItemMetadata");
 
         group.MapPost("/{itemId:guid}/move", (HttpContext ctx, Guid listId, Guid itemId, MoveItemRequest body, ItemsHandler h, CancellationToken ct) =>
                 h.MoveAsync(ctx, listId, itemId, body, ct))
@@ -130,7 +141,8 @@ public static class ItemsEndpoints
             .Produces<ItemResponse>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status401Unauthorized)
-            .Produces(StatusCodes.Status404NotFound);
+            .Produces(StatusCodes.Status404NotFound)
+            .WithName("MoveItem");
 
         group.MapDelete("/{itemId:guid}", (HttpContext ctx, Guid listId, Guid itemId, DateTimeOffset? occurredAt, ItemsHandler h, CancellationToken ct) =>
                 h.DeleteAsync(ctx, listId, itemId, occurredAt, ct))
@@ -139,7 +151,8 @@ public static class ItemsEndpoints
             .WithDescription("Optional `?occurredAt=` (ISO-8601) carries the client timestamp for LWW.")
             .Produces(StatusCodes.Status204NoContent)
             .Produces(StatusCodes.Status401Unauthorized)
-            .Produces(StatusCodes.Status404NotFound);
+            .Produces(StatusCodes.Status404NotFound)
+            .WithName("DeleteListItem");
 
         return app;
     }

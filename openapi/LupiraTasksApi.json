@@ -59,6 +59,7 @@
         ],
         "summary": "Offline delta-pull for a list (Viewer+).",
         "description": "Returns the current list plus all its live items (v1 full re-derive,\nregardless of `?since=`) and a `nextCursor` to pass on the next pull. The\nclient rebases its local mirror onto this base, then re-applies non-acked\noutbox rows.",
+        "operationId": "SyncList",
         "parameters": [
           {
             "name": "listId",
@@ -134,6 +135,7 @@
         ],
         "summary": "Redeem a share link as the authenticated caller (join the list).",
         "description": "Body `{ token }`. Adds the caller to the linked list — `ReadWrite` → Editor, `Read` → Viewer — and returns `{ listId, role }`. Idempotent: an existing member keeps their current role. Used by the web client to cash in a share link after SSO.",
+        "operationId": "RedeemShare",
         "parameters": [
           {
             "name": "Idempotency-Key",
@@ -221,6 +223,7 @@
         ],
         "summary": "Provision and return the caller's profile.",
         "description": "Upserts the caller's `UserProfile` from the bearer token (create on first\nlogin, else bump `LastSeenAt` and refresh display name / admin flag) and\nreturns `{ email, displayName, isAdmin }`. Call on app cold start.",
+        "operationId": "GetMe",
         "responses": {
           "200": {
             "description": "OK",
@@ -267,6 +270,7 @@
         ],
         "summary": "People seen across the caller's shared lists (for adding members).",
         "description": "`?q=` filters the distinct member emails (case-insensitive substring).",
+        "operationId": "GetUserDirectory",
         "parameters": [
           {
             "name": "q",
@@ -322,6 +326,7 @@
         ],
         "summary": "List the lists the caller is a member of.",
         "description": "`?archived=true` returns the caller's archived lists instead of the active ones.",
+        "operationId": "ListLists",
         "parameters": [
           {
             "name": "archived",
@@ -375,6 +380,7 @@
         ],
         "summary": "Create a list; the caller becomes Owner.",
         "description": "Body `{ id (GUIDv7), name, kind, color? }`. `kind` is `Todo`, `Shopping`, or `Agent` (agent/system-owned lists). Re-sending an existing id is an idempotent success.",
+        "operationId": "CreateList",
         "parameters": [
           {
             "name": "Idempotency-Key",
@@ -451,6 +457,7 @@
           "Lists"
         ],
         "summary": "Get a list with its members and tags (Viewer+).",
+        "operationId": "GetList",
         "parameters": [
           {
             "name": "listId",
@@ -516,6 +523,7 @@
         ],
         "summary": "Rename / recolor a list, or set its priority mode (Editor+).",
         "description": "Each provided field emits its own event. Set `colorProvided` to apply `color` (incl. clearing it). Send `simplePriority` (bool) to switch between simple on/off and the full 0..9 scale.",
+        "operationId": "UpdateList",
         "parameters": [
           {
             "name": "listId",
@@ -609,6 +617,7 @@
           "Lists"
         ],
         "summary": "Delete a list (Owner). Tombstone — stream retained.",
+        "operationId": "DeleteList",
         "parameters": [
           {
             "name": "listId",
@@ -677,6 +686,7 @@
           "Lists"
         ],
         "summary": "Archive a list (Owner). Soft — items retained.",
+        "operationId": "ArchiveList",
         "parameters": [
           {
             "name": "listId",
@@ -752,6 +762,7 @@
           "Lists"
         ],
         "summary": "Restore an archived list (Owner).",
+        "operationId": "RestoreList",
         "parameters": [
           {
             "name": "listId",
@@ -828,6 +839,7 @@
         ],
         "summary": "Set the caller's own position for this list (Viewer+).",
         "description": "Body `{ sortOrder }` — a fractional-index key generated between the neighbours the list was dropped between. Per-user: other members' ordering is untouched, and this does not count as a change to the list. Returned as `sortOrder` on the caller's `ListResponse`; lists the caller has never ordered come back null and sort by name after the ordered ones.",
+        "operationId": "ReorderListItems",
         "parameters": [
           {
             "name": "listId",
@@ -924,6 +936,7 @@
         ],
         "summary": "Add a member by email (any member; defaults to Editor).",
         "description": "Body `{ email, role? }`. Direct-add, no invite/accept. An unseen email provisions a placeholder principal (its `sub` is upgraded when the person first logs in). Members are returned with their `principalId`; use that for role change / removal.",
+        "operationId": "AddListMember",
         "parameters": [
           {
             "name": "listId",
@@ -1019,6 +1032,7 @@
           "Lists"
         ],
         "summary": "Change a member's role by principal id (Owner only).",
+        "operationId": "UpdateListMember",
         "parameters": [
           {
             "name": "listId",
@@ -1131,6 +1145,7 @@
           "Lists"
         ],
         "summary": "Remove a member by principal id, or leave (self). Last owner leaving deletes the list for everyone.",
+        "operationId": "RemoveListMember",
         "parameters": [
           {
             "name": "listId",
@@ -1229,6 +1244,7 @@
         ],
         "summary": "Search items across the caller's lists (Viewer+).",
         "description": "Case-insensitive `query` title substring, optional `completed`/`status`. `dueFrom`/`dueTo` bound `dueAt` half-open `[from, to)`; either bound implies `dueAt` is set. Spans every list the caller is a member of (archived included).",
+        "operationId": "ListItems",
         "parameters": [
           {
             "name": "query",
@@ -1314,6 +1330,7 @@
         ],
         "summary": "Edit item fields addressed by id (Editor+); the list is resolved server-side.",
         "description": "Same body as the list-scoped PATCH (`*Provided` flags). 404 if no such item or the caller can't edit its list.",
+        "operationId": "UpdateItem",
         "parameters": [
           {
             "name": "itemId",
@@ -1410,6 +1427,7 @@
         ],
         "summary": "Set an item's metadata addressed by id (Editor+); the list is resolved server-side.",
         "description": "Body `{ metadata (JSON object or null), occurredAt? }`. Whole-field LWW. 404 if no such item or the caller can't edit its list.",
+        "operationId": "SetItemMetadata",
         "parameters": [
           {
             "name": "itemId",
@@ -1506,6 +1524,7 @@
         ],
         "summary": "List a list's items (Viewer+).",
         "description": "Excludes deleted items; ordered by `sortOrder`. Filters: `completed`, `tagId`, `parentItemId`, `assignedTo`, `status`.",
+        "operationId": "ListListItems",
         "parameters": [
           {
             "name": "listId",
@@ -1608,6 +1627,7 @@
         ],
         "summary": "Add an item (Editor+).",
         "description": "Body `{ id (GUIDv7), title, parentItemId?, dueAt?, assigneeEmail?, quantity?, unit?, priority? (0..9), tagIds?, sortOrder, occurredAt? }`. Re-sending an existing id is idempotent.",
+        "operationId": "CreateListItem",
         "parameters": [
           {
             "name": "listId",
@@ -1703,6 +1723,7 @@
           "Items"
         ],
         "summary": "Get a single item (Viewer+).",
+        "operationId": "GetItem",
         "parameters": [
           {
             "name": "listId",
@@ -1777,6 +1798,7 @@
         ],
         "summary": "Edit item fields (Editor+).",
         "description": "One event per changed field. Use the `*Provided` flags so a null can mean 'clear' rather than 'unchanged' (e.g. `priority` 0..9 with `priorityProvided`). Tags via `addTagIds`/`removeTagIds`.",
+        "operationId": "UpdateListItem",
         "parameters": [
           {
             "name": "listId",
@@ -1880,6 +1902,7 @@
         ],
         "summary": "Delete an item (Editor+). Tombstone.",
         "description": "Optional `?occurredAt=` (ISO-8601) carries the client timestamp for LWW.",
+        "operationId": "DeleteListItem",
         "parameters": [
           {
             "name": "listId",
@@ -1965,6 +1988,7 @@
           "Items"
         ],
         "summary": "Mark an item complete (Editor+).",
+        "operationId": "CompleteItem",
         "parameters": [
           {
             "name": "listId",
@@ -2065,6 +2089,7 @@
           "Items"
         ],
         "summary": "Reopen a completed item (Editor+).",
+        "operationId": "ReopenItem",
         "parameters": [
           {
             "name": "listId",
@@ -2166,6 +2191,7 @@
         ],
         "summary": "Set an item's lifecycle status (Editor+).",
         "description": "Body `{ status (Open|InProgress|Blocked|Waiting|Done|Cancelled), reason?, occurredAt? }`. `Done` is equivalent to completing the item; `completed` is the derived `status == Done`.",
+        "operationId": "SetItemStatus",
         "parameters": [
           {
             "name": "listId",
@@ -2271,6 +2297,7 @@
         ],
         "summary": "Set an item's free-form JSON metadata (Editor+).",
         "description": "Body `{ metadata (JSON object or null), occurredAt? }`. Server-side bookkeeping; never in VTODO or share links. Whole-field LWW.",
+        "operationId": "SetListItemMetadata",
         "parameters": [
           {
             "name": "listId",
@@ -2376,6 +2403,7 @@
         ],
         "summary": "Reparent / reorder an item (Editor+).",
         "description": "Carries the fractional-index `sortOrder` string and optional `parentItemId`.",
+        "operationId": "MoveItem",
         "parameters": [
           {
             "name": "listId",
@@ -2481,6 +2509,7 @@
         ],
         "summary": "Link a task to a cal-api Prompt heartbeat or an external ref (Editor+).",
         "description": "Body `{ toKind, toRef, relationType, metadata? }`. `toKind` e.g. `cal-item` (the checking heartbeat Prompt) or `url` (issue/PR/incident/release). `relationType` e.g. `monitors`, `spawned-by`, `produced`, `blocked-by`, `relates-to`. Idempotent: re-linking the same edge is a no-op.",
+        "operationId": "CreateRelation",
         "parameters": [
           {
             "name": "listId",
@@ -2574,6 +2603,7 @@
           "Relations"
         ],
         "summary": "List a task's relations (Viewer+).",
+        "operationId": "ListRelations",
         "parameters": [
           {
             "name": "listId",
@@ -2651,6 +2681,7 @@
         ],
         "summary": "Remove a task relation by its edge tuple (Editor+).",
         "description": "Identify the edge with `?toKind=&toRef=&relationType=`. Idempotent: removing a link that isn't there is a no-op (204).",
+        "operationId": "DeleteRelation",
         "parameters": [
           {
             "name": "listId",
@@ -2754,6 +2785,7 @@
         ],
         "summary": "Mint a public share link for a list (Owner).",
         "description": "Body `{ access: 'Read' | 'ReadWrite', label?, expiresAt? }`. Returns the opaque token + a ready-to-copy URL. The link grants account-less access at `/shared/{token}` until revoked or expired.",
+        "operationId": "CreateShare",
         "parameters": [
           {
             "name": "listId",
@@ -2847,6 +2879,7 @@
           "Shares"
         ],
         "summary": "List a list's active share links (Owner).",
+        "operationId": "ListShares",
         "parameters": [
           {
             "name": "listId",
@@ -2913,6 +2946,7 @@
           "Shares"
         ],
         "summary": "Revoke a share link (Owner). The token is rejected on its next use.",
+        "operationId": "DeleteShare",
         "parameters": [
           {
             "name": "listId",
@@ -2991,6 +3025,7 @@
         ],
         "summary": "View a shared list by token (no account needed).",
         "description": "Returns the list + items, trimmed of all emails. `access` indicates read vs read/write.",
+        "operationId": "GetSharedList",
         "parameters": [
           {
             "name": "token",
@@ -3057,6 +3092,7 @@
           "Shared"
         ],
         "summary": "Add an item via a read/write share link.",
+        "operationId": "CreateSharedItem",
         "parameters": [
           {
             "name": "token",
@@ -3162,6 +3198,7 @@
           "Shared"
         ],
         "summary": "Edit an item via a read/write share link.",
+        "operationId": "UpdateSharedItem",
         "parameters": [
           {
             "name": "itemId",
@@ -3274,6 +3311,7 @@
           "Shared"
         ],
         "summary": "Delete an item via a read/write share link.",
+        "operationId": "DeleteSharedItem",
         "parameters": [
           {
             "name": "itemId",
@@ -3369,6 +3407,7 @@
           "Shared"
         ],
         "summary": "Mark an item complete via a read/write share link.",
+        "operationId": "CompleteSharedItem",
         "parameters": [
           {
             "name": "itemId",
@@ -3479,6 +3518,7 @@
           "Shared"
         ],
         "summary": "Reopen a completed item via a read/write share link.",
+        "operationId": "ReopenSharedItem",
         "parameters": [
           {
             "name": "itemId",
@@ -3589,6 +3629,7 @@
           "Shared"
         ],
         "summary": "Reparent / reorder an item via a read/write share link.",
+        "operationId": "MoveSharedItem",
         "parameters": [
           {
             "name": "itemId",

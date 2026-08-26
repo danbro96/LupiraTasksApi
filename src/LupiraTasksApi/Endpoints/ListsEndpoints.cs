@@ -16,7 +16,8 @@ public static class ListsEndpoints
             .WithSummary("List the lists the caller is a member of.")
             .WithDescription("`?archived=true` returns the caller's archived lists instead of the active ones.")
             .Produces<ListCollectionResponse>(StatusCodes.Status200OK)
-            .Produces(StatusCodes.Status401Unauthorized);
+            .Produces(StatusCodes.Status401Unauthorized)
+            .WithName("ListLists");
 
         group.MapPost("/", (HttpContext ctx, CreateListRequest body, ListsHandler h, CancellationToken ct) =>
                 h.CreateAsync(ctx, body, ct))
@@ -26,14 +27,16 @@ public static class ListsEndpoints
                 "(agent/system-owned lists). Re-sending an existing id is an idempotent success.")
             .Produces<ListResponse>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest)
-            .Produces(StatusCodes.Status401Unauthorized);
+            .Produces(StatusCodes.Status401Unauthorized)
+            .WithName("CreateList");
 
         group.MapGet("/{listId:guid}", (Guid listId, ListsHandler h, CancellationToken ct) =>
                 h.GetAsync(listId, ct))
             .WithSummary("Get a list with its members and tags (Viewer+).")
             .Produces<ListResponse>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status401Unauthorized)
-            .Produces(StatusCodes.Status404NotFound);
+            .Produces(StatusCodes.Status404NotFound)
+            .WithName("GetList");
 
         group.MapPatch("/{listId:guid}", (HttpContext ctx, Guid listId, UpdateListRequest body, ListsHandler h, CancellationToken ct) =>
                 h.UpdateAsync(ctx, listId, body, ct))
@@ -43,7 +46,8 @@ public static class ListsEndpoints
             .Produces<ListResponse>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status401Unauthorized)
-            .Produces(StatusCodes.Status404NotFound);
+            .Produces(StatusCodes.Status404NotFound)
+            .WithName("UpdateList");
 
         group.MapPost("/{listId:guid}/archive", (HttpContext ctx, Guid listId, ListsHandler h, CancellationToken ct) =>
                 h.ArchiveAsync(ctx, listId, ct))
@@ -51,7 +55,8 @@ public static class ListsEndpoints
             .WithSummary("Archive a list (Owner). Soft — items retained.")
             .Produces<ListResponse>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status401Unauthorized)
-            .Produces(StatusCodes.Status404NotFound);
+            .Produces(StatusCodes.Status404NotFound)
+            .WithName("ArchiveList");
 
         group.MapPost("/{listId:guid}/restore", (HttpContext ctx, Guid listId, ListsHandler h, CancellationToken ct) =>
                 h.RestoreAsync(ctx, listId, ct))
@@ -59,7 +64,8 @@ public static class ListsEndpoints
             .WithSummary("Restore an archived list (Owner).")
             .Produces<ListResponse>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status401Unauthorized)
-            .Produces(StatusCodes.Status404NotFound);
+            .Produces(StatusCodes.Status404NotFound)
+            .WithName("RestoreList");
 
         group.MapPost("/{listId:guid}/order", (HttpContext ctx, Guid listId, SetListOrderRequest body, ListsHandler h, CancellationToken ct) =>
                 h.SetOrderAsync(ctx, listId, body, ct))
@@ -72,7 +78,8 @@ public static class ListsEndpoints
             .Produces<ListResponse>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status401Unauthorized)
-            .Produces(StatusCodes.Status404NotFound);
+            .Produces(StatusCodes.Status404NotFound)
+            .WithName("ReorderListItems");
 
         group.MapDelete("/{listId:guid}", (HttpContext ctx, Guid listId, ListsHandler h, CancellationToken ct) =>
                 h.DeleteAsync(ctx, listId, ct))
@@ -80,7 +87,8 @@ public static class ListsEndpoints
             .WithSummary("Delete a list (Owner). Tombstone — stream retained.")
             .Produces(StatusCodes.Status204NoContent)
             .Produces(StatusCodes.Status401Unauthorized)
-            .Produces(StatusCodes.Status404NotFound);
+            .Produces(StatusCodes.Status404NotFound)
+            .WithName("DeleteList");
 
         group.MapPost("/{listId:guid}/members", (HttpContext ctx, Guid listId, AddMemberRequest body, ListsHandler h, CancellationToken ct) =>
                 h.AddMemberAsync(ctx, listId, body, ct))
@@ -92,7 +100,8 @@ public static class ListsEndpoints
             .Produces<ListResponse>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status401Unauthorized)
-            .Produces(StatusCodes.Status404NotFound);
+            .Produces(StatusCodes.Status404NotFound)
+            .WithName("AddListMember");
 
         group.MapPatch("/{listId:guid}/members/{principalId:guid}", (HttpContext ctx, Guid listId, Guid principalId, UpdateMemberRoleRequest body, ListsHandler h, CancellationToken ct) =>
                 h.ChangeMemberRoleAsync(ctx, listId, principalId, body, ct))
@@ -102,7 +111,8 @@ public static class ListsEndpoints
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status403Forbidden)
             .Produces(StatusCodes.Status401Unauthorized)
-            .Produces(StatusCodes.Status404NotFound);
+            .Produces(StatusCodes.Status404NotFound)
+            .WithName("UpdateListMember");
 
         group.MapDelete("/{listId:guid}/members/{principalId:guid}", (HttpContext ctx, Guid listId, Guid principalId, ListsHandler h, CancellationToken ct) =>
                 h.RemoveMemberAsync(ctx, listId, principalId, ct))
@@ -112,7 +122,8 @@ public static class ListsEndpoints
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status403Forbidden)
             .Produces(StatusCodes.Status401Unauthorized)
-            .Produces(StatusCodes.Status404NotFound);
+            .Produces(StatusCodes.Status404NotFound)
+            .WithName("RemoveListMember");
 
         return app;
     }

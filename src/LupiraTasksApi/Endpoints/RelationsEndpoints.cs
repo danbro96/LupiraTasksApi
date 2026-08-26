@@ -20,14 +20,16 @@ public static class RelationsEndpoints
             .Produces<RelationDto>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status401Unauthorized)
-            .Produces(StatusCodes.Status404NotFound);
+            .Produces(StatusCodes.Status404NotFound)
+            .WithName("CreateRelation");
 
         group.MapGet("/", (Guid listId, Guid itemId, RelationsHandler h, CancellationToken ct) =>
                 h.ListAsync(listId, itemId, ct))
             .WithSummary("List a task's relations (Viewer+).")
             .Produces<List<RelationDto>>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status401Unauthorized)
-            .Produces(StatusCodes.Status404NotFound);
+            .Produces(StatusCodes.Status404NotFound)
+            .WithName("ListRelations");
 
         group.MapDelete("/", (Guid listId, Guid itemId, string toKind, string toRef, string relationType, RelationsHandler h, CancellationToken ct) =>
                 h.UnlinkAsync(listId, itemId, toKind, toRef, relationType, ct))
@@ -37,7 +39,8 @@ public static class RelationsEndpoints
             .Produces(StatusCodes.Status204NoContent)
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status401Unauthorized)
-            .Produces(StatusCodes.Status404NotFound);
+            .Produces(StatusCodes.Status404NotFound)
+            .WithName("DeleteRelation");
 
         return app;
     }

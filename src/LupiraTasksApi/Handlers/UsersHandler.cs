@@ -1,5 +1,5 @@
-using LupiraTasksApi.Core.Application;
 using LupiraTasksApi.Auth;
+using LupiraTasksApi.Core.Application;
 using LupiraTasksApi.Core.Domain.Lists;
 using LupiraTasksApi.Core.Dtos.Users;
 using Marten;

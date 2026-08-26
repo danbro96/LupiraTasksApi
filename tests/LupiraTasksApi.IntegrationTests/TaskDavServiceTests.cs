@@ -5,6 +5,7 @@ using LupiraTasksApi.Core.Domain.Items;
 using LupiraTasksApi.Core.Domain.Lists;
 using Marten;
 using Xunit;
+using LupiraTasksApi.Core.Domain.Lists.Events;
 
 namespace LupiraTasksApi.IntegrationTests;
 

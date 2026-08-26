@@ -2,8 +2,11 @@ using JasperFx.Events.Projections;
 using LupiraTasksApi.Core.Domain;
 using LupiraTasksApi.Core.Domain.Identity;
 using LupiraTasksApi.Core.Domain.Items;
+using LupiraTasksApi.Core.Domain.Items.Events;
 using LupiraTasksApi.Core.Domain.Lists;
+using LupiraTasksApi.Core.Domain.Lists.Events;
 using LupiraTasksApi.Core.Domain.Shares;
+using LupiraTasksApi.Core.Domain.Shares.Events;
 using Marten;
 
 namespace LupiraTasksApi.Core.Data;

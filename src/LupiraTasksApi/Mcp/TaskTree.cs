@@ -1,21 +1,7 @@
-using System.ComponentModel;
 using LupiraTasksApi.Core.Domain.Items;
 using ModelContextProtocol;
 
 namespace LupiraTasksApi.Mcp;
-
-/// <summary>One node of a nested batch — the shape the app's list export/import round-trips.</summary>
-public sealed class TaskNode
-{
-    [Description("Task title.")]
-    public required string Title { get; set; }
-
-    [Description("Subtasks of this task (optional). Each has the same shape, so trees nest to any allowed depth.")]
-    public IReadOnlyList<TaskNode>? Subtasks { get; set; }
-}
-
-/// <summary>A batch node resolved to the item it will create: its id, parent, title, and sort key.</summary>
-public sealed record PlannedTask(Guid Id, Guid? ParentId, string Title, string SortOrder, int Level);
 
 /// <summary>
 /// Flattens a nested <see cref="TaskNode"/> tree into the ordered creates that build it. Pure (no

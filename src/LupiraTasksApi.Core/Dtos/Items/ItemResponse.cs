@@ -34,9 +34,3 @@ public sealed class ItemResponse
     /// <summary>Free-form JSON for agent/server bookkeeping. Server-side only — never in VTODO or the public share DTO.</summary>
     public JsonNode? Metadata { get; set; }
 }
-
-/// <summary>Envelope for a list's items.</summary>
-public sealed class ItemCollectionResponse
-{
-    public required IReadOnlyList<ItemResponse> Items { get; set; }
-}

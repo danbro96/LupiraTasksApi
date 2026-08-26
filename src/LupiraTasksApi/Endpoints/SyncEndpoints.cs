@@ -21,7 +21,8 @@ public static class SyncEndpoints
                 """)
             .Produces<SyncResponse>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status401Unauthorized)
-            .Produces(StatusCodes.Status404NotFound);
+            .Produces(StatusCodes.Status404NotFound)
+            .WithName("SyncList");
 
         return app;
     }

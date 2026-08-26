@@ -14,9 +14,3 @@ public sealed class ShareResponse
     public DateTimeOffset? ExpiresAt { get; set; }
     public required bool Revoked { get; set; }
 }
-
-/// <summary>Envelope for a list's active share links.</summary>
-public sealed class ShareCollectionResponse
-{
-    public required IReadOnlyList<ShareResponse> Shares { get; set; }
-}

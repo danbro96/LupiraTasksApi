@@ -23,7 +23,8 @@ public static class SharedEndpoints
             .WithDescription("Returns the list + items, trimmed of all emails. `access` indicates read vs read/write.")
             .Produces<SharedListResponse>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status401Unauthorized)
-            .Produces(StatusCodes.Status404NotFound);
+            .Produces(StatusCodes.Status404NotFound)
+            .WithName("GetSharedList");
 
         group.MapPost("/items", (HttpContext ctx, CreateItemRequest body, SharedHandler h, CancellationToken ct) =>
                 h.AddItemAsync(ctx, body, ct))
@@ -33,7 +34,8 @@ public static class SharedEndpoints
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status403Forbidden)
             .Produces(StatusCodes.Status401Unauthorized)
-            .Produces(StatusCodes.Status404NotFound);
+            .Produces(StatusCodes.Status404NotFound)
+            .WithName("CreateSharedItem");
 
         group.MapPatch("/items/{itemId:guid}", (HttpContext ctx, Guid itemId, UpdateItemRequest body, SharedHandler h, CancellationToken ct) =>
                 h.UpdateItemAsync(ctx, itemId, body, ct))
@@ -43,7 +45,8 @@ public static class SharedEndpoints
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status403Forbidden)
             .Produces(StatusCodes.Status401Unauthorized)
-            .Produces(StatusCodes.Status404NotFound);
+            .Produces(StatusCodes.Status404NotFound)
+            .WithName("UpdateSharedItem");
 
         group.MapPost("/items/{itemId:guid}/complete", (HttpContext ctx, Guid itemId, ItemTimestampRequest? body, SharedHandler h, CancellationToken ct) =>
                 h.CompleteAsync(ctx, itemId, body, ct))
@@ -52,7 +55,8 @@ public static class SharedEndpoints
             .Produces<SharedItemResponse>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status403Forbidden)
             .Produces(StatusCodes.Status401Unauthorized)
-            .Produces(StatusCodes.Status404NotFound);
+            .Produces(StatusCodes.Status404NotFound)
+            .WithName("CompleteSharedItem");
 
         group.MapPost("/items/{itemId:guid}/reopen", (HttpContext ctx, Guid itemId, ItemTimestampRequest? body, SharedHandler h, CancellationToken ct) =>
                 h.ReopenAsync(ctx, itemId, body, ct))
@@ -61,7 +65,8 @@ public static class SharedEndpoints
             .Produces<SharedItemResponse>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status403Forbidden)
             .Produces(StatusCodes.Status401Unauthorized)
-            .Produces(StatusCodes.Status404NotFound);
+            .Produces(StatusCodes.Status404NotFound)
+            .WithName("ReopenSharedItem");
 
         group.MapPost("/items/{itemId:guid}/move", (HttpContext ctx, Guid itemId, MoveItemRequest body, SharedHandler h, CancellationToken ct) =>
                 h.MoveAsync(ctx, itemId, body, ct))
@@ -71,7 +76,8 @@ public static class SharedEndpoints
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status403Forbidden)
             .Produces(StatusCodes.Status401Unauthorized)
-            .Produces(StatusCodes.Status404NotFound);
+            .Produces(StatusCodes.Status404NotFound)
+            .WithName("MoveSharedItem");
 
         group.MapDelete("/items/{itemId:guid}", (HttpContext ctx, Guid itemId, DateTimeOffset? occurredAt, SharedHandler h, CancellationToken ct) =>
                 h.DeleteItemAsync(ctx, itemId, occurredAt, ct))
@@ -80,7 +86,8 @@ public static class SharedEndpoints
             .Produces(StatusCodes.Status204NoContent)
             .ProducesProblem(StatusCodes.Status403Forbidden)
             .Produces(StatusCodes.Status401Unauthorized)
-            .Produces(StatusCodes.Status404NotFound);
+            .Produces(StatusCodes.Status404NotFound)
+            .WithName("DeleteSharedItem");
 
         return app;
     }

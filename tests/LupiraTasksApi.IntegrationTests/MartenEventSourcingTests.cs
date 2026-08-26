@@ -3,6 +3,7 @@ using LupiraTasksApi.Core.Domain;
 using LupiraTasksApi.Core.Domain.Items;
 using Marten;
 using Xunit;
+using LupiraTasksApi.Core.Domain.Items.Events;
 
 namespace LupiraTasksApi.IntegrationTests;
 

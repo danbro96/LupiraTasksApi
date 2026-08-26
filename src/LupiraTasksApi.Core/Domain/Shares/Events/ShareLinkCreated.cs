@@ -1,4 +1,4 @@
-namespace LupiraTasksApi.Core.Domain.Shares;
+namespace LupiraTasksApi.Core.Domain.Shares.Events;
 
 /// <summary>
 /// A public share link was minted for a list. The <see cref="Token"/> is the opaque secret a
@@ -12,6 +12,3 @@ public sealed record ShareLinkCreated(
     ShareAccess Access,
     string Label,
     DateTimeOffset? ExpiresAt);
-
-/// <summary>The link was revoked; the token is rejected on its next use. Revoker is in the <c>actor</c> header.</summary>
-public sealed record ShareLinkRevoked(Guid ShareId, string Reason);

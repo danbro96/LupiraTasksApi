@@ -49,6 +49,3 @@ public sealed record Caller
     public bool IsAdmin =>
         PrincipalId is not null && Groups.Any(g => AdminGroups.Contains(g, StringComparer.OrdinalIgnoreCase));
 }
-
-/// <summary>A validated share-link grant: scoped to exactly one list at one access level.</summary>
-public sealed record ShareGrant(Guid ShareId, Guid ListId, ShareAccess Access, string Label);
