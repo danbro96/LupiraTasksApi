@@ -1,5 +1,5 @@
 using LupiraTasksApi.Auth;
-using LupiraTasksApi.Core.Application;
+using LupiraTasksApi.Core.Application.Shares;
 using LupiraTasksApi.Core.Dtos.Shares;
 using LupiraTasksApi.Http;
 using Microsoft.AspNetCore.Http.HttpResults;

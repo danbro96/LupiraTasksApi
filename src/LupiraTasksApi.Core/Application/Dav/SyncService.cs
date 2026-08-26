@@ -1,3 +1,4 @@
+using LupiraTasksApi.Core.Application.Results;
 using LupiraTasksApi.Core.Auth;
 using LupiraTasksApi.Core.Domain;
 using LupiraTasksApi.Core.Domain.Items;
@@ -6,7 +7,7 @@ using LupiraTasksApi.Core.Dtos.Sync;
 using LupiraTasksApi.Core.Mappers;
 using Marten;
 
-namespace LupiraTasksApi.Core.Application;
+namespace LupiraTasksApi.Core.Application.Dav;
 
 /// <summary>
 /// Offline delta-pull. v1 is the simplest-correct shape: return the current list plus all

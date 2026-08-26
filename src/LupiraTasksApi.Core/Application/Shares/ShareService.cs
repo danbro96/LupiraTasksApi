@@ -1,5 +1,7 @@
 using System.Security.Cryptography;
 using JasperFx;
+using LupiraTasksApi.Core.Application.Items;
+using LupiraTasksApi.Core.Application.Results;
 using LupiraTasksApi.Core.Auth;
 using LupiraTasksApi.Core.Data;
 using LupiraTasksApi.Core.Domain;
@@ -15,7 +17,7 @@ using Marten;
 using Marten.Exceptions;
 using Microsoft.Extensions.Options;
 
-namespace LupiraTasksApi.Core.Application;
+namespace LupiraTasksApi.Core.Application.Shares;
 
 /// <summary>
 /// Owner-side management of share links over the <c>ShareLink</c> event stream: mint (read or

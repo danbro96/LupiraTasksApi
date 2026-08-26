@@ -1,5 +1,6 @@
 using LupiraTasksApi.Auth;
-using LupiraTasksApi.Core.Application;
+using LupiraTasksApi.Core.Application.Items;
+using LupiraTasksApi.Core.Application.Results;
 using LupiraTasksApi.Core.Dtos.Relations;
 using LupiraTasksApi.Http;
 using Microsoft.AspNetCore.Http.HttpResults;

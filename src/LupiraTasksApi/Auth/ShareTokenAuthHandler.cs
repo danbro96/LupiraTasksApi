@@ -1,6 +1,6 @@
 using System.Security.Claims;
 using System.Text.Encodings.Web;
-using LupiraTasksApi.Core.Application;
+using LupiraTasksApi.Core.Application.Shares;
 using LupiraTasksApi.Core.Domain;
 using LupiraTasksApi.Core.Domain.Shares;
 using Marten;

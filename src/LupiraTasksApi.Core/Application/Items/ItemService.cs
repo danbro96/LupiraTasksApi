@@ -1,4 +1,5 @@
 using JasperFx;
+using LupiraTasksApi.Core.Application.Results;
 using LupiraTasksApi.Core.Auth;
 using LupiraTasksApi.Core.Data;
 using LupiraTasksApi.Core.Domain;
@@ -10,7 +11,7 @@ using LupiraTasksApi.Core.Mappers;
 using Marten;
 using Marten.Exceptions;
 
-namespace LupiraTasksApi.Core.Application;
+namespace LupiraTasksApi.Core.Application.Items;
 
 /// <summary>
 /// Transport-neutral item operations over the <c>Item</c> event stream, scoped to a list.

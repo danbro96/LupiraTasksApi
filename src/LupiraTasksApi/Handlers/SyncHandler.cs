@@ -1,5 +1,5 @@
 using LupiraTasksApi.Auth;
-using LupiraTasksApi.Core.Application;
+using LupiraTasksApi.Core.Application.Dav;
 using LupiraTasksApi.Core.Dtos.Sync;
 using LupiraTasksApi.Http;
 using Microsoft.AspNetCore.Http.HttpResults;

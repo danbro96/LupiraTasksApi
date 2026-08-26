@@ -1,4 +1,4 @@
-namespace LupiraTasksApi.Core.Application;
+namespace LupiraTasksApi.Core.Application.Results;
 
 /// <summary>A no-content operation outcome (e.g. delete / leave).</summary>
 public readonly record struct OpResult(OpStatus Status, string? Error)

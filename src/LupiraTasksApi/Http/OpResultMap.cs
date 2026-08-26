@@ -1,4 +1,4 @@
-using LupiraTasksApi.Core.Application;
+using LupiraTasksApi.Core.Application.Results;
 using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace LupiraTasksApi.Http;

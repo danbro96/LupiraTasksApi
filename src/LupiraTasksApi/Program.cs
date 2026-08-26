@@ -4,7 +4,7 @@ using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
 using JasperFx;
 using LupiraTasksApi.Auth;
-using LupiraTasksApi.Core.Application;
+using LupiraTasksApi.Core.Application.Shares;
 using LupiraTasksApi.Core.Data;
 using LupiraTasksApi.Core.Domain.Items;
 using LupiraTasksApi.Core.Domain.Lists;

@@ -1,4 +1,4 @@
-namespace LupiraTasksApi.Core.Application;
+namespace LupiraTasksApi.Core.Application.Dav;
 
 /// <summary>
 /// Outcome of a CalDAV VTODO PUT: whether the resource was created (→ 201) vs updated (→ 204),

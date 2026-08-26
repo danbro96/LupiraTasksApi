@@ -1,4 +1,8 @@
 using LupiraTasksApi.Core.Application;
+using LupiraTasksApi.Core.Application.Dav;
+using LupiraTasksApi.Core.Application.Items;
+using LupiraTasksApi.Core.Application.Lists;
+using LupiraTasksApi.Core.Application.Shares;
 using LupiraTasksApi.Core.Auth;
 using LupiraTasksApi.Core.Data;
 

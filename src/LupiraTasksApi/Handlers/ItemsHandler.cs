@@ -1,5 +1,6 @@
 using LupiraTasksApi.Auth;
-using LupiraTasksApi.Core.Application;
+using LupiraTasksApi.Core.Application.Items;
+using LupiraTasksApi.Core.Application.Results;
 using LupiraTasksApi.Core.Domain;
 using LupiraTasksApi.Core.Dtos.Items;
 using LupiraTasksApi.Http;
