@@ -20,7 +20,7 @@ public static class SyncEndpoints
                 outbox rows.
                 """)
             .Produces<SyncResponse>(StatusCodes.Status200OK)
-            .Produces(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status404NotFound)
             .WithName("SyncList");
 
         return app;

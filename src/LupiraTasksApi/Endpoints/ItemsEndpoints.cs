@@ -25,7 +25,7 @@ public static class ItemsEndpoints
             .WithDescription("Same body as the list-scoped PATCH (`*Provided` flags). 404 if no such item or the caller can't edit its list.")
             .Produces<ItemResponse>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest)
-            .Produces(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status404NotFound)
             .WithName("UpdateItem");
 
         top.MapPost("/{itemId:guid}/metadata", (HttpContext ctx, Guid itemId, SetMetadataRequest body, ItemsHandler h, CancellationToken ct) =>
@@ -35,7 +35,7 @@ public static class ItemsEndpoints
             .WithDescription("Body `{ metadata (JSON object or null), occurredAt? }`. Whole-field LWW. 404 if no such item or the caller can't edit its list.")
             .Produces<ItemResponse>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest)
-            .Produces(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status404NotFound)
             .WithName("SetItemMetadata");
 
         var group = app.MapGroup("/lists/{listId:guid}/items")
@@ -55,7 +55,7 @@ public static class ItemsEndpoints
             .WithSummary("List a list's items (Viewer+).")
             .WithDescription("Excludes deleted items; ordered by `sortOrder`. Filters: `completed`, `tagId`, `parentItemId`, `assignedTo`, `status`.")
             .Produces<ItemCollectionResponse>(StatusCodes.Status200OK)
-            .Produces(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status404NotFound)
             .WithName("ListListItems");
 
         group.MapPost("/", (HttpContext ctx, Guid listId, CreateItemRequest body, ItemsHandler h, CancellationToken ct) =>
@@ -65,14 +65,14 @@ public static class ItemsEndpoints
             .WithDescription("Body `{ id (GUIDv7), title, parentItemId?, dueAt?, assigneeEmail?, quantity?, unit?, priority? (0..9), tagIds?, sortOrder, occurredAt? }`. Re-sending an existing id is idempotent.")
             .Produces<ItemResponse>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest)
-            .Produces(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status404NotFound)
             .WithName("CreateListItem");
 
         group.MapGet("/{itemId:guid}", (Guid listId, Guid itemId, ItemsHandler h, CancellationToken ct) =>
                 h.GetAsync(listId, itemId, ct))
             .WithSummary("Get a single item (Viewer+).")
             .Produces<ItemResponse>(StatusCodes.Status200OK)
-            .Produces(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status404NotFound)
             .WithName("GetItem");
 
         group.MapPatch("/{itemId:guid}", (HttpContext ctx, Guid listId, Guid itemId, UpdateItemRequest body, ItemsHandler h, CancellationToken ct) =>
@@ -82,7 +82,7 @@ public static class ItemsEndpoints
             .WithDescription("One event per changed field. Use the `*Provided` flags so a null can mean 'clear' rather than 'unchanged' (e.g. `priority` 0..9 with `priorityProvided`). Tags via `addTagIds`/`removeTagIds`.")
             .Produces<ItemResponse>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest)
-            .Produces(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status404NotFound)
             .WithName("UpdateListItem");
 
         group.MapPost("/{itemId:guid}/complete", (HttpContext ctx, Guid listId, Guid itemId, ItemTimestampRequest? body, ItemsHandler h, CancellationToken ct) =>
@@ -90,7 +90,7 @@ public static class ItemsEndpoints
             .WithIdempotencyKey()
             .WithSummary("Mark an item complete (Editor+).")
             .Produces<ItemResponse>(StatusCodes.Status200OK)
-            .Produces(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status404NotFound)
             .WithName("CompleteItem");
 
         group.MapPost("/{itemId:guid}/reopen", (HttpContext ctx, Guid listId, Guid itemId, ItemTimestampRequest? body, ItemsHandler h, CancellationToken ct) =>
@@ -98,7 +98,7 @@ public static class ItemsEndpoints
             .WithIdempotencyKey()
             .WithSummary("Reopen a completed item (Editor+).")
             .Produces<ItemResponse>(StatusCodes.Status200OK)
-            .Produces(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status404NotFound)
             .WithName("ReopenItem");
 
         group.MapPost("/{itemId:guid}/status", (HttpContext ctx, Guid listId, Guid itemId, SetStatusRequest body, ItemsHandler h, CancellationToken ct) =>
@@ -109,7 +109,7 @@ public static class ItemsEndpoints
                 "`Done` is equivalent to completing the item; `completed` is the derived `status == Done`.")
             .Produces<ItemResponse>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest)
-            .Produces(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status404NotFound)
             .WithName("SetItemStatus");
 
         group.MapPost("/{itemId:guid}/metadata", (HttpContext ctx, Guid listId, Guid itemId, SetMetadataRequest body, ItemsHandler h, CancellationToken ct) =>
@@ -119,7 +119,7 @@ public static class ItemsEndpoints
             .WithDescription("Body `{ metadata (JSON object or null), occurredAt? }`. Server-side bookkeeping; never in VTODO or share links. Whole-field LWW.")
             .Produces<ItemResponse>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest)
-            .Produces(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status404NotFound)
             .WithName("SetListItemMetadata");
 
         group.MapPost("/{itemId:guid}/move", (HttpContext ctx, Guid listId, Guid itemId, MoveItemRequest body, ItemsHandler h, CancellationToken ct) =>
@@ -129,7 +129,7 @@ public static class ItemsEndpoints
             .WithDescription("Carries the fractional-index `sortOrder` string and optional `parentItemId`.")
             .Produces<ItemResponse>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest)
-            .Produces(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status404NotFound)
             .WithName("MoveItem");
 
         group.MapDelete("/{itemId:guid}", (HttpContext ctx, Guid listId, Guid itemId, DateTimeOffset? occurredAt, ItemsHandler h, CancellationToken ct) =>
@@ -138,7 +138,7 @@ public static class ItemsEndpoints
             .WithSummary("Delete an item (Editor+). Tombstone.")
             .WithDescription("Optional `?occurredAt=` (ISO-8601) carries the client timestamp for LWW.")
             .Produces(StatusCodes.Status204NoContent)
-            .Produces(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status404NotFound)
             .WithName("DeleteListItem");
 
         return app;

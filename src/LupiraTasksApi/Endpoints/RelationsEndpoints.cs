@@ -19,14 +19,14 @@ public static class RelationsEndpoints
                 "`produced`, `blocked-by`, `relates-to`. Idempotent: re-linking the same edge is a no-op.")
             .Produces<RelationDto>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest)
-            .Produces(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status404NotFound)
             .WithName("CreateRelation");
 
         group.MapGet("/", (Guid listId, Guid itemId, RelationsHandler h, CancellationToken ct) =>
                 h.ListAsync(listId, itemId, ct))
             .WithSummary("List a task's relations (Viewer+).")
             .Produces<List<RelationDto>>(StatusCodes.Status200OK)
-            .Produces(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status404NotFound)
             .WithName("ListRelations");
 
         group.MapDelete("/", (Guid listId, Guid itemId, string toKind, string toRef, string relationType, RelationsHandler h, CancellationToken ct) =>
@@ -36,7 +36,7 @@ public static class RelationsEndpoints
                 "isn't there is a no-op (204).")
             .Produces(StatusCodes.Status204NoContent)
             .ProducesProblem(StatusCodes.Status400BadRequest)
-            .Produces(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status404NotFound)
             .WithName("DeleteRelation");
 
         return app;

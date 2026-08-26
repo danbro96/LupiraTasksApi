@@ -18,14 +18,14 @@ public static class SharesEndpoints
             .WithDescription("Body `{ access: 'Read' | 'ReadWrite', label?, expiresAt? }`. Returns the opaque token + a ready-to-copy URL. The link grants account-less access at `/shared/{token}` until revoked or expired.")
             .Produces<ShareResponse>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest)
-            .Produces(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status404NotFound)
             .WithName("CreateShare");
 
         group.MapGet("/", (Guid listId, SharesHandler h, CancellationToken ct) =>
                 h.ListAsync(listId, ct))
             .WithSummary("List a list's active share links (Owner).")
             .Produces<ShareCollectionResponse>(StatusCodes.Status200OK)
-            .Produces(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status404NotFound)
             .WithName("ListShares");
 
         group.MapDelete("/{shareId:guid}", (HttpContext ctx, Guid listId, Guid shareId, SharesHandler h, CancellationToken ct) =>
@@ -33,7 +33,7 @@ public static class SharesEndpoints
             .WithIdempotencyKey()
             .WithSummary("Revoke a share link (Owner). The token is rejected on its next use.")
             .Produces(StatusCodes.Status204NoContent)
-            .Produces(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status404NotFound)
             .WithName("DeleteShare");
 
         // Member-side redemption: an authenticated caller "cashes in" a share token to join the list.
@@ -48,7 +48,7 @@ public static class SharesEndpoints
             .WithDescription("Body `{ token }`. Adds the caller to the linked list — `ReadWrite` → Editor, `Read` → Viewer — and returns `{ listId, role }`. Idempotent: an existing member keeps their current role. Used by the web client to cash in a share link after SSO.")
             .Produces<RedeemShareResponse>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest)
-            .Produces(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status404NotFound)
             .WithName("RedeemShare");
 
         return app;
