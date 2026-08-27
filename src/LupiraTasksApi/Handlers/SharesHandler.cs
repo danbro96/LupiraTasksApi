@@ -30,7 +30,7 @@ public sealed class SharesHandler
         return OpResultMap.OkNotFoundProblem(await _shares.CreateAsync(caller, IdempotencyKey.From(ctx), listId, request, ct));
     }
 
-    public async Task<Results<Ok<ShareCollectionResponse>, NotFound, UnauthorizedHttpResult>> ListAsync(
+    public async Task<Results<Ok<IReadOnlyList<ShareDto>>, NotFound, UnauthorizedHttpResult>> ListAsync(
         Guid listId, CancellationToken ct)
     {
         var caller = await _callers.MemberAsync(ct);

@@ -98,10 +98,10 @@ public sealed class ItemStatusTests(TasksApiTestFactory factory) : IntegrationTe
         var b = await CreateItemAsync(api, list.Id, "B", "a1");
         await SetStatusAsync(api, list.Id, a.Id, ItemStatus.Blocked, "x");
 
-        var blocked = await ReadAsync<ItemCollectionResponse>(
+        var blocked = await ReadAsync<List<ItemDto>>(
             await api.GetAsync($"/lists/{list.Id}/items?status=Blocked"));
-        Assert.Equal(a.Id, Assert.Single(blocked.Items).Id);
-        Assert.DoesNotContain(blocked.Items, i => i.Id == b.Id);
+        Assert.Equal(a.Id, Assert.Single(blocked).Id);
+        Assert.DoesNotContain(blocked, i => i.Id == b.Id);
     }
 
     [Theory]

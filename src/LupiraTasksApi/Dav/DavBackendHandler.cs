@@ -36,7 +36,7 @@ public sealed class DavBackendHandler(IQuerySession session, TaskDavService dav,
         return TypedResults.Ok(new DavCollectionsDto
         {
             Principal = new DavPrincipalDto { DisplayName = email },
-            Collections = [.. accessible.Value!.Lists.Select(l => new DavCollectionDto
+            Collections = [.. accessible.Value!.Select(l => new DavCollectionDto
             {
                 Id = l.Id,
                 Kind = DavCollectionKind.TodoList,

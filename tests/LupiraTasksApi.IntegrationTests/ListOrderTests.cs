@@ -18,9 +18,9 @@ public sealed class ListOrderTests(TasksApiTestFactory factory) : IntegrationTes
 
     private static async Task<List<ListDto>> Lists(HttpClient api, bool archived = false)
     {
-        var resp = await ReadAsync<ListCollectionResponse>(
+        var resp = await ReadAsync<List<ListDto>>(
             await api.GetAsync($"/lists?archived={archived.ToString().ToLowerInvariant()}"));
-        return [.. resp.Lists];
+        return [.. resp];
     }
 
     [Fact]

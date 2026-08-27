@@ -90,10 +90,10 @@ public sealed class ShareService
             : OpResult<ShareDto>.Ok(ToResponse(link));
     }
 
-    public async Task<OpResult<ShareCollectionResponse>> ListAsync(Caller caller, Guid listId, CancellationToken ct)
+    public async Task<OpResult<IReadOnlyList<ShareDto>>> ListAsync(Caller caller, Guid listId, CancellationToken ct)
     {
         var access = await _access.AuthorizeAsync(caller, listId, ListRole.Owner, ct);
-        if (!access.Allowed) return OpResult<ShareCollectionResponse>.NotFound();
+        if (!access.Allowed) return OpResult<IReadOnlyList<ShareDto>>.NotFound();
 
         var links = await _session.Query<ShareLink>()
             .Where(s => s.ListId == listId && !s.Revoked)
@@ -104,7 +104,7 @@ public sealed class ShareService
             .Select(ToResponse)
             .ToList();
 
-        return OpResult<ShareCollectionResponse>.Ok(new ShareCollectionResponse { Shares = shares });
+        return OpResult<IReadOnlyList<ShareDto>>.Ok(shares);
     }
 
     public async Task<OpResult> RevokeAsync(Caller caller, Guid? cmdId, Guid listId, Guid shareId, CancellationToken ct)

@@ -24,7 +24,7 @@ public static class SharesEndpoints
         group.MapGet("/", (Guid listId, SharesHandler h, CancellationToken ct) =>
                 h.ListAsync(listId, ct))
             .WithSummary("List a list's active share links (Owner).")
-            .Produces<ShareCollectionResponse>(StatusCodes.Status200OK)
+            .Produces<IReadOnlyList<ShareDto>>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status404NotFound)
             .WithName("ListShares");
 

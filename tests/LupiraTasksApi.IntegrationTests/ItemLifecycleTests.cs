@@ -28,7 +28,7 @@ public sealed class ItemLifecycleTests(TasksApiTestFactory factory) : Integratio
         Assert.Equal(HttpStatusCode.NoContent, del.StatusCode);
 
         Assert.Equal(HttpStatusCode.NotFound, (await alice.GetAsync($"/lists/{list.Id}/items/{item.Id}")).StatusCode);
-        var live = await ReadAsync<ItemCollectionResponse>(await alice.GetAsync($"/lists/{list.Id}/items"));
-        Assert.DoesNotContain(live.Items, i => i.Id == item.Id);
+        var live = await ReadAsync<List<ItemDto>>(await alice.GetAsync($"/lists/{list.Id}/items"));
+        Assert.DoesNotContain(live, i => i.Id == item.Id);
     }
 }

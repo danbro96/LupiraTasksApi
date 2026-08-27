@@ -15,7 +15,7 @@ public static class ListsEndpoints
                 h.ListAsync(archived ?? false, ct))
             .WithSummary("List the lists the caller is a member of.")
             .WithDescription("`?archived=true` returns the caller's archived lists instead of the active ones.")
-            .Produces<ListCollectionResponse>(StatusCodes.Status200OK)
+            .Produces<IReadOnlyList<ListDto>>(StatusCodes.Status200OK)
             .WithName("ListLists");
 
         group.MapPost("/", (HttpContext ctx, CreateListRequest body, ListsHandler h, CancellationToken ct) =>

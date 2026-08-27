@@ -15,7 +15,7 @@ public static class ItemsEndpoints
                 h.SearchAsync(query, completed, status, dueFrom, dueTo, ct))
             .WithSummary("Search items across the caller's lists (Viewer+).")
             .WithDescription("Case-insensitive `query` title substring, optional `completed`/`status`. `dueFrom`/`dueTo` bound `dueAt` half-open `[from, to)`; either bound implies `dueAt` is set. Spans every list the caller is a member of (archived included).")
-            .Produces<ItemCollectionResponse>(StatusCodes.Status200OK)
+            .Produces<IReadOnlyList<ItemDto>>(StatusCodes.Status200OK)
             .WithName("ListItems");
 
         top.MapPatch("/{itemId:guid}", (HttpContext ctx, Guid itemId, UpdateItemRequest body, ItemsHandler h, CancellationToken ct) =>
@@ -54,7 +54,7 @@ public static class ItemsEndpoints
             h.ListAsync(listId, completed, tagId, parentItemId, assignedTo, status, ct))
             .WithSummary("List a list's items (Viewer+).")
             .WithDescription("Excludes deleted items; ordered by `sortOrder`. Filters: `completed`, `tagId`, `parentItemId`, `assignedTo`, `status`.")
-            .Produces<ItemCollectionResponse>(StatusCodes.Status200OK)
+            .Produces<IReadOnlyList<ItemDto>>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status404NotFound)
             .WithName("ListListItems");
 

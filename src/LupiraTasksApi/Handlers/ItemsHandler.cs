@@ -26,7 +26,7 @@ public sealed class ItemsHandler
         _items = items;
     }
 
-    public async Task<Results<Ok<ItemCollectionResponse>, NotFound, UnauthorizedHttpResult>> ListAsync(
+    public async Task<Results<Ok<IReadOnlyList<ItemDto>>, NotFound, UnauthorizedHttpResult>> ListAsync(
         Guid listId,
         bool? completed,
         Guid? tagId,
@@ -41,7 +41,7 @@ public sealed class ItemsHandler
             await _items.ListAsync(caller, listId, new ItemFilter(completed, tagId, parentItemId, assignedTo, status), ct));
     }
 
-    public async Task<Results<Ok<ItemCollectionResponse>, UnauthorizedHttpResult>> SearchAsync(
+    public async Task<Results<Ok<IReadOnlyList<ItemDto>>, UnauthorizedHttpResult>> SearchAsync(
         string? query,
         bool? completed,
         ItemStatus? status,

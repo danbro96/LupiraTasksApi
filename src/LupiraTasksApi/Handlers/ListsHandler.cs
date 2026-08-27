@@ -25,7 +25,7 @@ public sealed class ListsHandler
         _lists = lists;
     }
 
-    public async Task<Results<Ok<ListCollectionResponse>, UnauthorizedHttpResult>> ListAsync(
+    public async Task<Results<Ok<IReadOnlyList<ListDto>>, UnauthorizedHttpResult>> ListAsync(
         bool archived,
         CancellationToken ct)
     {

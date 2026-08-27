@@ -342,7 +342,10 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ListCollectionResponse"
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ListDto"
+                  }
                 }
               }
             }
@@ -1290,7 +1293,10 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ItemCollectionResponse"
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ItemDto"
+                  }
                 }
               }
             }
@@ -1579,7 +1585,10 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ItemCollectionResponse"
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ItemDto"
+                  }
                 }
               }
             }
@@ -2897,7 +2906,10 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ShareCollectionResponse"
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ShareDto"
+                  }
                 }
               }
             }
@@ -3960,21 +3972,6 @@
         },
         "description": "The distinct people across the caller's lists, for member-add autocomplete."
       },
-      "ItemCollectionResponse": {
-        "required": [
-          "items"
-        ],
-        "type": "object",
-        "properties": {
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ItemDto"
-            }
-          }
-        },
-        "description": "Envelope for a list's items."
-      },
       "ItemDto": {
         "required": [
           "id",
@@ -4149,21 +4146,6 @@
         "description": "Body for complete/reopen/delete. Carries only the LWW timestamp; the item id is in\nthe route. DateTimeOffset? ItemTimestampRequest.OccurredAt defaults to server now when omitted."
       },
       "JsonNode": { },
-      "ListCollectionResponse": {
-        "required": [
-          "lists"
-        ],
-        "type": "object",
-        "properties": {
-          "lists": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ListDto"
-            }
-          }
-        },
-        "description": "Envelope for the caller's lists."
-      },
       "ListDto": {
         "required": [
           "id",
@@ -4591,21 +4573,6 @@
           "ReadWrite"
         ],
         "description": "What a public share link permits."
-      },
-      "ShareCollectionResponse": {
-        "required": [
-          "shares"
-        ],
-        "type": "object",
-        "properties": {
-          "shares": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ShareDto"
-            }
-          }
-        },
-        "description": "Envelope for a list's active share links."
       },
       "SharedItemDto": {
         "required": [

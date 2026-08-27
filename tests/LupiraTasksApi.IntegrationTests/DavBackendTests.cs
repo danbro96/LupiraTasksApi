@@ -147,7 +147,7 @@ public sealed class DavBackendTests(TasksApiTestFactory factory) : IntegrationTe
         var api = Factory.ApiClient(Email);
         var list = await CreateListAsync(api);
         await PutVtodoAsync(api, list.Id, "todo-1@x", MinimalVtodo("todo-1@x", "Buy milk"));
-        var itemId = (await ReadAsync<ItemCollectionResponse>(await api.GetAsync($"/lists/{list.Id}/items"))).Items[0].Id;
+        var itemId = (await ReadAsync<List<ItemDto>>(await api.GetAsync($"/lists/{list.Id}/items")))[0].Id;
 
         async Task<string> DavEtag() =>
             (await api.GetAsync($"{Base()}/collections/{list.Id}/resources/todo-1@x")).Headers.ETag!.Tag.Trim('"');

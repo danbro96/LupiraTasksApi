@@ -64,9 +64,9 @@ public sealed class TaskTools
         CancellationToken ct = default)
     {
         var caller = await CallerAsync(ct);
-        var lists = (await _lists.ListAsync(caller, archived: false, ct)).Value!.Lists.ToList();
+        var lists = (await _lists.ListAsync(caller, archived: false, ct)).Value!.ToList();
         if (includeArchived)
-            lists.AddRange((await _lists.ListAsync(caller, archived: true, ct)).Value!.Lists);
+            lists.AddRange((await _lists.ListAsync(caller, archived: true, ct)).Value!);
         return lists.Select(l => Summarize(caller, l)).ToList();
     }
 
@@ -107,8 +107,8 @@ public sealed class TaskTools
         }
         else
         {
-            lists.AddRange((await _lists.ListAsync(caller, archived: false, ct)).Value!.Lists);
-            lists.AddRange((await _lists.ListAsync(caller, archived: true, ct)).Value!.Lists);
+            lists.AddRange((await _lists.ListAsync(caller, archived: false, ct)).Value!);
+            lists.AddRange((await _lists.ListAsync(caller, archived: true, ct)).Value!);
         }
 
         var results = new List<TaskSummary>();
@@ -116,7 +116,7 @@ public sealed class TaskTools
         {
             var items = await _items.ListAsync(caller, list.Id, new ItemFilter(completed, null, parentTaskId, assignedTo, status), ct);
             if (!items.IsOk) continue;
-            foreach (var it in items.Value!.Items)
+            foreach (var it in items.Value!)
             {
                 if (!string.IsNullOrWhiteSpace(query) && !it.Title.Contains(query, StringComparison.OrdinalIgnoreCase))
                     continue;
@@ -401,7 +401,7 @@ public sealed class TaskTools
     {
         var caller = await CallerAsync(ct);
         var result = Require(await _shares.ListAsync(caller, listId, ct));
-        return result.Shares.Select(ToShareSummary).ToList();
+        return result.Select(ToShareSummary).ToList();
     }
 
     [McpServerTool(Name = "revoke_share_link")]
@@ -451,7 +451,7 @@ public sealed class TaskTools
 
     /// <summary>Every live task of a list, in sort order — the working set for the tree/sibling maths.</summary>
     private async Task<IReadOnlyList<ItemDto>> ItemsAsync(Caller caller, Guid listId, CancellationToken ct) =>
-        Require(await _items.ListAsync(caller, listId, new ItemFilter(null, null, null, null), ct)).Items;
+        Require(await _items.ListAsync(caller, listId, new ItemFilter(null, null, null, null), ct));
 
     /// <summary>
     /// Require a referenced task to be in the same list. The services only guard self-parenting — referential

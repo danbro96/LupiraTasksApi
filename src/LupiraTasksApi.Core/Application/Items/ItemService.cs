@@ -38,11 +38,11 @@ public sealed class ItemService
         _principals = principals;
     }
 
-    public async Task<OpResult<ItemCollectionResponse>> ListAsync(
+    public async Task<OpResult<IReadOnlyList<ItemDto>>> ListAsync(
         Caller caller, Guid listId, ItemFilter filter, CancellationToken ct)
     {
         var access = await _access.AuthorizeAsync(caller, listId, ListRole.Viewer, ct);
-        if (!access.Allowed) return OpResult<ItemCollectionResponse>.NotFound();
+        if (!access.Allowed) return OpResult<IReadOnlyList<ItemDto>>.NotFound();
 
         // Marten can't translate the per-field-LWW snapshot's computed members across all
         // filters, so fetch the list's live items and filter/sort in memory (family scale).
@@ -63,8 +63,8 @@ public sealed class ItemService
         }
 
         var ordered = filtered.OrderBy(i => i.SortOrder, StringComparer.Ordinal).ToList();
-        return OpResult<ItemCollectionResponse>.Ok(
-            new ItemCollectionResponse { Items = await ToResponsesAsync(ordered, ct) });
+        return OpResult<IReadOnlyList<ItemDto>>.Ok(
+            await ToResponsesAsync(ordered, ct));
     }
 
     /// <summary>Search live items across every list the caller is a member of (archived lists included),
@@ -72,7 +72,7 @@ public sealed class ItemService
     /// <c>[dueFrom, dueTo)</c> window on <c>DueAt</c> (either bound implies <c>DueAt</c> is set). The membership
     /// predicate scopes results to the caller's own + shared lists; no per-list role beyond Viewer is needed.
     /// Ordered by title for a stable candidate list. Backs the cross-list REST <c>GET /items</c> search.</summary>
-    public async Task<OpResult<ItemCollectionResponse>> SearchAsync(
+    public async Task<OpResult<IReadOnlyList<ItemDto>>> SearchAsync(
         Caller caller, string? query, bool? completed, ItemStatus? status,
         DateTimeOffset? dueFrom, DateTimeOffset? dueTo, CancellationToken ct)
     {
@@ -82,7 +82,7 @@ public sealed class ItemService
             .Select(l => l.Id)
             .ToListAsync(ct);
         if (listIds.Count == 0)
-            return OpResult<ItemCollectionResponse>.Ok(new ItemCollectionResponse { Items = [] });
+            return OpResult<IReadOnlyList<ItemDto>>.Ok([]);
 
         var items = await _session.Query<Item>()
             .Where(i => listIds.Contains(i.ListId) && !i.Deleted)
@@ -103,8 +103,8 @@ public sealed class ItemService
             filtered = filtered.Where(i => i.Title.Contains(query, StringComparison.OrdinalIgnoreCase));
 
         var ordered = filtered.OrderBy(i => i.Title, StringComparer.OrdinalIgnoreCase).ToList();
-        return OpResult<ItemCollectionResponse>.Ok(
-            new ItemCollectionResponse { Items = await ToResponsesAsync(ordered, ct) });
+        return OpResult<IReadOnlyList<ItemDto>>.Ok(
+            await ToResponsesAsync(ordered, ct));
     }
 
     public async Task<OpResult<ItemDto>> CreateAsync(

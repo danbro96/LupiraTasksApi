@@ -22,12 +22,12 @@ public sealed class CrossListItemsTests(TasksApiTestFactory factory) : Integrati
         await SendJson(alice, HttpMethod.Post, $"/lists/{todo.Id}/items/{done.Id}/complete");
 
         // Title substring, across both lists.
-        var pays = await ReadAsync<ItemCollectionResponse>(await alice.GetAsync("/items?query=pay"));
-        Assert.Equal(["Pay electricity bill", "Pay parking fine"], pays.Items.Select(i => i.Title).OrderBy(t => t));
-        Assert.Contains(pays.Items, i => i.Id == pay.Id && i.ListId == bills.Id);
+        var pays = await ReadAsync<List<ItemDto>>(await alice.GetAsync("/items?query=pay"));
+        Assert.Equal(["Pay electricity bill", "Pay parking fine"], pays.Select(i => i.Title).OrderBy(t => t));
+        Assert.Contains(pays, i => i.Id == pay.Id && i.ListId == bills.Id);
 
-        var open = await ReadAsync<ItemCollectionResponse>(await alice.GetAsync("/items?query=pay&completed=false"));
-        Assert.Equal("Pay electricity bill", Assert.Single(open.Items).Title);
+        var open = await ReadAsync<List<ItemDto>>(await alice.GetAsync("/items?query=pay&completed=false"));
+        Assert.Equal("Pay electricity bill", Assert.Single(open).Title);
     }
 
     [Fact]
@@ -47,15 +47,15 @@ public sealed class CrossListItemsTests(TasksApiTestFactory factory) : Integrati
 
         static string Iso(DateTimeOffset d) => Uri.EscapeDataString(d.ToString("O"));
 
-        var window = await ReadAsync<ItemCollectionResponse>(
+        var window = await ReadAsync<List<ItemDto>>(
             await alice.GetAsync($"/items?dueFrom={Iso(from)}&dueTo={Iso(to)}"));
-        Assert.Equal(["Inside", "On from boundary"], window.Items.Select(i => i.Title).OrderBy(t => t));
+        Assert.Equal(["Inside", "On from boundary"], window.Select(i => i.Title).OrderBy(t => t));
 
-        var fromOnly = await ReadAsync<ItemCollectionResponse>(await alice.GetAsync($"/items?dueFrom={Iso(from)}"));
-        Assert.Equal(["Inside", "On from boundary", "On to boundary"], fromOnly.Items.Select(i => i.Title).OrderBy(t => t));
+        var fromOnly = await ReadAsync<List<ItemDto>>(await alice.GetAsync($"/items?dueFrom={Iso(from)}"));
+        Assert.Equal(["Inside", "On from boundary", "On to boundary"], fromOnly.Select(i => i.Title).OrderBy(t => t));
 
-        var toOnly = await ReadAsync<ItemCollectionResponse>(await alice.GetAsync($"/items?dueTo={Iso(to)}"));
-        Assert.Equal(["Before", "Inside", "On from boundary"], toOnly.Items.Select(i => i.Title).OrderBy(t => t));
+        var toOnly = await ReadAsync<List<ItemDto>>(await alice.GetAsync($"/items?dueTo={Iso(to)}"));
+        Assert.Equal(["Before", "Inside", "On from boundary"], toOnly.Select(i => i.Title).OrderBy(t => t));
     }
 
     [Fact]
@@ -70,9 +70,9 @@ public sealed class CrossListItemsTests(TasksApiTestFactory factory) : Integrati
 
         static string Iso(DateTimeOffset d) => Uri.EscapeDataString(d.ToString("O"));
 
-        var open = await ReadAsync<ItemCollectionResponse>(await alice.GetAsync(
+        var open = await ReadAsync<List<ItemDto>>(await alice.GetAsync(
             $"/items?completed=false&dueFrom={Iso(due.AddDays(-1))}&dueTo={Iso(due.AddDays(1))}"));
-        Assert.Equal("Still open", Assert.Single(open.Items).Title);
+        Assert.Equal("Still open", Assert.Single(open).Title);
     }
 
     [Fact]
@@ -83,8 +83,8 @@ public sealed class CrossListItemsTests(TasksApiTestFactory factory) : Integrati
         var aliceList = await CreateListAsync(alice, "Alice");
         await CreateItemAsync(alice, aliceList.Id, "Secret errand");
 
-        var bobResults = await ReadAsync<ItemCollectionResponse>(await bob.GetAsync("/items?query=secret"));
-        Assert.Empty(bobResults.Items);
+        var bobResults = await ReadAsync<List<ItemDto>>(await bob.GetAsync("/items?query=secret"));
+        Assert.Empty(bobResults);
     }
 
     [Fact]

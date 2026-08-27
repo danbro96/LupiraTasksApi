@@ -42,7 +42,7 @@ public sealed class ListService
         _principals = principals;
     }
 
-    public async Task<OpResult<ListCollectionResponse>> ListAsync(Caller caller, bool archived, CancellationToken ct)
+    public async Task<OpResult<IReadOnlyList<ListDto>>> ListAsync(Caller caller, bool archived, CancellationToken ct)
     {
         var principalId = caller.PrincipalId!.Value; // member-only surface
 
@@ -64,7 +64,7 @@ public sealed class ListService
         var lookup = await _principals.LookupAsync(ordered.SelectMany(PrincipalIdsOf), ct);
         var lists = ordered.Select(l => l.ToResponse(lookup, principalId)).ToList();
 
-        return OpResult<ListCollectionResponse>.Ok(new ListCollectionResponse { Lists = lists });
+        return OpResult<IReadOnlyList<ListDto>>.Ok(lists);
     }
 
     public async Task<OpResult<ListDto>> CreateAsync(Caller caller, Guid? cmdId, CreateListRequest request, CancellationToken ct)

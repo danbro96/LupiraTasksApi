@@ -18,14 +18,14 @@ public sealed class ListLifecycleTests(TasksApiTestFactory factory) : Integratio
         var byId = await ReadAsync<ListDto>(await agent.GetAsync($"/lists/{list.Id}"));
         Assert.Equal(ListKind.Agent, byId.Kind);
 
-        var collection = await ReadAsync<ListCollectionResponse>(await agent.GetAsync("/lists"));
-        Assert.Equal(ListKind.Agent, collection.Lists.Single(l => l.Id == list.Id).Kind);
+        var collection = await ReadAsync<List<ListDto>>(await agent.GetAsync("/lists"));
+        Assert.Equal(ListKind.Agent, collection.Single(l => l.Id == list.Id).Kind);
     }
 
     private static async Task<bool> ListVisible(HttpClient api, Guid listId, bool archived)
     {
-        var resp = await ReadAsync<ListCollectionResponse>(await api.GetAsync($"/lists?archived={archived.ToString().ToLowerInvariant()}"));
-        return resp.Lists.Any(l => l.Id == listId);
+        var resp = await ReadAsync<List<ListDto>>(await api.GetAsync($"/lists?archived={archived.ToString().ToLowerInvariant()}"));
+        return resp.Any(l => l.Id == listId);
     }
 
     [Fact]
