@@ -1,5 +1,6 @@
 using System.Net;
 using LupiraTasksApi.Core.Domain;
+using LupiraTasksApi.Core.Domain.Identity;
 using LupiraTasksApi.Core.Domain.Items;
 using LupiraTasksApi.Core.Dtos.Items;
 using Marten;
@@ -60,6 +61,29 @@ public sealed class ShareLinkE2ETests(TasksApiTestFactory factory) : Integration
         var resp = await SendJson(anon, HttpMethod.Post, $"/shared/{link.Token}/items",
             new CreateItemRequest { Id = Guid.CreateVersion7(), Title = "Nope", SortOrder = "a0" });
         Assert.Equal(HttpStatusCode.Forbidden, resp.StatusCode);
+    }
+
+    [Fact]
+    public async Task Read_write_link_cannot_set_an_assignee_or_provision_a_principal()
+    {
+        var alice = Factory.ApiClient("alice@x.test");
+        var list = await CreateListAsync(alice);
+        var link = await MintShareLinkAsync(alice, list.Id, ShareAccess.ReadWrite, label: "fridge");
+
+        var itemId = Guid.CreateVersion7();
+        var anon = Factory.CreateClient();
+        var resp = await SendJson(anon, HttpMethod.Post, $"/shared/{link.Token}/items",
+            new CreateItemRequest
+            {
+                Id = itemId, Title = "Eggs", SortOrder = "a0", AssigneeEmail = "victim@x.test",
+            });
+
+        Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
+
+        await using var q = Store.QuerySession();
+        Assert.Null(await q.LoadAsync<Item>(itemId));
+        // The email must not have reached the directory: resolving it used to provision a row.
+        Assert.Empty(await q.Query<Principal>().Where(p => p.Email == "victim@x.test").ToListAsync());
     }
 
     [Fact]

@@ -139,7 +139,9 @@ public sealed class ItemService
         }
 
         var occurredAt = request.OccurredAt ?? DateTimeOffset.UtcNow;
-        var assigneePrincipalId = await ResolveAssigneeAsync(request.AssigneeEmail, ct);
+        var assignee = await ResolveAssigneeAsync(caller, request.AssigneeEmail, ct);
+        if (!assignee.IsOk) return OpResult<ItemDto>.Invalid(assignee.Error!);
+        var assigneePrincipalId = assignee.Value;
 
         EventActor.Stamp(_session, caller.Actor, caller.ActorEmail, commandId);
         try
@@ -226,8 +228,9 @@ public sealed class ItemService
         if (request.AssigneeEmailProvided)
         {
             // Empty email clears the assignee; otherwise resolve/provision the assignee principal.
-            var assigneePrincipalId = await ResolveAssigneeAsync(request.AssigneeEmail, ct);
-            events.Add(new ItemAssigned(itemId, assigneePrincipalId, occurredAt, commandId));
+            var assignee = await ResolveAssigneeAsync(caller, request.AssigneeEmail, ct);
+            if (!assignee.IsOk) return OpResult<ItemDto>.Invalid(assignee.Error!);
+            events.Add(new ItemAssigned(itemId, assignee.Value, occurredAt, commandId));
         }
 
         if (request.QuantityProvided)
@@ -348,11 +351,15 @@ public sealed class ItemService
 
     /// <summary>Resolve an assignee email to a principal id (provisioning a placeholder if unseen);
     /// <c>null</c> when the email is blank (unassign).</summary>
-    private async Task<Guid?> ResolveAssigneeAsync(string? email, CancellationToken ct)
+    private async Task<OpResult<Guid?>> ResolveAssigneeAsync(Caller caller, string? email, CancellationToken ct)
     {
-        if (string.IsNullOrWhiteSpace(email)) return null;
+        if (string.IsNullOrWhiteSpace(email)) return OpResult<Guid?>.Ok(null);
+        // Refused for a share link: the request DTOs are shared with the member surface, so a link
+        // holder could otherwise provision a Principal for any string.
+        if (caller.Share is not null) return OpResult<Guid?>.Invalid("A share link cannot set an assignee.");
+
         var principal = await _principals.ResolveOrProvisionAsync(sub: null, email.Trim(), name: null, ct);
-        return principal.Id;
+        return OpResult<Guid?>.Ok(principal.Id);
     }
 
     /// <summary>Map an item to its response, resolving assignee + attribution ids to <see cref="PersonRef"/>.</summary>
