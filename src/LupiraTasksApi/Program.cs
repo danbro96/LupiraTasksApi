@@ -13,6 +13,7 @@ using LupiraTasksApi.Dav;
 using LupiraTasksApi.Endpoints;
 using LupiraTasksApi.Handlers;
 using LupiraTasksApi.Http;
+using LupiraTasksApi.Mcp;
 using Marten;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -94,6 +95,7 @@ builder.Services.AddScoped<DavBackendHandler>();
 builder.Services
     .AddMcpServer()
     .WithHttpTransport()
+    .WithRequestFilters(f => f.AddCallToolFilter(StrictToolArguments.Filter))
     .WithToolsFromAssembly();
 
 builder.Services.AddProblemDetails(o => o.CustomizeProblemDetails = ctx =>
