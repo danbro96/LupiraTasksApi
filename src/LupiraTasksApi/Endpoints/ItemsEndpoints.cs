@@ -116,7 +116,7 @@ public static class ItemsEndpoints
                 h.SetMetadataAsync(ctx, listId, itemId, body, ct))
             .WithIdempotencyKey()
             .WithSummary("Set an item's free-form JSON metadata (Editor+).")
-            .WithDescription("Body `{ metadata (JSON object or null), occurredAt? }`. Server-side bookkeeping; never in VTODO or share links. Whole-field LWW.")
+            .WithDescription("Body `{ metadata (JSON object or null), occurredAt? }`. Server-side bookkeeping; never in share links. Whole-field LWW.")
             .Produces<ItemDto>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status404NotFound)

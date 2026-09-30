@@ -21,7 +21,7 @@ public sealed class CreateItemRequest
 
     public string? Unit { get; set; }
 
-    /// <summary>Standard iCalendar priority, 0..9 (0 = none). Defaults to 0.</summary>
+    /// <summary>Priority 0..9 (0 = none). Defaults to 0.</summary>
     public int Priority { get; set; }
 
     public IReadOnlyList<Guid>? TagIds { get; set; }

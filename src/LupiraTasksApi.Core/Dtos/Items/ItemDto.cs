@@ -50,6 +50,6 @@ public sealed class ItemDto
 
     public required DateTimeOffset UpdatedAt { get; set; }
 
-    /// <summary>Free-form JSON for agent/server bookkeeping. Server-side only — never in VTODO or the public share DTO.</summary>
+    /// <summary>Free-form JSON for agent/server bookkeeping. Server-side only — never in the public share DTO.</summary>
     public JsonNode? Metadata { get; set; }
 }

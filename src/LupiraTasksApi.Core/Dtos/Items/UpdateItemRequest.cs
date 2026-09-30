@@ -30,7 +30,7 @@ public sealed class UpdateItemRequest
 
     public bool QuantityProvided { get; set; }
 
-    /// <summary>Standard iCalendar priority, 0..9 (0 = none). Only applied when <see cref="PriorityProvided"/> is true.</summary>
+    /// <summary>Priority 0..9 (0 = none). Only applied when <see cref="PriorityProvided"/> is true.</summary>
     public int Priority { get; set; }
 
     public bool PriorityProvided { get; set; }

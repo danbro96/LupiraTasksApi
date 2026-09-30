@@ -2305,7 +2305,7 @@
           "Items"
         ],
         "summary": "Set an item's free-form JSON metadata (Editor+).",
-        "description": "Body `{ metadata (JSON object or null), occurredAt? }`. Server-side bookkeeping; never in VTODO or share links. Whole-field LWW.",
+        "description": "Body `{ metadata (JSON object or null), occurredAt? }`. Server-side bookkeeping; never in share links. Whole-field LWW.",
         "operationId": "SetListItemMetadata",
         "parameters": [
           {
@@ -3826,7 +3826,7 @@
           },
           "priority": {
             "type": "integer",
-            "description": "Standard iCalendar priority, 0..9 (0 = none). Defaults to 0.",
+            "description": "Priority 0..9 (0 = none). Defaults to 0.",
             "format": "int32"
           },
           "tagIds": {
@@ -4112,7 +4112,7 @@
                 "type": "null"
               },
               {
-                "description": "Free-form JSON for agent/server bookkeeping. Server-side only — never in VTODO or the public share DTO.",
+                "description": "Free-form JSON for agent/server bookkeeping. Server-side only — never in the public share DTO.",
                 "$ref": "#/components/schemas/JsonNode"
               }
             ]
@@ -4866,7 +4866,7 @@
           },
           "priority": {
             "type": "integer",
-            "description": "Standard iCalendar priority, 0..9 (0 = none). Only applied when bool UpdateItemRequest.PriorityProvided is true.",
+            "description": "Priority 0..9 (0 = none). Only applied when bool UpdateItemRequest.PriorityProvided is true.",
             "format": "int32"
           },
           "priorityProvided": {
