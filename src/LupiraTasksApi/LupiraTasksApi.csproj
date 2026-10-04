@@ -38,15 +38,16 @@
 
     <PackageReference Include="Marten" Version="9.40.0" />
 
-    <PackageReference Include="ModelContextProtocol.AspNetCore" Version="1.4.0" />
+    <PackageReference Include="Lupira.Auth.DevUser" Version="0.1.0" />
+    <PackageReference Include="Lupira.Hosting.Defaults" Version="0.1.0" />
+    <PackageReference Include="Lupira.Hosting.Health" Version="0.1.0" />
+    <PackageReference Include="Lupira.Hosting.LanEdge" Version="1.0.0" />
+    <PackageReference Include="Lupira.Hosting.Observability" Version="0.1.1" />
+    <PackageReference Include="Lupira.Hosting.Problems" Version="0.1.0" />
+    <PackageReference Include="Lupira.Mcp" Version="0.1.0" />
 
     <!-- DAV Basic auth binds against the Authentik LDAP outpost (DAVx5 can't use OIDC JWT). -->
 
-    <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.16.0" />
-    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.16.0" />
-    <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.15.2" />
-    <PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.15.1" />
-    <PackageReference Include="OpenTelemetry.Instrumentation.Runtime" Version="1.15.1" />
   </ItemGroup>
 
 </Project>

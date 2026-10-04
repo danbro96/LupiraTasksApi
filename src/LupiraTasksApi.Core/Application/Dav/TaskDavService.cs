@@ -1,6 +1,6 @@
 using System.Security.Cryptography;
 using System.Text.Json;
-using LupiraTasksApi.Core.Application.Results;
+using Lupira.Results;
 using LupiraTasksApi.Core.Auth;
 using LupiraTasksApi.Core.Domain;
 using LupiraTasksApi.Core.Domain.Items;

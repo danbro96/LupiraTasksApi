@@ -1,8 +1,8 @@
 using System.Net;
+using Lupira.Results;
 using LupiraTasksApi.Core.Domain;
 using LupiraTasksApi.Core.Dtos.Lists;
 using Xunit;
-using LupiraTasksApi.Core.Application.Results;
 
 namespace LupiraTasksApi.IntegrationTests;
 

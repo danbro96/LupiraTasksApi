@@ -1,9 +1,11 @@
+# syntax=docker/dockerfile:1
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 # Restore layer: copy both csproj (the host references the Core bounded-context project).
+COPY nuget.config Directory.Build.props .editorconfig ./
 COPY src/LupiraTasksApi.Core/LupiraTasksApi.Core.csproj src/LupiraTasksApi.Core/
 COPY src/LupiraTasksApi/LupiraTasksApi.csproj src/LupiraTasksApi/
-RUN dotnet restore src/LupiraTasksApi/LupiraTasksApi.csproj
+RUN --mount=type=secret,id=packages_token,env=PACKAGES_TOKEN dotnet restore src/LupiraTasksApi/LupiraTasksApi.csproj
 COPY src/LupiraTasksApi.Core/ src/LupiraTasksApi.Core/
 COPY src/LupiraTasksApi/ src/LupiraTasksApi/
 RUN dotnet publish src/LupiraTasksApi/LupiraTasksApi.csproj -c Release -o /out --no-restore

@@ -241,9 +241,9 @@ list existence is never leaked.
 ## Error handling and transport mapping
 
 Services never throw for expected outcomes; they return a transport-neutral
-[`OpResult`/`OpResult<T>`](../src/LupiraTasksApi.Core/Application/OpResult.cs) carrying an `OpStatus`.
+`OpResult`/`OpResult<T>` (`Lupira.Results`) carrying an `OpStatus`.
 Each surface maps it to its own wire shape — REST via
-[`OpResultMap`](../src/LupiraTasksApi/Http/OpResultMapping.cs) to typed `Results<...>` unions that keep
+`OpResultMap` (`Lupira.Hosting.Problems`) to typed `Results<...>` unions that keep
 the OpenAPI contract fixed. Genuinely exceptional Marten concurrency faults stay as exceptions inside
 the service (and are treated as idempotency replays).
 

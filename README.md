@@ -84,7 +84,7 @@ Two projects in one solution (`LupiraTasksApi.slnx`), split so ASP.NET cannot le
   (VTODO mapping), and `Auth/AccessResolver.cs`. Depends only on Marten — no ASP.NET reference.
 - **`src/LupiraTasksApi/`** — the thin ASP.NET host. Holds `Program.cs`, the surface adapters
   (`Endpoints/` + `Handlers/`, `Mcp/`, `Dav/`, the `/shared` endpoints), HTTP concerns (`Http/`:
-  result mapping, the `Idempotency-Key` reader), the auth handlers, plus OpenTelemetry, rate
+  the `Idempotency-Key` reader), the auth handlers, plus OpenTelemetry, rate
   limiting, OpenAPI, and health probes.
 - **`tests/`** — `LupiraTasksApi.UnitTests` (xunit unit tests, no infrastructure) and
   `LupiraTasksApi.IntegrationTests` (HTTP end-to-end against a Testcontainers Postgres).
@@ -144,7 +144,7 @@ containers). Defaults shown are the code defaults.
 | `RateLimit__RequestsPerMinute` | no (120) | Per-caller token-bucket limit (partitioned by email, else remote IP; disabled on `/dav-backend`). |
 | `Share__LinkBaseUrl` | no | Base URL used to build share-link URLs returned to clients. |
 | `DavGateway__ClientId` | only for `/dav-backend` | The DAV gateway's client id (`azp`) accepted on the seam. |
-| `OTEL_EXPORTER_OTLP_ENDPOINT` (+ standard `OTEL_*`) | no | When set, exports traces, metrics, and logs over OTLP. |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` (+ standard `OTEL_*`) | outside Development | Exports traces, metrics, and logs over OTLP; startup fails without it outside Development. |
 | `ASPNETCORE_ENVIRONMENT` | no | `Development` enables the `X-Dev-User` header and auto-applies the schema. |
 | `ASPNETCORE_URLS` | no (`http://0.0.0.0:8080`) | Kestrel bind address (set in the container image). |
 
@@ -180,7 +180,7 @@ services:
       Auth__Oidc__Audience: "${OIDC_AUDIENCE:-lupira-tasks}"
       Share__LinkBaseUrl: "${SHARE_LINK_BASE_URL:-http://localhost:8080}"
       RateLimit__RequestsPerMinute: "${RATE_LIMIT:-120}"
-      # OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector:4318"   # optional: enables OTLP telemetry
+      OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector:4318"
     ports:
       - "8080:8080"
     healthcheck:

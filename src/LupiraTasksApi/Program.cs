@@ -1,8 +1,13 @@
-using System.Diagnostics;
 using System.Globalization;
-using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
 using JasperFx;
+using Lupira.Auth.DevUser;
+using Lupira.Hosting.Defaults;
+using Lupira.Hosting.Health;
+using Lupira.Hosting.LanEdge;
+using Lupira.Hosting.Observability;
+using Lupira.Hosting.Problems;
+using Lupira.Mcp;
 using LupiraTasksApi.Auth;
 using LupiraTasksApi.Core.Application.Shares;
 using LupiraTasksApi.Core.Data;
@@ -13,17 +18,13 @@ using LupiraTasksApi.Dav;
 using LupiraTasksApi.Endpoints;
 using LupiraTasksApi.Handlers;
 using LupiraTasksApi.Http;
-using LupiraTasksApi.Mcp;
 using Marten;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
-using OpenTelemetry.Logs;
-using OpenTelemetry.Metrics;
-using OpenTelemetry.Resources;
-using OpenTelemetry.Trace;
 using Scalar.AspNetCore;
 using Weasel.Core;
 
@@ -62,7 +63,7 @@ builder.Services
     .UseLightweightSessions();
 
 // Liveness (/livez) + readiness (/readyz, pings Postgres) probes.
-builder.Services.AddAppHealthChecks();
+builder.Services.AddLupiraHealth().AddReadyCheck<MartenHealthCheck>("postgres");
 
 builder.Services.Configure<OidcAuthOptions>(builder.Configuration.GetSection(OidcAuthOptions.SectionName));
 builder.Services.Configure<ShareLinkOptions>(builder.Configuration.GetSection(ShareLinkOptions.SectionName));
@@ -92,16 +93,9 @@ builder.Services.AddScoped<DavBackendHandler>();
 // Application services as the REST handlers (no second source of truth). Mounted at /mcp
 // over Streamable HTTP, secured by the same OIDC JWT bearer (see MapMcp below), and kept
 // LAN/WireGuard-only — never published through the Cloudflare Tunnel.
-builder.Services
-    .AddMcpServer()
-    .WithHttpTransport()
-    .WithRequestFilters(f => f.AddCallToolFilter(StrictToolArguments.Filter))
-    .WithToolsFromAssembly();
+builder.Services.AddLupiraMcp().WithToolsFromAssembly();
 
-builder.Services.AddProblemDetails(o => o.CustomizeProblemDetails = ctx =>
-    ctx.ProblemDetails.Extensions["traceId"] = Activity.Current?.Id ?? ctx.HttpContext.TraceIdentifier);
-builder.Services.AddExceptionHandler<ProblemExceptionHandler>();
-builder.Services.Configure<RouteHandlerOptions>(o => o.ThrowOnBadRequest = true);
+builder.Services.AddLupiraProblems();
 
 builder.Services.AddOpenApi("v1", options =>
 {
@@ -300,12 +294,12 @@ authBuilder.AddScheme<AuthenticationSchemeOptions, ShareTokenAuthHandler>(ShareT
 if (builder.Environment.IsDevelopment())
 {
     // Development-only: allow X-Dev-User header auth so the API can be exercised without Authentik.
-    authBuilder.AddScheme<AuthenticationSchemeOptions, DevAuthHandler>(DevAuthHandler.SchemeName, _ => { });
+    authBuilder.AddLupiraDevHeaderAuth();
     authBuilder.AddPolicyScheme(devOrJwtScheme, devOrJwtScheme, options =>
     {
         options.ForwardDefaultSelector = ctx =>
-            ctx.Request.Headers.ContainsKey(DevAuthHandler.HeaderName)
-                ? DevAuthHandler.SchemeName
+            ctx.Request.Headers.ContainsKey(DevHeaderAuthHandler.HeaderName)
+                ? DevAuthenticationBuilderExtensions.DefaultScheme
                 : JwtBearerDefaults.AuthenticationScheme;
     });
 }
@@ -324,7 +318,7 @@ builder.Services.AddAuthorization(o =>
     o.AddPolicy("DavBackendPolicy", p => p
         .RequireAuthenticatedUser()
         .RequireAssertion(ctx =>
-            ctx.User.Identity?.AuthenticationType == DevAuthHandler.SchemeName
+            ctx.User.Identity?.AuthenticationType == DevAuthenticationBuilderExtensions.DefaultScheme
             || (davGatewayClientId is not null && ctx.User.HasClaim("azp", davGatewayClientId))));
 });
 
@@ -357,47 +351,16 @@ if (allowedOrigins.Length > 0)
         p.WithOrigins(allowedOrigins).AllowAnyHeader().AllowAnyMethod()));
 }
 
-builder.Services.Configure<Microsoft.AspNetCore.Http.Json.JsonOptions>(o =>
+builder.AddLupiraDefaults(o =>
 {
-    o.SerializerOptions.PropertyNameCaseInsensitive = true;
-    o.SerializerOptions.NumberHandling = JsonNumberHandling.Strict;
-    o.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    o.CaseInsensitiveProperties = true;
+    o.ThrowOnBadRequest = true;
+    o.ForwardedHeaders = ForwardedHeaders.None;
 });
 
 builder.WebHost.ConfigureKestrel(o => o.Limits.MaxRequestBodySize = 1_000_000);
 
-var otlpEndpoint = builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"];
-if (!string.IsNullOrWhiteSpace(otlpEndpoint))
-{
-    builder.Services.AddOpenTelemetry()
-        .ConfigureResource(r => r.AddService(
-            serviceName: "lupira-tasks-api",
-            serviceVersion: typeof(Program).Assembly.GetName().Version?.ToString() ?? "0.0.0"))
-        .WithTracing(t => t
-            .AddSource("LupiraTasksApi.*")
-            .AddAspNetCoreInstrumentation(o =>
-            {
-                o.RecordException = true;
-                // Health probes are polled constantly by docker + devops-monitor; their spans add nothing.
-                o.Filter = ctx => ctx.Request.Path != "/livez" && ctx.Request.Path != "/readyz"
-                    && ctx.Request.Path != "/pingz";
-            })
-            .AddHttpClientInstrumentation()
-            .AddOtlpExporter())
-        .WithMetrics(m => m
-            .AddMeter("LupiraTasksApi.*")
-            .AddAspNetCoreInstrumentation()
-            .AddHttpClientInstrumentation()
-            .AddRuntimeInstrumentation()
-            .AddOtlpExporter());
-
-    builder.Logging.AddOpenTelemetry(o =>
-    {
-        o.IncludeFormattedMessage = true;
-        o.IncludeScopes = true;
-        o.AddOtlpExporter();
-    });
-}
+builder.AddLupiraTelemetry("lupira-tasks-api");
 
 var app = builder.Build();
 
@@ -431,13 +394,11 @@ if (args.Contains("--rebuild-projections"))
 // Keep the LAN-only surfaces (/mcp + its discovery metadata, /dav-backend) LAN/WireGuard-only: reject
 // anything that arrived via the Cloudflare Tunnel (backstop behind the ingress not routing them at all).
 // Before auth so a tunnelled probe never even receives a challenge.
-app.UseLanOnlySurfaces();
+app.UseLanOnlySurfaces("/mcp", "/dav-backend", "/.well-known/oauth-protected-resource");
 
 if (allowedOrigins.Length > 0) app.UseCors();
+app.UseLupiraDefaults();
 app.UseExceptionHandler();
-// Fills the empty body of a bare 4xx (auth challenges, TypedResults.NotFound) with
-// ProblemDetails, so the spec's promise holds. Scoped away from /mcp — JSON-RPC has its own error shape.
-app.UseWhen(c => !c.Request.Path.StartsWithSegments("/mcp"), b => b.UseStatusCodePages());
 
 app.UseAuthentication();
 app.UseAuthorization();
@@ -453,9 +414,9 @@ app.MapGet("/", () => TypedResults.Redirect("/scalar"))
    .ExcludeFromDescription()
    .AllowAnonymous();
 
-app.MapAppHealthChecks(app.Environment);
+app.MapLupiraHealth();
 
-app.MapPing();
+app.MapLupiraPing();
 app.MapMe();
 app.MapUsers();
 app.MapLists();

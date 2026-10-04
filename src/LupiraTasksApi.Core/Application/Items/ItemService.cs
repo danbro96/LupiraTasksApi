@@ -1,5 +1,5 @@
 using JasperFx;
-using LupiraTasksApi.Core.Application.Results;
+using Lupira.Results;
 using LupiraTasksApi.Core.Auth;
 using LupiraTasksApi.Core.Data;
 using LupiraTasksApi.Core.Domain;

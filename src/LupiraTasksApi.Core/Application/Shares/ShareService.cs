@@ -1,7 +1,7 @@
 using System.Security.Cryptography;
 using JasperFx;
+using Lupira.Results;
 using LupiraTasksApi.Core.Application.Items;
-using LupiraTasksApi.Core.Application.Results;
 using LupiraTasksApi.Core.Auth;
 using LupiraTasksApi.Core.Data;
 using LupiraTasksApi.Core.Domain;

@@ -1,11 +1,12 @@
 using System.ComponentModel;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using Lupira.Mcp;
+using Lupira.Results;
 using LupiraTasksApi.Auth;
 using LupiraTasksApi.Core.Application;
 using LupiraTasksApi.Core.Application.Items;
 using LupiraTasksApi.Core.Application.Lists;
-using LupiraTasksApi.Core.Application.Results;
 using LupiraTasksApi.Core.Application.Shares;
 using LupiraTasksApi.Core.Domain;
 using LupiraTasksApi.Core.Domain.Items;
@@ -79,7 +80,7 @@ public sealed class TaskTools
     {
         var caller = await CallerAsync(ct);
         var request = new CreateListRequest { Id = Guid.CreateVersion7(), Name = name, Kind = kind };
-        var created = Require(await _lists.CreateAsync(caller, Guid.CreateVersion7(), request, ct));
+        var created = (await _lists.CreateAsync(caller, Guid.CreateVersion7(), request, ct)).Require();
         return Summarize(caller, created);
     }
 
@@ -160,7 +161,7 @@ public sealed class TaskTools
             SortOrder = FractionalIndex.KeyAfter(MaxSortKey(siblings.Where(i => i.ParentItemId == parentTaskId))),
             OccurredAt = DateTimeOffset.UtcNow,
         };
-        var item = Require(await _items.CreateAsync(caller, Guid.CreateVersion7(), listId, request, ct));
+        var item = (await _items.CreateAsync(caller, Guid.CreateVersion7(), listId, request, ct)).Require();
         return await ToTaskSummaryAsync(caller, listId, item, ct);
     }
 
@@ -189,7 +190,7 @@ public sealed class TaskTools
                 SortOrder = task.SortOrder,
                 OccurredAt = DateTimeOffset.UtcNow,
             };
-            var item = Require(await _items.CreateAsync(caller, Guid.CreateVersion7(), listId, request, ct));
+            var item = (await _items.CreateAsync(caller, Guid.CreateVersion7(), listId, request, ct)).Require();
             created.Add(new CreatedTask(item.Id, item.ParentItemId, item.Title));
         }
 
@@ -231,7 +232,7 @@ public sealed class TaskTools
             SortOrder = PositionKey(siblings, afterTaskId, atStart),
             OccurredAt = DateTimeOffset.UtcNow,
         };
-        var item = Require(await _items.MoveAsync(caller, Guid.CreateVersion7(), listId, taskId, request, ct));
+        var item = (await _items.MoveAsync(caller, Guid.CreateVersion7(), listId, taskId, request, ct)).Require();
         return await ToTaskSummaryAsync(caller, listId, item, ct);
     }
 
@@ -301,7 +302,7 @@ public sealed class TaskTools
             PriorityProvided = priority is not null,
             OccurredAt = DateTimeOffset.UtcNow,
         };
-        var item = Require(await _items.UpdateAsync(caller, Guid.CreateVersion7(), listId, taskId, request, ct));
+        var item = (await _items.UpdateAsync(caller, Guid.CreateVersion7(), listId, taskId, request, ct)).Require();
         return await ToTaskSummaryAsync(caller, listId, item, ct);
     }
 
@@ -327,7 +328,7 @@ public sealed class TaskTools
             RelationType = relationType,
             Metadata = ParseMetadata(metadata),
         };
-        var rel = Require(await _relations.LinkAsync(caller, listId, taskId, request, ct));
+        var rel = (await _relations.LinkAsync(caller, listId, taskId, request, ct)).Require();
         return new RelationSummary(rel.Id, rel.ToKind, rel.ToRef, rel.RelationType, rel.Metadata);
     }
 
@@ -339,7 +340,7 @@ public sealed class TaskTools
         var caller = await CallerAsync(ct);
         var listId = await _items.FindListIdAsync(taskId, ct)
             ?? throw new McpException($"No task found with id {taskId}.");
-        var rels = Require(await _relations.ListAsync(caller, listId, taskId, ct));
+        var rels = (await _relations.ListAsync(caller, listId, taskId, ct)).Require();
         return rels.Select(r => new RelationSummary(r.Id, r.ToKind, r.ToRef, r.RelationType, r.Metadata)).ToList();
     }
 
@@ -371,7 +372,7 @@ public sealed class TaskTools
     {
         var caller = await CallerAsync(ct);
         var request = new AddMemberRequest { Email = memberEmail, Role = role };
-        var updated = Require(await _lists.AddMemberAsync(caller, Guid.CreateVersion7(), listId, request, ct));
+        var updated = (await _lists.AddMemberAsync(caller, Guid.CreateVersion7(), listId, request, ct)).Require();
         return Summarize(caller, updated);
     }
 
@@ -391,7 +392,7 @@ public sealed class TaskTools
         var caller = await CallerAsync(ct);
         DateTimeOffset? expiresAt = expiresInDays is { } d and > 0 ? DateTimeOffset.UtcNow.AddDays(d) : null;
         var request = new CreateShareRequest { Access = access, Label = label, ExpiresAt = expiresAt };
-        return ToShareSummary(Require(await _shares.CreateAsync(caller, Guid.CreateVersion7(), listId, request, ct)));
+        return ToShareSummary((await _shares.CreateAsync(caller, Guid.CreateVersion7(), listId, request, ct)).Require());
     }
 
     [McpServerTool(Name = "list_share_links")]
@@ -400,7 +401,7 @@ public sealed class TaskTools
         [Description("The list.")] Guid listId, CancellationToken ct = default)
     {
         var caller = await CallerAsync(ct);
-        var result = Require(await _shares.ListAsync(caller, listId, ct));
+        var result = (await _shares.ListAsync(caller, listId, ct)).Require();
         return result.Select(ToShareSummary).ToList();
     }
 
@@ -446,7 +447,7 @@ public sealed class TaskTools
     {
         var caller = await CallerAsync(ct);
         var listId = await ListOfAsync(taskId, ct);
-        var item = Require(await op(caller, listId));
+        var item = (await op(caller, listId)).Require();
         return await ToTaskSummaryAsync(caller, listId, item, ct);
     }
 
@@ -456,7 +457,7 @@ public sealed class TaskTools
 
     /// <summary>Every live task of a list, in sort order — the working set for the tree/sibling maths.</summary>
     private async Task<IReadOnlyList<ItemDto>> ItemsAsync(Caller caller, Guid listId, CancellationToken ct) =>
-        Require(await _items.ListAsync(caller, listId, new ItemFilter(null, null, null, null), ct));
+        (await _items.ListAsync(caller, listId, new ItemFilter(null, null, null, null), ct)).Require();
 
     /// <summary>
     /// Require a referenced task to be in the same list. The services only guard self-parenting — referential
@@ -532,14 +533,4 @@ public sealed class TaskTools
 
     private static ListRole? RoleOf(Caller caller, ListDto list) =>
         list.Members.FirstOrDefault(m => m.PrincipalId == caller.PrincipalId)?.Role;
-
-    /// <summary>Unwrap a successful result or surface the failure to the agent as a tool error.</summary>
-    private static T Require<T>(OpResult<T> result) => result.Status switch
-    {
-        OpStatus.Ok => result.Value!,
-        OpStatus.NotFound => throw new McpException("Not found, or you don't have access to it."),
-        OpStatus.Forbidden => throw new McpException(result.Error ?? "You don't have permission to do that."),
-        OpStatus.Invalid => throw new McpException(result.Error ?? "The request was invalid."),
-        _ => throw new McpException("Unexpected error."),
-    };
 }

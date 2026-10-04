@@ -17,6 +17,7 @@ concurrency:
 jobs:
   tests:
     uses: ./.github/workflows/tests.yml
+    secrets: inherit
     with:
       run_integration: true
 
@@ -56,3 +57,5 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          secrets: |
+            packages_token=${{ secrets.PACKAGES_TOKEN }}

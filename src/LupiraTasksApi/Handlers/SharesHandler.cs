@@ -1,3 +1,4 @@
+using Lupira.Hosting.Problems;
 using LupiraTasksApi.Auth;
 using LupiraTasksApi.Core.Application.Shares;
 using LupiraTasksApi.Core.Dtos.Shares;

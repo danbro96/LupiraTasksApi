@@ -12,6 +12,7 @@
   <ItemGroup>
     <!-- The bounded context: Domain (event-sourced aggregates), Application (services),
          Data (Marten config + idempotency). No ASP.NET dependency — that lives in the host. -->
+    <PackageReference Include="Lupira.Results" Version="1.0.0" />
     <PackageReference Include="Marten" Version="9.40.0" />
     <!-- VTODO (de)serialization for the CalDAV surface (DAVx5). Same lib/version LupiraCalApi uses. -->
     <PackageReference Include="Ical.Net" Version="5.2.2" />
