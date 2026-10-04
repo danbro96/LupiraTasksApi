@@ -14,7 +14,7 @@ public sealed class RelationsTests(TasksApiTestFactory factory) : IntegrationTes
 {
     private const string Email = "alice@x.test";
 
-    private static CreateRelationRequest Monitor(string toRef = "cal-item-1", JsonNode? metadata = null) => new()
+    private static CreateRelationRequest Monitor(string toRef = "cal-item-1", JsonObject? metadata = null) => new()
     {
         ToKind = "cal-item",
         ToRef = toRef,
@@ -31,7 +31,7 @@ public sealed class RelationsTests(TasksApiTestFactory factory) : IntegrationTes
         var list = await CreateListAsync(api);
         var item = await CreateItemAsync(api, list.Id);
 
-        var metadata = JsonNode.Parse("""{"note":"release watch","checks":0}""");
+        var metadata = JsonNode.Parse("""{"note":"release watch","checks":0}""")!.AsObject();
         var link = await SendJson(api, HttpMethod.Post, RelationsUrl(list.Id, item.Id), Monitor(metadata: metadata));
         link.EnsureSuccessStatusCode();
         var dto = await ReadAsync<RelationDto>(link);
@@ -64,7 +64,7 @@ public sealed class RelationsTests(TasksApiTestFactory factory) : IntegrationTes
             await SendJson(api, HttpMethod.Post, RelationsUrl(list.Id, item.Id), Monitor()));
         var second = await ReadAsync<RelationDto>(
             await SendJson(api, HttpMethod.Post, RelationsUrl(list.Id, item.Id),
-                Monitor(metadata: JsonNode.Parse("""{"checks":3}"""))));
+                Monitor(metadata: JsonNode.Parse("""{"checks":3}""")!.AsObject())));
 
         Assert.Equal(first.Id, second.Id); // same edge tuple → same deterministic id
         var listed = await ReadAsync<List<RelationDto>>(await api.GetAsync(RelationsUrl(list.Id, item.Id)));
@@ -116,5 +116,18 @@ public sealed class RelationsTests(TasksApiTestFactory factory) : IntegrationTes
         var resp = await SendJson(api, HttpMethod.Post, RelationsUrl(list.Id, item.Id),
             new CreateRelationRequest { ToKind = "cal-item", ToRef = "  ", RelationType = "monitors" });
         Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
+    }
+
+    [Fact]
+    public async Task Link_with_non_object_metadata_is_bad_request()
+    {
+        var api = Factory.ApiClient(Email);
+        var list = await CreateListAsync(api);
+        var item = await CreateItemAsync(api, list.Id);
+
+        var resp = await SendJson(api, HttpMethod.Post, RelationsUrl(list.Id, item.Id),
+            new { toKind = "cal-item", toRef = "cal-item-1", relationType = "monitors", metadata = "x" });
+        Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
+        Assert.Contains("application/problem+json", resp.Content.Headers.ContentType?.MediaType ?? "");
     }
 }

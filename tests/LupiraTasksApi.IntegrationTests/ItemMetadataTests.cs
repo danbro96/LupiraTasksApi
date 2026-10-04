@@ -1,6 +1,8 @@
+using System.Net;
 using System.Text.Json.Nodes;
 using LupiraTasksApi.Core.Domain;
 using LupiraTasksApi.Core.Dtos.Items;
+using ModelContextProtocol;
 using Xunit;
 
 namespace LupiraTasksApi.IntegrationTests;
@@ -15,7 +17,7 @@ public sealed class ItemMetadataTests(TasksApiTestFactory factory) : Integration
     private static readonly DateTimeOffset T0 = new(2026, 6, 6, 12, 0, 0, TimeSpan.Zero);
     private static DateTimeOffset At(int seconds) => T0.AddSeconds(seconds);
 
-    private static Task<ItemDto> SetMetadataAsync(HttpClient api, Guid listId, Guid itemId, JsonNode? metadata, DateTimeOffset? at = null) =>
+    private static Task<ItemDto> SetMetadataAsync(HttpClient api, Guid listId, Guid itemId, JsonObject? metadata, DateTimeOffset? at = null) =>
         SendJson(api, HttpMethod.Post, $"/lists/{listId}/items/{itemId}/metadata",
             new SetMetadataRequest { Metadata = metadata, OccurredAt = at })
             .ContinueWith(t => ReadAsync<ItemDto>(t.Result.EnsureSuccessStatusCode())).Unwrap();
@@ -28,7 +30,7 @@ public sealed class ItemMetadataTests(TasksApiTestFactory factory) : Integration
         var item = await CreateItemAsync(api, list.Id);
         Assert.Null(item.Metadata);
 
-        var set = await SetMetadataAsync(api, list.Id, item.Id, JsonNode.Parse("""{"alertId":"abc","checks":3}"""));
+        var set = await SetMetadataAsync(api, list.Id, item.Id, JsonNode.Parse("""{"alertId":"abc","checks":3}""")!.AsObject());
         Assert.Equal("""{"alertId":"abc","checks":3}""", set.Metadata!.ToJsonString());
 
         var reloaded = await ReadAsync<ItemDto>(await api.GetAsync($"/lists/{list.Id}/items/{item.Id}"));
@@ -45,8 +47,8 @@ public sealed class ItemMetadataTests(TasksApiTestFactory factory) : Integration
         var list = await CreateListAsync(api);
         var item = await CreateItemAsync(api, list.Id);
 
-        await SetMetadataAsync(api, list.Id, item.Id, JsonNode.Parse("""{"checks":2}"""), at: At(20));
-        var stale = await SetMetadataAsync(api, list.Id, item.Id, JsonNode.Parse("""{"checks":1}"""), at: At(10));
+        await SetMetadataAsync(api, list.Id, item.Id, JsonNode.Parse("""{"checks":2}""")!.AsObject(), at: At(20));
+        var stale = await SetMetadataAsync(api, list.Id, item.Id, JsonNode.Parse("""{"checks":1}""")!.AsObject(), at: At(10));
 
         Assert.Equal("""{"checks":2}""", stale.Metadata!.ToJsonString()); // older OccurredAt loses
     }
@@ -57,7 +59,7 @@ public sealed class ItemMetadataTests(TasksApiTestFactory factory) : Integration
         var api = Factory.ApiClient(Email);
         var list = await CreateListAsync(api);
         var item = await CreateItemAsync(api, list.Id, "Buy milk");
-        await SetMetadataAsync(api, list.Id, item.Id, JsonNode.Parse("""{"secret":"alert-xyz"}"""));
+        await SetMetadataAsync(api, list.Id, item.Id, JsonNode.Parse("""{"secret":"alert-xyz"}""")!.AsObject());
         var link = await MintShareLinkAsync(api, list.Id, ShareAccess.Read);
 
         var anon = Factory.CreateClient();
@@ -66,5 +68,30 @@ public sealed class ItemMetadataTests(TasksApiTestFactory factory) : Integration
         Assert.Contains("Buy milk", body);
         Assert.DoesNotContain("alert-xyz", body); // server-side bookkeeping must not leak to a public link
         Assert.DoesNotContain("metadata", body, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task Non_object_metadata_is_bad_request()
+    {
+        var api = Factory.ApiClient(Email);
+        var list = await CreateListAsync(api);
+        var item = await CreateItemAsync(api, list.Id);
+
+        var resp = await SendJson(api, HttpMethod.Post, $"/lists/{list.Id}/items/{item.Id}/metadata",
+            new { metadata = new[] { 1 } });
+        Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
+        Assert.Contains("application/problem+json", resp.Content.Headers.ContentType?.MediaType ?? "");
+    }
+
+    [Fact]
+    public async Task Mcp_rejects_non_object_metadata()
+    {
+        var api = Factory.ApiClient(Email);
+        var list = await CreateListAsync(api);
+        var item = await CreateItemAsync(api, list.Id);
+
+        var ex = await Assert.ThrowsAsync<McpException>(() =>
+            AsAgent(Email, tools => tools.SetTaskMetadata(item.Id, "[1]")));
+        Assert.Contains("JSON object", ex.Message);
     }
 }

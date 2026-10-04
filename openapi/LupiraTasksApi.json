@@ -3903,7 +3903,7 @@
                 "type": "null"
               },
               {
-                "$ref": "#/components/schemas/JsonNode"
+                "$ref": "#/components/schemas/JsonObject"
               }
             ]
           }
@@ -4113,7 +4113,7 @@
               },
               {
                 "description": "Free-form JSON for agent/server bookkeeping. Server-side only — never in the public share DTO.",
-                "$ref": "#/components/schemas/JsonNode"
+                "$ref": "#/components/schemas/JsonObject"
               }
             ]
           }
@@ -4145,7 +4145,9 @@
         },
         "description": "Body for complete/reopen/delete. Carries only the LWW timestamp; the item id is in\nthe route. DateTimeOffset? ItemTimestampRequest.OccurredAt defaults to server now when omitted."
       },
-      "JsonNode": { },
+      "JsonObject": {
+        "type": "object"
+      },
       "ListDto": {
         "required": [
           "id",
@@ -4499,7 +4501,7 @@
                 "type": "null"
               },
               {
-                "$ref": "#/components/schemas/JsonNode"
+                "$ref": "#/components/schemas/JsonObject"
               }
             ]
           }
@@ -4526,7 +4528,7 @@
                 "type": "null"
               },
               {
-                "$ref": "#/components/schemas/JsonNode"
+                "$ref": "#/components/schemas/JsonObject"
               }
             ]
           },

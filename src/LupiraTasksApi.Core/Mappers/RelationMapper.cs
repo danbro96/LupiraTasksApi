@@ -15,6 +15,6 @@ internal static class RelationMapper
         ToKind = r.ToKind,
         ToRef = r.ToRef,
         RelationType = r.RelationType,
-        Metadata = string.IsNullOrWhiteSpace(r.Metadata) ? null : JsonNode.Parse(r.Metadata),
+        Metadata = string.IsNullOrWhiteSpace(r.Metadata) ? null : JsonNode.Parse(r.Metadata)?.AsObject(),
     };
 }

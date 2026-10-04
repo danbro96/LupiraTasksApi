@@ -16,5 +16,5 @@ public sealed class RelationDto
 
     public required string RelationType { get; set; }
 
-    public JsonNode? Metadata { get; set; }
+    public JsonObject? Metadata { get; set; }
 }

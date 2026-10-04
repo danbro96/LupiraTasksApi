@@ -101,6 +101,7 @@ builder.Services
 builder.Services.AddProblemDetails(o => o.CustomizeProblemDetails = ctx =>
     ctx.ProblemDetails.Extensions["traceId"] = Activity.Current?.Id ?? ctx.HttpContext.TraceIdentifier);
 builder.Services.AddExceptionHandler<ProblemExceptionHandler>();
+builder.Services.Configure<RouteHandlerOptions>(o => o.ThrowOnBadRequest = true);
 
 builder.Services.AddOpenApi("v1", options =>
 {

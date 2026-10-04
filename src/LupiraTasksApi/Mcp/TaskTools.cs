@@ -49,13 +49,13 @@ public sealed class TaskTools
 
     /// <summary>A task as the agent sees it — trimmed, with its owning list named and its parent for nesting.</summary>
     public sealed record TaskSummary(
-        Guid Id, Guid ListId, string ListName, Guid? ParentTaskId, string Title, ItemStatus Status, bool Completed, DateTimeOffset? DueAt, string? AssignedTo, int Priority, JsonNode? Metadata);
+        Guid Id, Guid ListId, string ListName, Guid? ParentTaskId, string Title, ItemStatus Status, bool Completed, DateTimeOffset? DueAt, string? AssignedTo, int Priority, JsonObject? Metadata);
 
     /// <summary>A task created by <c>add_tasks_batch</c> — just enough to follow it up or check the tree.</summary>
     public sealed record CreatedTask(Guid Id, Guid? ParentTaskId, string Title);
 
     /// <summary>A cross-API link as the agent sees it — the edge tuple needed to read or unlink it.</summary>
-    public sealed record RelationSummary(Guid Id, string ToKind, string ToRef, string RelationType, JsonNode? Metadata);
+    public sealed record RelationSummary(Guid Id, string ToKind, string ToRef, string RelationType, JsonObject? Metadata);
 
     [McpServerTool(Name = "list_my_lists")]
     [Description("List the to-do / shopping lists the current user is a member of, with their role on each.")]
@@ -421,17 +421,22 @@ public sealed class TaskTools
     private async Task<Caller> CallerAsync(CancellationToken ct) =>
         await _callers.MemberAsync(ct) ?? throw new McpException("Unauthenticated.");
 
-    /// <summary>Parse an optional JSON string for a relation's free-form metadata, surfacing bad JSON as a tool error.</summary>
-    private static JsonNode? ParseMetadata(string? json)
+    /// <summary>Parse an optional JSON string for free-form metadata, surfacing anything but a JSON object as a tool error.</summary>
+    private static JsonObject? ParseMetadata(string? json)
     {
         if (string.IsNullOrWhiteSpace(json)) return null;
         try
         {
-            return JsonNode.Parse(json);
+            return JsonNode.Parse(json) switch
+            {
+                null => null,
+                JsonObject obj => obj,
+                _ => throw new McpException("`metadata` must be a JSON object."),
+            };
         }
-        catch (JsonException ex)
+        catch (JsonException)
         {
-            throw new McpException($"`metadata` must be valid JSON: {ex.Message}");
+            throw new McpException("`metadata` must be a JSON object.");
         }
     }
 

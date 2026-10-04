@@ -32,6 +32,6 @@ internal static class ItemMapper
         CreatedBy = PersonRef.FromActor(item.CreatedBy, principals),
         CreatedAt = item.CreatedAt,
         UpdatedAt = item.UpdatedAt,
-        Metadata = string.IsNullOrWhiteSpace(item.Metadata) ? null : JsonNode.Parse(item.Metadata),
+        Metadata = string.IsNullOrWhiteSpace(item.Metadata) ? null : JsonNode.Parse(item.Metadata)?.AsObject(),
     };
 }
