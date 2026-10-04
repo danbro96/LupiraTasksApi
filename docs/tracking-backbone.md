@@ -25,7 +25,7 @@ Examples (assistant-driven): an unhealthy API → a **task** (fix it, tracked un
 | Items tracked to done | `Item` — `Status`-derived `Completed` + `CompletedAt/By`, reopen via `ItemReopened` (clears completion), soft `Deleted` (`Domain/Items/Item.cs`, `ItemState.cs`) |
 | Due / assignee / priority / tags / subtasks | `DueAt`, `AssignedTo`, `Priority` (0..9, validated), `Tags`, `ParentItemId` — plus `Notes`, `Quantity`/`Unit` (shopping), `SortOrder`, `StatusReason` |
 | Agent surface | 16 MCP tools — lists, tasks (incl. `set_task_status`/`set_task_metadata`), relations, sharing (`Mcp/TaskTools.cs`); OIDC bearer JWT, `/mcp` LAN/WireGuard-only |
-| Offline-safe writes | per-field LWW `(OccurredAt, CommandId)` + idempotency ledger (insert-not-upsert, so a duplicate command rolls back whole), single `SaveChangesAsync` (`Data/Idempotency.cs`, `Domain/Items/ItemLww.cs`) |
+| Offline-safe writes | per-field LWW `(OccurredAt, CommandId)` + idempotency ledger (insert-not-upsert, so a duplicate command rolls back whole), single `SaveChangesAsync` (`Lupira.Marten.Idempotency`, `Domain/Items/ItemLww.cs`) |
 | Event sourcing | Marten inline snapshots, schema `tasks` (`Data/MartenRegistrations.cs`); DAV sync-token = global event `Sequence`, REST `/sync` cursor = max item `Version` |
 
 So "the assistant gets its own lists and drives them" needs **no new model** — the MCP surface and ownership already cover it.

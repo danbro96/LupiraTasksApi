@@ -1,3 +1,4 @@
+using Lupira.Testing.Postgres;
 using LupiraTasksApi.Core.Domain;
 using LupiraTasksApi.Core.Dtos.Items;
 using LupiraTasksApi.Core.Dtos.Lists;

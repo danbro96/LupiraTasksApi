@@ -1,6 +1,7 @@
 using JasperFx.Events.Projections;
+using Lupira.Identity.Marten;
+using Lupira.Marten.Idempotency;
 using LupiraTasksApi.Core.Domain;
-using LupiraTasksApi.Core.Domain.Identity;
 using LupiraTasksApi.Core.Domain.Items;
 using LupiraTasksApi.Core.Domain.Items.Events;
 using LupiraTasksApi.Core.Domain.Lists;
@@ -48,11 +49,7 @@ public static class MartenRegistrations
         // those per-resource GET/PUT/DELETE lookups don't table-scan the items.
         opts.Schema.For<Item>().Index(x => x.Uid);
 
-        // Unique sub: without it, concurrent first-sight logins fork one login into two principals.
-        // Email stays non-unique — mutable, and a placeholder row shares it until the sub upgrade lands.
-        opts.Schema.For<Principal>().Identity(x => x.Id)
-            .Index(x => x.AuthentikSub, i => i.IsUnique = true)
-            .Index(x => x.Email);
+        opts.AddLupiraPrincipals();
 
         // Idempotency ledger keyed by command id.
         opts.Schema.For<ProcessedCommand>().Identity(c => c.CommandId);

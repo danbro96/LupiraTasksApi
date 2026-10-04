@@ -1,5 +1,5 @@
+using Lupira.Identity.Marten;
 using LupiraTasksApi.Core.Application.Shares;
-using LupiraTasksApi.Core.Domain;
 
 namespace LupiraTasksApi.Core.Application;
 

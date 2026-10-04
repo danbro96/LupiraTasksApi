@@ -1,4 +1,5 @@
 using System.Net;
+using Lupira.Testing.Postgres;
 using LupiraTasksApi.Core.Dtos.Items;
 using Xunit;
 

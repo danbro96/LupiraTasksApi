@@ -1,8 +1,9 @@
+using Lupira.Contracts.Dav;
+using Lupira.Identity.Marten;
 using Lupira.Results;
 using LupiraTasksApi.Core.Application;
 using LupiraTasksApi.Core.Application.Dav;
 using LupiraTasksApi.Core.Application.Lists;
-using LupiraTasksApi.Core.Domain.Identity;
 using LupiraTasksApi.Core.Domain.Items;
 using LupiraTasksApi.Core.Domain.Lists;
 using LupiraTasksApi.Core.Ical;

@@ -1,5 +1,5 @@
+using Lupira.Identity.Marten;
 using LupiraTasksApi.Core.Domain;
-using LupiraTasksApi.Core.Domain.Identity;
 using LupiraTasksApi.Core.Domain.Lists;
 using LupiraTasksApi.Core.Dtos;
 using LupiraTasksApi.Core.Dtos.Lists;

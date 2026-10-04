@@ -1,5 +1,5 @@
 using System.Text.Json.Nodes;
-using LupiraTasksApi.Core.Domain.Identity;
+using Lupira.Identity.Marten;
 using LupiraTasksApi.Core.Domain.Items;
 using LupiraTasksApi.Core.Dtos;
 using LupiraTasksApi.Core.Dtos.Items;

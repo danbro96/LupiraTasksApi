@@ -1,9 +1,10 @@
 using System.Security.Cryptography;
 using JasperFx;
+using Lupira.Identity.Marten;
+using Lupira.Marten.Idempotency;
 using Lupira.Results;
 using LupiraTasksApi.Core.Application.Items;
 using LupiraTasksApi.Core.Auth;
-using LupiraTasksApi.Core.Data;
 using LupiraTasksApi.Core.Domain;
 using LupiraTasksApi.Core.Domain.Items;
 using LupiraTasksApi.Core.Domain.Lists;
@@ -71,7 +72,7 @@ public sealed class ShareService
         {
             _session.Events.StartStream<ShareLink>(
                 shareId, new ShareLinkCreated(shareId, listId, token, request.Access, label, request.ExpiresAt));
-            _idempotency.Record(commandId, shareId, version: 1);
+            _idempotency.Record(commandId, shareId, resultVersion: 1);
             await _session.SaveChangesAsync(ct);
         }
         catch (ExistingStreamIdCollisionException)

@@ -1,4 +1,5 @@
 using JasperFx.Events;
+using Lupira.Identity.Marten;
 using LupiraTasksApi.Core.Domain.Shares.Events;
 
 namespace LupiraTasksApi.Core.Domain.Shares;

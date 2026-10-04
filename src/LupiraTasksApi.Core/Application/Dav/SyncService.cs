@@ -1,3 +1,4 @@
+using Lupira.Identity.Marten;
 using Lupira.Results;
 using LupiraTasksApi.Core.Auth;
 using LupiraTasksApi.Core.Domain;

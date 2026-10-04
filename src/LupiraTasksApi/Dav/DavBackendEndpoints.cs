@@ -1,3 +1,4 @@
+using Lupira.Contracts.Dav;
 namespace LupiraTasksApi.Dav;
 
 /// <summary>

@@ -1,4 +1,5 @@
 using System.Net;
+using Lupira.Testing.Postgres;
 using LupiraTasksApi.Core.Domain;
 using LupiraTasksApi.Core.Dtos.Lists;
 using Xunit;

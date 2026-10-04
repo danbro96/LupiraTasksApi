@@ -1,10 +1,10 @@
-using LupiraTasksApi.Core.Application;
+using Lupira.Identity.Marten;
+using Lupira.Marten.Idempotency;
 using LupiraTasksApi.Core.Application.Dav;
 using LupiraTasksApi.Core.Application.Items;
 using LupiraTasksApi.Core.Application.Lists;
 using LupiraTasksApi.Core.Application.Shares;
 using LupiraTasksApi.Core.Auth;
-using LupiraTasksApi.Core.Data;
 
 namespace Microsoft.Extensions.DependencyInjection;
 
@@ -21,7 +21,7 @@ public static class CoreServiceCollectionExtensions
     public static IServiceCollection AddTasksCore(this IServiceCollection services) =>
         services
             .AddScoped<AccessResolver>()
-            .AddScoped<PrincipalDirectory>()
+            .AddLupiraPrincipalDirectory()
             .AddScoped<Idempotency>()
             .AddScoped<ListService>()
             .AddScoped<ItemService>()

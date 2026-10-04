@@ -1,6 +1,7 @@
 using System.Net;
+using Lupira.Identity.Marten;
+using Lupira.Testing.Postgres;
 using LupiraTasksApi.Core.Domain;
-using LupiraTasksApi.Core.Domain.Identity;
 using LupiraTasksApi.Core.Domain.Items;
 using LupiraTasksApi.Core.Dtos.Items;
 using Marten;

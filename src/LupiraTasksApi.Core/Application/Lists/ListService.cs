@@ -1,7 +1,8 @@
 using JasperFx;
+using Lupira.Identity.Marten;
+using Lupira.Marten.Idempotency;
 using Lupira.Results;
 using LupiraTasksApi.Core.Auth;
-using LupiraTasksApi.Core.Data;
 using LupiraTasksApi.Core.Domain;
 using LupiraTasksApi.Core.Domain.Lists;
 using LupiraTasksApi.Core.Domain.Lists.Events;
@@ -97,7 +98,7 @@ public sealed class ListService
             _session.Events.StartStream<TodoList>(
                 request.Id,
                 new ListCreated(request.Id, name, request.Kind, request.Color, ownerPrincipalId));
-            _idempotency.Record(commandId, request.Id, version: 1);
+            _idempotency.Record(commandId, request.Id, resultVersion: 1);
             await _session.SaveChangesAsync(ct);
         }
         catch (ExistingStreamIdCollisionException)

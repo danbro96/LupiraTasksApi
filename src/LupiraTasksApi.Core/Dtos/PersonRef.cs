@@ -1,4 +1,4 @@
-using LupiraTasksApi.Core.Domain.Identity;
+using Lupira.Identity.Marten;
 
 namespace LupiraTasksApi.Core.Dtos;
 

@@ -27,22 +27,21 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.9" />
-    <PackageReference Include="Microsoft.OpenApi" Version="2.7.5" />
-    <PackageReference Include="Microsoft.Extensions.ApiDescription.Server" Version="10.0.9">
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.12" />
+    <PackageReference Include="Microsoft.Extensions.ApiDescription.Server" Version="10.0.12">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.9" />
-    <PackageReference Include="Scalar.AspNetCore" Version="2.16.5" />
 
     <PackageReference Include="Marten" Version="9.40.0" />
 
-    <PackageReference Include="Lupira.Auth.DevUser" Version="0.1.0" />
+    <PackageReference Include="Lupira.Auth.Jwt" Version="0.1.0" />
+    <PackageReference Include="Lupira.Contracts.Dav" Version="1.0.0" />
     <PackageReference Include="Lupira.Hosting.Defaults" Version="0.1.0" />
     <PackageReference Include="Lupira.Hosting.Health" Version="0.1.0" />
     <PackageReference Include="Lupira.Hosting.LanEdge" Version="1.0.0" />
     <PackageReference Include="Lupira.Hosting.Observability" Version="0.1.1" />
+    <PackageReference Include="Lupira.Hosting.OpenApi" Version="0.1.0" />
     <PackageReference Include="Lupira.Hosting.Problems" Version="0.1.0" />
     <PackageReference Include="Lupira.Mcp" Version="0.1.0" />
 

@@ -190,8 +190,8 @@ Nesting is a plain parent pointer with no depth limit; clients render the tree b
 ## Ownership and identity
 
 Identity is anchored on an internal **principal id** (a Guid). A login (OIDC `sub` + email, or a DAV
-email) is resolved — and JIT-provisioned — to a [`Principal`](../src/LupiraTasksApi.Core/Domain/Identity/Principal.cs)
-by [`PrincipalDirectory`](../src/LupiraTasksApi.Core/Application/PrincipalDirectory.cs): it matches on
+email) is resolved — and JIT-provisioned — to a `Principal` by `PrincipalDirectory` (both
+`Lupira.Identity.Marten`): it matches on
 the immutable `AuthentikSub` first, then email, so the durable key is the `sub` and an email change
 never strands access. Emails live only on the `Principal` document (plus an `actor.email` audit
 header) — no email is baked into an event payload. The host funnels every login to a
@@ -210,7 +210,7 @@ resolved at the read boundary. Member manage-routes and client self-matching use
 the LDAP bind and only knows email — and resolves it server-side.
 
 Every mutation stamps four provenance facts onto its events via
-[`EventActor.Stamp`](../src/LupiraTasksApi.Core/Domain/EventActor.cs) before the single commit
+`EventActor.Stamp` (`Lupira.Identity.Marten`) before the single commit
 (they are unbackfillable, so they are never optional):
 
 - **actor** header (+ Marten `LastModifiedBy`) — a member's `PrincipalId`, or `share:{label}` for a

@@ -1,4 +1,6 @@
 using JasperFx;
+using Lupira.Identity.Marten;
+using Lupira.Marten.Idempotency;
 using LupiraTasksApi.Core.Domain;
 using LupiraTasksApi.Core.Domain.Items;
 using LupiraTasksApi.Core.Domain.Items.Events;
