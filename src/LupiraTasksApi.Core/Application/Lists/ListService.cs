@@ -62,7 +62,7 @@ public sealed class ListService
                 .ThenBy(l => SortKeyOf(l, principalId), StringComparer.Ordinal)
                 .ThenBy(l => l.Name, StringComparer.OrdinalIgnoreCase)
                 .ToList();
-        var lookup = await _principals.LookupAsync(ordered.SelectMany(PrincipalIdsOf), ct);
+        var lookup = await _principals.LookupAsync(ordered.SelectMany(ListMapper.PrincipalIdsOf), ct);
         var lists = ordered.Select(l => l.ToResponse(lookup, principalId)).ToList();
 
         return OpResult<IReadOnlyList<ListDto>>.Ok(lists);
@@ -315,19 +315,8 @@ public sealed class ListService
     /// <summary>Map a list to its response, resolving owner + member principal ids to <see cref="PersonRef"/>.</summary>
     private async Task<ListDto> ToResponseAsync(TodoList list, Guid callerPrincipalId, CancellationToken ct)
     {
-        var lookup = await _principals.LookupAsync(PrincipalIdsOf(list), ct);
+        var lookup = await _principals.LookupAsync(list.PrincipalIdsOf(), ct);
         return list.ToResponse(lookup, callerPrincipalId);
-    }
-
-    /// <summary>Every principal id referenced by a list snapshot: owner, members, and Guid-shaped AddedBy actors.</summary>
-    private static IEnumerable<Guid> PrincipalIdsOf(TodoList list)
-    {
-        yield return list.OwnerPrincipalId;
-        foreach (var m in list.Members)
-        {
-            yield return m.PrincipalId;
-            if (Guid.TryParse(m.AddedBy, out var addedBy)) yield return addedBy;
-        }
     }
 
     /// <summary>

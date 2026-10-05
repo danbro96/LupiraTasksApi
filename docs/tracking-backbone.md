@@ -26,7 +26,7 @@ Examples (assistant-driven): an unhealthy API → a **task** (fix it, tracked un
 | Due / assignee / priority / tags / subtasks | `DueAt`, `AssignedTo`, `Priority` (0..9, validated), `Tags`, `ParentItemId` — plus `Notes`, `Quantity`/`Unit` (shopping), `SortOrder`, `StatusReason` |
 | Agent surface | 16 MCP tools — lists, tasks (incl. `set_task_status`/`set_task_metadata`), relations, sharing (`Mcp/TaskTools.cs`); OIDC bearer JWT, `/mcp` LAN/WireGuard-only |
 | Offline-safe writes | per-field LWW `(OccurredAt, CommandId)` + idempotency ledger (insert-not-upsert, so a duplicate command rolls back whole), single `SaveChangesAsync` (`Lupira.Marten.Idempotency`, `Domain/Items/ItemLww.cs`) |
-| Event sourcing | Marten inline snapshots, schema `tasks` (`Data/MartenRegistrations.cs`); DAV sync-token = global event `Sequence`, REST `/sync` cursor = max item `Version` |
+| Event sourcing | Marten inline snapshots, Quick append mode, schema `tasks` (`Data/MartenRegistrations.cs`); DAV sync-token = global event `Sequence`; REST `/sync/lists` + `/sync/items` cursor = settled global event sequence + readable-list scope (`Application/Sync/SyncFeed.cs`, `Lupira.Sync.Marten`) |
 
 So "the assistant gets its own lists and drives them" needs **no new model** — the MCP surface and ownership already cover it.
 

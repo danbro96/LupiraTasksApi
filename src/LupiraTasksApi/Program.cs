@@ -11,6 +11,7 @@ using Lupira.Mcp;
 using Lupira.Postgres.Health;
 using LupiraTasksApi.Auth;
 using LupiraTasksApi.Core.Application.Shares;
+using LupiraTasksApi.Core.Application.Sync;
 using LupiraTasksApi.Core.Data;
 using LupiraTasksApi.Core.Domain.Items;
 using LupiraTasksApi.Core.Domain.Lists;
@@ -55,6 +56,7 @@ builder.Services
 builder.Services.AddLupiraHealth().AddReadyCheck<DatabaseReadyCheck>("postgres");
 
 builder.Services.Configure<ShareLinkOptions>(builder.Configuration.GetSection(ShareLinkOptions.SectionName));
+builder.Services.Configure<SyncFeedOptions>(builder.Configuration.GetSection(SyncFeedOptions.SectionName));
 
 // Caller identity + authorization + per-request handlers. CurrentUser reads the
 // validated JWT via IHttpContextAccessor and never writes to the DB.

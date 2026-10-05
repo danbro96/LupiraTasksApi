@@ -72,6 +72,13 @@ public sealed class AccessResolver
         return AccessResult.Granted(list, member.Role);
     }
 
+    /// <summary>Lists the principal can read: a member at any role, list not deleted (archived included).</summary>
+    public async Task<IReadOnlyList<Guid>> ReadableListIdsAsync(Guid principalId, CancellationToken ct) =>
+        await _session.Query<TodoList>()
+            .Where(l => !l.IsDeleted && l.Members.Any(m => m.PrincipalId == principalId))
+            .Select(l => l.Id)
+            .ToListAsync(ct);
+
     /// <summary>
     /// True when <paramref name="actual"/> meets or exceeds <paramref name="required"/>.
     /// The enum is ordered Owner(0) &gt; Editor(1) &gt; Viewer(2), so a lower numeric

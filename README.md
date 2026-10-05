@@ -17,7 +17,7 @@ truth, so an event written through any surface is immediately visible through th
 
 | Surface | Route(s) | For |
 | --- | --- | --- |
-| **REST** | `/lists`, `/lists/{id}/items`, `/lists/{id}/sync`, `/lists/{id}/shares`, `/me`, `/users` | App clients — fine-grained CRUD + offline sync (client-supplied GUIDv7 ids, fractional-index `sortOrder`, `Idempotency-Key`, per-field LWW) |
+| **REST** | `/lists`, `/lists/{id}/items`, `/lists/{id}/sync`, `/sync/lists`, `/sync/items`, `/lists/{id}/shares`, `/me`, `/users` | App clients — fine-grained CRUD + offline sync (client-supplied GUIDv7 ids, fractional-index `sortOrder`, `Idempotency-Key`, per-field LWW) |
 | **MCP** | `/mcp` (Streamable HTTP) | AI agents — intent-shaped tools that mint ids/sort keys/command ids server-side |
 | **Share links** | `/shared/{token}` | Account-less public access to one list (read or read/write, optional expiry, revocable) |
 | **DAV backend** | `/dav-backend/u/{email}/…` (LAN-only, gateway-authed) | The LupiraDavApi gateway — collections/query/resources/changes over raw VTODO blobs |

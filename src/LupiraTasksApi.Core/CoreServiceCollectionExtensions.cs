@@ -4,6 +4,7 @@ using LupiraTasksApi.Core.Application.Dav;
 using LupiraTasksApi.Core.Application.Items;
 using LupiraTasksApi.Core.Application.Lists;
 using LupiraTasksApi.Core.Application.Shares;
+using LupiraTasksApi.Core.Application.Sync;
 using LupiraTasksApi.Core.Auth;
 
 namespace Microsoft.Extensions.DependencyInjection;
@@ -14,7 +15,7 @@ namespace Microsoft.Extensions.DependencyInjection;
 /// depends only on the DI abstractions, not ASP.NET, so the "no ASP.NET in the core" rule holds. The host still
 /// owns environment-specific composition: <c>AddMarten</c> (connection string + <c>AutoCreate</c> gating, which
 /// calls <c>MartenRegistrations.Configure</c>), the <c>HttpContext</c>-based <c>CurrentUser</c>, the transport
-/// handlers / MCP tools, and options binding (<c>ShareLinkOptions</c>).
+/// handlers / MCP tools, and options binding (<c>ShareLinkOptions</c>, <c>SyncFeedOptions</c>).
 /// </summary>
 public static class CoreServiceCollectionExtensions
 {
@@ -27,6 +28,7 @@ public static class CoreServiceCollectionExtensions
             .AddScoped<ItemService>()
             .AddScoped<RelationService>()
             .AddScoped<SyncService>()
+            .AddScoped<SyncFeed>()
             .AddScoped<ShareService>()
             .AddScoped<TaskDavService>();
 }

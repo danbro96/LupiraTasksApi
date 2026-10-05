@@ -2787,6 +2787,154 @@
         ]
       }
     },
+    "/sync/lists": {
+      "get": {
+        "tags": [
+          "Sync"
+        ],
+        "summary": "Lists the caller can read that changed since a cursor, for an offline mirror.",
+        "description": "Omit `since` for a full sync; then pass back each returned `cursor`, looping while `hasMore`. `reset: true` = drop the mirror before applying the page (first page of a full sync, or the caller gained or lost a list). `limit` defaults to 200, max 500. Lists leave the mirror through `reset`, so `deleted` is always empty.",
+        "operationId": "SyncLists",
+        "parameters": [
+          {
+            "name": "since",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SyncPageOfListDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/sync/items": {
+      "get": {
+        "tags": [
+          "Sync"
+        ],
+        "summary": "Items of the caller's readable lists that changed since a cursor, with per-field guards.",
+        "description": "Omit `since` for a full sync; then pass back each returned `cursor`, looping while `hasMore`. `reset: true` = drop the mirror before applying the page (first page of a full sync, or the caller gained or lost a list). `limit` defaults to 200, max 500. `deleted` holds the ids of deleted items.",
+        "operationId": "SyncItems",
+        "parameters": [
+          {
+            "name": "since",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SyncPageOfItemSyncChange"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
     "/lists/{listId}/shares": {
       "post": {
         "tags": [
@@ -4120,6 +4268,57 @@
         },
         "description": "An item's current snapshot. Clients nest by Guid? ItemDto.ParentItemId."
       },
+      "ItemGuardsDto": {
+        "required": [
+          "name",
+          "notes",
+          "assignee",
+          "due",
+          "qty",
+          "priority",
+          "status",
+          "move",
+          "metadata",
+          "tags"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "$ref": "#/components/schemas/SectionGuardDto"
+          },
+          "notes": {
+            "$ref": "#/components/schemas/SectionGuardDto"
+          },
+          "assignee": {
+            "$ref": "#/components/schemas/SectionGuardDto"
+          },
+          "due": {
+            "$ref": "#/components/schemas/SectionGuardDto"
+          },
+          "qty": {
+            "$ref": "#/components/schemas/SectionGuardDto"
+          },
+          "priority": {
+            "$ref": "#/components/schemas/SectionGuardDto"
+          },
+          "status": {
+            "$ref": "#/components/schemas/SectionGuardDto"
+          },
+          "move": {
+            "$ref": "#/components/schemas/SectionGuardDto"
+          },
+          "metadata": {
+            "$ref": "#/components/schemas/SectionGuardDto"
+          },
+          "tags": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/SectionGuardDto"
+            }
+          }
+        },
+        "description": "The write that owns each field's current value, so an offline client resolves its pending edits\n            field by field against the server state. `tags` is keyed by tag id and keeps removed tags."
+      },
       "ItemStatus": {
         "enum": [
           "Open",
@@ -4130,6 +4329,22 @@
           "Cancelled"
         ],
         "description": "An item's lifecycle position — one state machine, not two flags. ItemStatus.Open, ItemStatus.InProgress,\nItemStatus.Blocked, and ItemStatus.Waiting are open; ItemStatus.Done and ItemStatus.Cancelled are\nclosed. `Completed` is derived (`Status == Done`). The value is LWW-guarded by one\n(OccurredAt, CommandId) guard shared by every lifecycle event, so done-ness and the open sub-state can never\ndisagree. Lets the assistant answer \"what's blocked / waiting on me?\"."
+      },
+      "ItemSyncChange": {
+        "required": [
+          "item",
+          "guards"
+        ],
+        "type": "object",
+        "properties": {
+          "item": {
+            "$ref": "#/components/schemas/ItemDto"
+          },
+          "guards": {
+            "$ref": "#/components/schemas/ItemGuardsDto"
+          }
+        },
+        "description": "A changed item: its current state plus the per-field guards."
       },
       "ItemTimestampRequest": {
         "type": "object",
@@ -4507,6 +4722,24 @@
           }
         }
       },
+      "SectionGuardDto": {
+        "required": [
+          "ts",
+          "cmd"
+        ],
+        "type": "object",
+        "properties": {
+          "ts": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "cmd": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "description": "One section's last-writer guard: the (occurredAt, commandId) of the write that owns its current\n            value. Offline clients seed their local guards from these so a pending edit on one section never blocks —\n            and is never clobbered by — fresher server state on another."
+      },
       "SetListOrderRequest": {
         "required": [
           "sortOrder"
@@ -4763,6 +4996,76 @@
           }
         },
         "description": "A share link as the owner sees it, including the opaque string ShareDto.Token and ready-to-copy string ShareDto.Url."
+      },
+      "SyncPageOfItemSyncChange": {
+        "required": [
+          "cursor",
+          "hasMore",
+          "reset",
+          "changed",
+          "deleted"
+        ],
+        "type": "object",
+        "properties": {
+          "cursor": {
+            "type": "string"
+          },
+          "hasMore": {
+            "type": "boolean"
+          },
+          "reset": {
+            "type": "boolean"
+          },
+          "changed": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ItemSyncChange"
+            }
+          },
+          "deleted": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        },
+        "description": "One page of a `/sync/*` feed. `reset` starts a full sync: rows the full sync never mentions are gone."
+      },
+      "SyncPageOfListDto": {
+        "required": [
+          "cursor",
+          "hasMore",
+          "reset",
+          "changed",
+          "deleted"
+        ],
+        "type": "object",
+        "properties": {
+          "cursor": {
+            "type": "string"
+          },
+          "hasMore": {
+            "type": "boolean"
+          },
+          "reset": {
+            "type": "boolean"
+          },
+          "changed": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ListDto"
+            }
+          },
+          "deleted": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        },
+        "description": "One page of a `/sync/*` feed. `reset` starts a full sync: rows the full sync never mentions are gone."
       },
       "SyncResponse": {
         "required": [

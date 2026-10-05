@@ -16,6 +16,8 @@
     <PackageReference Include="Lupira.Marten.Idempotency" Version="0.1.0" />
     <PackageReference Include="Lupira.Postgres.Health" Version="0.1.0" />
     <PackageReference Include="Lupira.Results" Version="1.0.0" />
+    <PackageReference Include="Lupira.Sync" Version="0.2.0" />
+    <PackageReference Include="Lupira.Sync.Marten" Version="0.1.0" />
     <PackageReference Include="Marten" Version="9.40.0" />
     <!-- VTODO (de)serialization for the CalDAV surface (DAVx5). Same lib/version LupiraCalApi uses. -->
     <PackageReference Include="Ical.Net" Version="5.2.2" />

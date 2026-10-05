@@ -6,7 +6,6 @@ using LupiraTasksApi.Core.Auth;
 using LupiraTasksApi.Core.Domain;
 using LupiraTasksApi.Core.Domain.Items;
 using LupiraTasksApi.Core.Domain.Items.Events;
-using LupiraTasksApi.Core.Domain.Lists;
 using LupiraTasksApi.Core.Dtos.Items;
 using LupiraTasksApi.Core.Mappers;
 using Marten;
@@ -78,10 +77,7 @@ public sealed class ItemService
         DateTimeOffset? dueFrom, DateTimeOffset? dueTo, CancellationToken ct)
     {
         var principalId = caller.PrincipalId!.Value;
-        var listIds = await _session.Query<TodoList>()
-            .Where(l => !l.IsDeleted && l.Members.Any(m => m.PrincipalId == principalId))
-            .Select(l => l.Id)
-            .ToListAsync(ct);
+        var listIds = await _access.ReadableListIdsAsync(principalId, ct);
         if (listIds.Count == 0)
             return OpResult<IReadOnlyList<ItemDto>>.Ok([]);
 
@@ -366,23 +362,14 @@ public sealed class ItemService
     /// <summary>Map an item to its response, resolving assignee + attribution ids to <see cref="PersonRef"/>.</summary>
     private async Task<ItemDto> ToResponseAsync(Item item, CancellationToken ct)
     {
-        var lookup = await _principals.LookupAsync(PrincipalIdsOf(item), ct);
+        var lookup = await _principals.LookupAsync(item.PrincipalIdsOf(), ct);
         return item.ToResponse(lookup);
     }
 
     private async Task<IReadOnlyList<ItemDto>> ToResponsesAsync(IReadOnlyList<Item> items, CancellationToken ct)
     {
-        var lookup = await _principals.LookupAsync(items.SelectMany(PrincipalIdsOf), ct);
+        var lookup = await _principals.LookupAsync(items.SelectMany(ItemMapper.PrincipalIdsOf), ct);
         return items.Select(i => i.ToResponse(lookup)).ToList();
-    }
-
-    /// <summary>Every principal id referenced by an item snapshot: assignee, plus Guid-shaped
-    /// createdBy/completedBy actors (a <c>share:{label}</c> actor is not a principal and is skipped).</summary>
-    private static IEnumerable<Guid> PrincipalIdsOf(Item item)
-    {
-        if (item.AssignedToPrincipalId is { } a) yield return a;
-        if (Guid.TryParse(item.CreatedBy, out var c)) yield return c;
-        if (Guid.TryParse(item.CompletedBy, out var d)) yield return d;
     }
 
     /// <summary>

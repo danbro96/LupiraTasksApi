@@ -16,7 +16,11 @@ public sealed class TasksApiTestFactory : LupiraApiFactory<Program>
 
     protected override Task ResetDataAsync() => Store.Advanced.ResetAllData();
 
-    // Lift the per-email limiter so a busy serial test run can't trip 429.
-    protected override void AddSettings(IDictionary<string, string?> settings) =>
+    // Lift the per-email limiter so a busy serial test run can't trip 429; tests commit serially, so the
+    // sync feeds need no settle lag.
+    protected override void AddSettings(IDictionary<string, string?> settings)
+    {
         settings["RateLimit:RequestsPerMinute"] = "100000";
+        settings["Sync:SettleLag"] = "00:00:00";
+    }
 }

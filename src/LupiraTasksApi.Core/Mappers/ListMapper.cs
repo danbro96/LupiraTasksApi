@@ -43,4 +43,15 @@ internal static class ListMapper
             })
             .ToList(),
     };
+
+    /// <summary>Every principal id referenced by a list snapshot: owner, members, and Guid-shaped AddedBy actors.</summary>
+    public static IEnumerable<Guid> PrincipalIdsOf(this TodoList list)
+    {
+        yield return list.OwnerPrincipalId;
+        foreach (var m in list.Members)
+        {
+            yield return m.PrincipalId;
+            if (Guid.TryParse(m.AddedBy, out var addedBy)) yield return addedBy;
+        }
+    }
 }

@@ -1,3 +1,4 @@
+using JasperFx.Events;
 using JasperFx.Events.Projections;
 using Lupira.Identity.Marten;
 using Lupira.Marten.Idempotency;
@@ -34,6 +35,9 @@ public static class MartenRegistrations
         // Evolving an event = a new versioned type mapped to the SAME alias + an upcaster (see
         // docs/architecture.md § Event evolution), never a trailing-optional field.
         MapEvents(opts);
+
+        // No Apply reads the event sequence or version; the sync feeds read changes from the event log.
+        opts.Events.AppendMode = EventAppendMode.Quick;
 
         // Single-stream event-sourced aggregates, projected inline (O(1) reads,
         // immediately consistent — no async daemon, no multi-stream projection).
