@@ -31,6 +31,9 @@ public sealed class ItemDto
     /// <summary>The assignee; <c>null</c> if unassigned.</summary>
     public PersonRef? Assignee { get; set; }
 
+    /// <summary>A date-only due; <c>dueAt</c> is the timed one. At most one is set.</summary>
+    public DateOnly? DueOn { get; set; }
+
     public DateTimeOffset? DueAt { get; set; }
 
     public decimal? Quantity { get; set; }

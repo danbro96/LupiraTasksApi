@@ -45,6 +45,8 @@ public sealed class Item
 
     public Guid? AssignedToPrincipalId => State.AssignedToPrincipalId;
 
+    public DateOnly? DueOn => State.DueOn;
+
     public DateTimeOffset? DueAt => State.DueAt;
 
     public decimal? Quantity => State.Quantity;
@@ -79,7 +81,7 @@ public sealed class Item
 
     public void Apply(IEvent<ItemAssigned> e) => ItemLww.ApplyAssigned(State, e.Data);
 
-    public void Apply(IEvent<ItemDueDateSet> e) => ItemLww.ApplyDueDateSet(State, e.Data);
+    public void Apply(IEvent<ItemDueDateSetV2> e) => ItemLww.ApplyDueDateSet(State, e.Data);
 
     public void Apply(IEvent<ItemTagAdded> e) => ItemLww.ApplyTagAdded(State, e.Data);
 
@@ -101,5 +103,5 @@ public sealed class Item
 
     public void Apply(IEvent<ItemDeleted> e) => ItemLww.ApplyDeleted(State, e.Data);
 
-    public void Apply(IEvent<ItemVtodoPut> e) => ItemLww.ApplyVtodoPut(State, e.Data, EventActor.Of(e));
+    public void Apply(IEvent<ItemVtodoPutV2> e) => ItemLww.ApplyVtodoPut(State, e.Data, EventActor.Of(e));
 }

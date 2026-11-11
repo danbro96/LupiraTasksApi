@@ -25,6 +25,7 @@ internal static class ItemMapper
         CompletedAt = item.CompletedAt,
         CompletedBy = PersonRef.FromActor(item.CompletedBy, principals),
         Assignee = item.AssignedToPrincipalId is { } a ? PersonRef.From(a, principals) : null,
+        DueOn = item.DueOn,
         DueAt = item.DueAt,
         Quantity = item.Quantity,
         Unit = item.Unit,

@@ -45,7 +45,21 @@ public class VtodoMapperTests
         Assert.Equal("Buy milk", parsed.Title);
         Assert.Equal("2 litres", parsed.Notes);
         Assert.Equal(Due, parsed.DueAt);
+        Assert.Null(parsed.DueOn);
         Assert.Equal(ItemStatus.Open, parsed.Status);
+    }
+
+    [Fact]
+    public void Date_only_due_round_trips_as_value_date()
+    {
+        var item = ItemWith(s => s.DueOn = new DateOnly(2026, 6, 20));
+
+        var raw = VtodoMapper.ToVtodo(item, [], sourceRaw: null);
+        var parsed = VtodoMapper.Parse(raw);
+
+        Assert.Contains("DUE;VALUE=DATE:20260620", raw);
+        Assert.Equal(new DateOnly(2026, 6, 20), parsed.DueOn);
+        Assert.Null(parsed.DueAt);
     }
 
     [Fact]

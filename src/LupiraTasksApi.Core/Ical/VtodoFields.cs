@@ -7,6 +7,7 @@ namespace LupiraTasksApi.Core.Ical;
 public readonly record struct VtodoFields(
     string Title,
     string? Notes,
+    DateOnly? DueOn,
     DateTimeOffset? DueAt,
     ItemStatus Status,
     DateTimeOffset? CompletedAt,

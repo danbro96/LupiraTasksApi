@@ -6,7 +6,7 @@ using Xunit;
 namespace LupiraTasksApi.UnitTests;
 
 /// <summary>
-/// LWW vectors for the CalDAV write event <see cref="ItemVtodoPut"/>. It must establish identity on
+/// LWW vectors for the CalDAV write event <see cref="ItemVtodoPutV2"/>. It must establish identity on
 /// a new stream and otherwise compete field-by-field through the SAME (OccurredAt, CommandId) guards
 /// as the granular REST/MCP events — so a phone PUT and a web edit converge regardless of order.
 /// </summary>
@@ -19,13 +19,14 @@ public class ItemVtodoLwwTests
 
     private static DateTimeOffset At(int s) => T0.AddSeconds(s);
 
-    private static ItemVtodoPut Put(
+    private static ItemVtodoPutV2 Put(
         int atSeconds, Guid cmd, string title = "From phone", bool completed = false,
         ItemStatus? status = null,
-        IReadOnlyList<Guid>? tags = null, string uid = "phone-uid", string raw = "RAWVTODO", int priority = 0)
+        IReadOnlyList<Guid>? tags = null, string uid = "phone-uid", string raw = "RAWVTODO", int priority = 0,
+        DateOnly? dueOn = null)
     {
         var s = status ?? (completed ? ItemStatus.Done : ItemStatus.Open);
-        return new(ItemId, ListId, uid, title, Notes: null, DueAt: null, s,
+        return new(ItemId, ListId, uid, title, Notes: null, dueOn, DueAt: null, s,
             s == ItemStatus.Done ? At(atSeconds) : null, tags ?? [], SortOrder: "~z", raw, At(atSeconds), cmd, priority);
     }
 
@@ -43,6 +44,18 @@ public class ItemVtodoLwwTests
         Assert.Equal(At(5), s.CreatedAt);
         Assert.Equal("BLOB", s.SourceVtodo);
         Assert.False(s.Deleted);
+    }
+
+    [Fact]
+    public void Newer_put_date_only_due_replaces_an_older_timed_due()
+    {
+        var s = new ItemState();
+        ItemLww.ApplyVtodoPut(s, Put(5, Cmd), actor: "a@x.test");
+        ItemLww.ApplyDueDateSet(s, new ItemDueDateSetV2(ItemId, DueOn: null, At(100), At(10), Cmd));
+        ItemLww.ApplyVtodoPut(s, Put(20, Cmd, dueOn: new DateOnly(2026, 6, 20)), actor: "a@x.test");
+
+        Assert.Equal(new DateOnly(2026, 6, 20), s.DueOn);
+        Assert.Null(s.DueAt);
     }
 
     [Fact]

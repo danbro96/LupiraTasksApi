@@ -47,7 +47,7 @@ public static class ItemLww
     /// modeled field through its existing per-field guard, so a DAV PUT interleaves with granular
     /// REST/MCP edits under one LWW rule. The raw blob is stored under its own guard for round-trip.
     /// </summary>
-    public static void ApplyVtodoPut(ItemState s, ItemVtodoPut e, string? actor)
+    public static void ApplyVtodoPut(ItemState s, ItemVtodoPutV2 e, string? actor)
     {
         // First event on the stream → a DAV-created item. Seed identity + creation metadata.
         if (s.CreatedAt == default)
@@ -81,6 +81,7 @@ public static class ItemLww
 
         if (Wins(e.OccurredAt, e.CommandId, s.DueTs, s.DueCmd))
         {
+            s.DueOn = e.DueOn;
             s.DueAt = e.DueAt;
             s.DueTs = e.OccurredAt;
             s.DueCmd = e.CommandId;
@@ -166,9 +167,10 @@ public static class ItemLww
         Touch(s, e.OccurredAt);
     }
 
-    public static void ApplyDueDateSet(ItemState s, ItemDueDateSet e)
+    public static void ApplyDueDateSet(ItemState s, ItemDueDateSetV2 e)
     {
         if (s.Deleted || !Wins(e.OccurredAt, e.CommandId, s.DueTs, s.DueCmd)) return;
+        s.DueOn = e.DueOn;
         s.DueAt = e.DueAt;
         s.DueTs = e.OccurredAt;
         s.DueCmd = e.CommandId;

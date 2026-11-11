@@ -122,11 +122,53 @@ public class ItemLwwTests
         var carol = Guid.NewGuid();
         ItemLww.ApplyAssigned(s, new ItemAssigned(ItemId, carol, At(40), Cmd));
         ItemLww.ApplyRenamed(s, new ItemRenamed(ItemId, "Oat milk", At(30), Cmd));
-        ItemLww.ApplyDueDateSet(s, new ItemDueDateSet(ItemId, At(100), At(35), Cmd));
+        ItemLww.ApplyDueDateSet(s, new ItemDueDateSetV2(ItemId, DueOn: null, At(100), At(35), Cmd));
 
         Assert.Equal("Oat milk", s.Title);
         Assert.Equal(carol, s.AssignedToPrincipalId);
         Assert.Equal(At(100), s.DueAt);
+    }
+
+    [Fact]
+    public void Newer_date_only_due_replaces_a_timed_due()
+    {
+        var s = NewItem();
+        ItemLww.ApplyDueDateSet(s, new ItemDueDateSetV2(ItemId, DueOn: null, At(100), At(10), CmdLo));
+        ItemLww.ApplyDueDateSet(s, new ItemDueDateSetV2(ItemId, new DateOnly(2026, 6, 20), DueAt: null, At(20), CmdLo));
+
+        Assert.Equal(new DateOnly(2026, 6, 20), s.DueOn);
+        Assert.Null(s.DueAt);
+        Assert.Equal(At(20), s.DueTs);
+    }
+
+    [Fact]
+    public void Older_timed_due_does_not_clobber_a_newer_date_only_due()
+    {
+        var s = NewItem();
+        ItemLww.ApplyDueDateSet(s, new ItemDueDateSetV2(ItemId, new DateOnly(2026, 6, 20), DueAt: null, At(20), CmdLo));
+        ItemLww.ApplyDueDateSet(s, new ItemDueDateSetV2(ItemId, DueOn: null, At(100), At(10), CmdHi));
+
+        Assert.Equal(new DateOnly(2026, 6, 20), s.DueOn);
+        Assert.Null(s.DueAt);
+    }
+
+    [Fact]
+    public void Due_shapes_tie_on_occurredAt_converges_on_the_greater_commandId()
+    {
+        var dateOnly = new ItemDueDateSetV2(ItemId, new DateOnly(2026, 6, 20), DueAt: null, At(20), CmdLo);
+        var timed = new ItemDueDateSetV2(ItemId, DueOn: null, At(100), At(20), CmdHi);
+
+        var a = NewItem();
+        ItemLww.ApplyDueDateSet(a, dateOnly);
+        ItemLww.ApplyDueDateSet(a, timed);
+        var b = NewItem();
+        ItemLww.ApplyDueDateSet(b, timed);
+        ItemLww.ApplyDueDateSet(b, dateOnly);
+
+        Assert.Null(a.DueOn);
+        Assert.Equal(At(100), a.DueAt);
+        Assert.Null(b.DueOn);
+        Assert.Equal(At(100), b.DueAt);
     }
 
     [Fact]

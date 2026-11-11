@@ -10,6 +10,7 @@ using Lupira.Hosting.Problems;
 using Lupira.Mcp;
 using Lupira.Postgres.Health;
 using LupiraTasksApi.Auth;
+using LupiraTasksApi.Core.Application.Items;
 using LupiraTasksApi.Core.Application.Shares;
 using LupiraTasksApi.Core.Application.Sync;
 using LupiraTasksApi.Core.Data;
@@ -23,6 +24,7 @@ using Marten;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.OpenApi;
+using NodaTime;
 using Weasel.Core;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -57,6 +59,9 @@ builder.Services.AddLupiraHealth().AddReadyCheck<DatabaseReadyCheck>("postgres")
 
 builder.Services.Configure<ShareLinkOptions>(builder.Configuration.GetSection(ShareLinkOptions.SectionName));
 builder.Services.Configure<SyncFeedOptions>(builder.Configuration.GetSection(SyncFeedOptions.SectionName));
+builder.Services.AddOptions<ItemTimeZoneOptions>().BindConfiguration(ItemTimeZoneOptions.SectionName)
+    .Validate(o => DateTimeZoneProviders.Tzdb.GetZoneOrNull(o.DefaultTimezone) is not null, "Tasks:DefaultTimezone is not an IANA time zone id.")
+    .ValidateOnStart();
 
 // Caller identity + authorization + per-request handlers. CurrentUser reads the
 // validated JWT via IHttpContextAccessor and never writes to the DB.
@@ -205,6 +210,16 @@ if (args.Contains("--rebuild-projections"))
     await daemon.RebuildProjectionAsync<Item>(CancellationToken.None);
     await daemon.RebuildProjectionAsync<ShareLink>(CancellationToken.None);
     Console.WriteLine("Projections rebuilt.");
+    return;
+}
+
+// One-off: `--backfill-date-only-dues [--dry-run]` turns 23:59-local timed dues into date-only dues.
+if (args.Contains("--backfill-date-only-dues"))
+{
+    await using var scope = app.Services.CreateAsyncScope();
+    var backfill = ActivatorUtilities.CreateInstance<DateOnlyDueBackfill>(scope.ServiceProvider);
+    var report = await backfill.RunAsync(dryRun: args.Contains("--dry-run"), CancellationToken.None);
+    foreach (var line in report.Lines()) Console.WriteLine(line);
     return;
 }
 

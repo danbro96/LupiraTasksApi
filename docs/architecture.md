@@ -77,6 +77,7 @@ classDiagram
         +string StatusReason
         +bool Completed
         +Guid AssignedToPrincipalId
+        +DateOnly DueOn
         +DateTimeOffset DueAt
         +decimal Quantity
         +string Unit
@@ -126,10 +127,10 @@ classDiagram
     Item "0..*" --> "0..1" Principal : assignee
 ```
 
-> Nullable fields (`Color`, `Notes`, `AssignedToPrincipalId`, `DueAt`, `Quantity`, `Unit`, `SourceVtodo`,
+> Nullable fields (`Color`, `Notes`, `AssignedToPrincipalId`, `DueOn`, `DueAt`, `Quantity`, `Unit`, `SourceVtodo`,
 > `ParentItemId`, `ExpiresAt`, `AddedBy`, `DisplayName`) are shown without the `?` for diagram
 > compatibility; see the source for exact nullability. `Completed` is derived (`Status == Done`), not a
-> stored field. `Item` also carries per-field LWW guards (`(OccurredAt, CommandId)` for name, notes,
+> stored field. A due is a whole day (`DueOn`) or an instant (`DueAt`), never both. `Item` also carries per-field LWW guards (`(OccurredAt, CommandId)` for name, notes,
 > assignee, due, quantity, priority, status, move, and the raw VTODO blob, plus a per-tag guard map) —
 > the one status guard covers the whole lifecycle (complete/reopen/status-change). These live on
 > [`ItemState`](../src/LupiraTasksApi.Core/Domain/Items/ItemState.cs), not on the wire DTO.
@@ -262,7 +263,7 @@ The LAN-only `/dav-backend` seam (consumed by the LupiraDavApi gateway — see [
 
 - **GET regenerates** the VTODO from the live snapshot rather than echoing a stored blob — REST/MCP
   edits use granular events that never touch the stored blob, so an echoed blob would go stale. Modeled
-  properties (`UID`, `SUMMARY`, `DESCRIPTION`, `DUE`, `STATUS`/`PERCENT-COMPLETE`/`COMPLETED`,
+  properties (`UID`, `SUMMARY`, `DESCRIPTION`, `DUE` (`VALUE=DATE` for a date-only due), `STATUS`/`PERCENT-COMPLETE`/`COMPLETED`,
   `CATEGORIES`, `PRIORITY`, timestamps, and `X-LUPIRA-*` for assignee/quantity/unit) are written from
   the snapshot; every **unmodeled** top-level property from the last PUT (`RRULE`, custom `X-*`, …) is
   spliced back in from `Item.SourceVtodo` so it survives the round-trip.
@@ -299,6 +300,9 @@ opts.Events.Upcast<ItemAdded, ItemAddedV2>(old =>
     new ItemAddedV2(old.ItemId, old.ListId, old.ParentItemId, old.Title,
         old.SortOrder, old.OccurredAt, old.CommandId, old.Uid, ItemSource.Unknown));
 ```
+
+`item_due_date_set` and `item_vtodo_put` are at schema version 2 (`DueOn` added); their v1 rows upcast with
+`DueOn = null` in [`EventUpcasts`](../src/LupiraTasksApi.Core/Data/EventUpcasts.cs).
 
 Events carry no derived/denormalized values (rollups, hashes) — those are computed in the projection,
 so a formula fix heals on rebuild. Enums serialize by name (`JsonStringEnumConverter`), so appending

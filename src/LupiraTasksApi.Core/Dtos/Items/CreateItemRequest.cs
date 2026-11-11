@@ -13,6 +13,9 @@ public sealed class CreateItemRequest
 
     public Guid? ParentItemId { get; set; }
 
+    /// <summary>A date-only due; <c>dueAt</c> is the timed one. At most one is set.</summary>
+    public DateOnly? DueOn { get; set; }
+
     public DateTimeOffset? DueAt { get; set; }
 
     public string? AssigneeEmail { get; set; }

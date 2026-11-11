@@ -21,6 +21,11 @@
     <PackageReference Include="Marten" Version="9.40.0" />
     <!-- VTODO (de)serialization for the CalDAV surface (DAVx5). Same lib/version LupiraCalApi uses. -->
     <PackageReference Include="Ical.Net" Version="5.2.2" />
+    <PackageReference Include="NodaTime" Version="3.3.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="LupiraTasksApi.UnitTests" />
   </ItemGroup>
 
 </Project>

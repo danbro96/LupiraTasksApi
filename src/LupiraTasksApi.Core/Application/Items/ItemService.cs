@@ -10,6 +10,8 @@ using LupiraTasksApi.Core.Dtos.Items;
 using LupiraTasksApi.Core.Mappers;
 using Marten;
 using Marten.Exceptions;
+using Microsoft.Extensions.Options;
+using NodaTime;
 
 namespace LupiraTasksApi.Core.Application.Items;
 
@@ -24,18 +26,22 @@ namespace LupiraTasksApi.Core.Application.Items;
 public sealed class ItemService
 {
     private const int MaxTitleLength = 256;
+    private const string BothDues = "Set at most one of `dueOn` and `dueAt`.";
 
     private readonly IDocumentSession _session;
     private readonly AccessResolver _access;
     private readonly Idempotency _idempotency;
     private readonly PrincipalDirectory _principals;
+    private readonly IOptions<ItemTimeZoneOptions> _zones;
 
-    public ItemService(IDocumentSession session, AccessResolver access, Idempotency idempotency, PrincipalDirectory principals)
+    public ItemService(
+        IDocumentSession session, AccessResolver access, Idempotency idempotency, PrincipalDirectory principals, IOptions<ItemTimeZoneOptions> zones)
     {
         _session = session;
         _access = access;
         _idempotency = idempotency;
         _principals = principals;
+        _zones = zones;
     }
 
     public async Task<OpResult<IReadOnlyList<ItemDto>>> ListAsync(
@@ -69,7 +75,8 @@ public sealed class ItemService
 
     /// <summary>Search live items across every list the caller is a member of (archived lists included),
     /// filtered by an optional case-insensitive title substring + completion/status + a half-open
-    /// <c>[dueFrom, dueTo)</c> window on <c>DueAt</c> (either bound implies <c>DueAt</c> is set). The membership
+    /// <c>[dueFrom, dueTo)</c> window on the due (either bound implies a due; a date-only due counts from its day's
+    /// start in <see cref="ItemTimeZoneOptions.DefaultTimezone"/>). The membership
     /// predicate scopes results to the caller's own + shared lists; no per-list role beyond Viewer is needed.
     /// Ordered by title for a stable candidate list. Backs the cross-list REST <c>GET /items</c> search.</summary>
     public async Task<OpResult<IReadOnlyList<ItemDto>>> SearchAsync(
@@ -91,7 +98,8 @@ public sealed class ItemService
         if (status is { } st) filtered = filtered.Where(i => i.Status == st);
         if (dueFrom is not null || dueTo is not null)
         {
-            filtered = filtered.Where(i => i.DueAt is { } d
+            var zone = DateTimeZoneProviders.Tzdb[_zones.Value.DefaultTimezone];
+            filtered = filtered.Where(i => DueStart(i, zone) is { } d
                 && (dueFrom is null || d >= dueFrom)
                 && (dueTo is null || d < dueTo));
         }
@@ -123,6 +131,8 @@ public sealed class ItemService
             return OpResult<ItemDto>.Invalid("`priority` must be 0..9.");
         if (request.ParentItemId == request.Id)
             return OpResult<ItemDto>.Invalid("An item cannot be its own parent.");
+        if (request.DueOn is not null && request.DueAt is not null)
+            return OpResult<ItemDto>.Invalid(BothDues);
 
         var commandId = cmdId ?? Guid.CreateVersion7();
         var seen = await _idempotency.SeenAsync(commandId, ct);
@@ -147,8 +157,8 @@ public sealed class ItemService
             {
                 new ItemAdded(request.Id, listId, request.ParentItemId, title, request.SortOrder, occurredAt, commandId),
             };
-            if (request.DueAt is not null)
-                seed.Add(new ItemDueDateSet(request.Id, request.DueAt, occurredAt, commandId));
+            if (request.DueOn is not null || request.DueAt is not null)
+                seed.Add(new ItemDueDateSetV2(request.Id, request.DueOn, request.DueAt, occurredAt, commandId));
             if (assigneePrincipalId is not null)
                 seed.Add(new ItemAssigned(request.Id, assigneePrincipalId, occurredAt, commandId));
             if (request.Quantity is not null || !string.IsNullOrWhiteSpace(request.Unit))
@@ -221,7 +231,12 @@ public sealed class ItemService
         if (request.NotesProvided)
             events.Add(new ItemNotesEdited(itemId, request.Notes, occurredAt, commandId));
         if (request.DueAtProvided)
-            events.Add(new ItemDueDateSet(itemId, request.DueAt, occurredAt, commandId));
+        {
+            if (request.DueOn is not null && request.DueAt is not null)
+                return OpResult<ItemDto>.Invalid(BothDues);
+            events.Add(new ItemDueDateSetV2(itemId, request.DueOn, request.DueAt, occurredAt, commandId));
+        }
+
         if (request.AssigneeEmailProvided)
         {
             // Empty email clears the assignee; otherwise resolve/provision the assignee principal.
@@ -345,6 +360,9 @@ public sealed class ItemService
         var updated = await _session.LoadAsync<Item>(itemId, ct);
         return OpResult<ItemDto>.Ok(await ToResponseAsync(updated!, ct));
     }
+
+    private static DateTimeOffset? DueStart(Item item, DateTimeZone zone) =>
+        item.DueOn is { } day ? LocalDate.FromDateOnly(day).AtStartOfDayInZone(zone).ToDateTimeOffset() : item.DueAt;
 
     /// <summary>Resolve an assignee email to a principal id (provisioning a placeholder if unseen);
     /// <c>null</c> when the email is blank (unassign).</summary>

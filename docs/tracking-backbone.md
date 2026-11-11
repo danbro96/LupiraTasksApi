@@ -10,11 +10,11 @@ LupiraTasksApi is the assistant's (and the user's) **backlog** — the substrate
 - **cal-api** = things that **fire** (events, prompts that run at a time). Owns the clock.
 - **tasks-api** = things **tracked to done** (open items with a lifecycle, no firing moment). Owns the backlog.
 
-The decisive line is *fires vs tracked-to-done*, not *time-bound vs not* — tasks carry a `DueAt`, but tasks-api never fires on it. Anything that must happen at a time is a cal-api Prompt; tasks-api just tracks open work until it's closed.
+The decisive line is *fires vs tracked-to-done*, not *time-bound vs not* — tasks carry a due (`DueOn` for a day, `DueAt` for an instant), but tasks-api never fires on it. Anything that must happen at a time is a cal-api Prompt; tasks-api just tracks open work until it's closed.
 
 Examples (assistant-driven): an unhealthy API → a **task** (fix it, tracked until closed); "notify me when the game releases" → a **task** (the durable goal) whose checking heartbeat is a cal-api Prompt; "research desserts Friday and report" → a cal-api **Prompt event**, *not* a task.
 
-**Bills, deliveries and reply obligations are tasks** (tracked to done — paid / received / answered), never calendar events — assistant-api routes each to a dedicated, user-owned list it scaffolds on first use (**"Bills"**, **"Deliveries"**, **"Replies"**). The list is the classifier; the structured fields ride the item's `Metadata` blob (bill: `{ kind:"bill", amount, currency, payee, invoiceNumber }`; delivery: `{ kind:"delivery", carrier, trackingNumber, trackingUrl, orderReference }`; reply: `{ kind:"reply", topicRef, conversationRef, platform, counterpartyContactId }`). `DueAt` holds the payment due date / expected arrival — passive here; the timed nudge is a **linked cal-api Prompt** (`Relation(ToKind="cal-item", RelationType="monitors")`), exactly the standing-monitor shape below. A reply has no natural `DueAt` — its nudge is a recurring check-in until done, cancelled inline on completion.
+**Bills, deliveries and reply obligations are tasks** (tracked to done — paid / received / answered), never calendar events — assistant-api routes each to a dedicated, user-owned list it scaffolds on first use (**"Bills"**, **"Deliveries"**, **"Replies"**). The list is the classifier; the structured fields ride the item's `Metadata` blob (bill: `{ kind:"bill", amount, currency, payee, invoiceNumber }`; delivery: `{ kind:"delivery", carrier, trackingNumber, trackingUrl, orderReference }`; reply: `{ kind:"reply", topicRef, conversationRef, platform, counterpartyContactId }`). The due holds the payment due date / expected arrival — passive here; the timed nudge is a **linked cal-api Prompt** (`Relation(ToKind="cal-item", RelationType="monitors")`), exactly the standing-monitor shape below. A reply has no natural due — its nudge is a recurring check-in until done, cancelled inline on completion.
 
 ## What already supports it
 
@@ -23,7 +23,7 @@ Examples (assistant-driven): an unhealthy API → a **task** (fix it, tracked un
 | Lists with roles | `TodoList` + `Member` (Owner/Editor/Viewer), `OwnerPrincipalId` (`Domain/Lists/TodoList.cs`) |
 | **Agent can own lists** | any principal owns lists via `OwnerPrincipalId`; no domain blocker — an agent principal owns its own lists and adds humans as members |
 | Items tracked to done | `Item` — `Status`-derived `Completed` + `CompletedAt/By`, reopen via `ItemReopened` (clears completion), soft `Deleted` (`Domain/Items/Item.cs`, `ItemState.cs`) |
-| Due / assignee / priority / tags / subtasks | `DueAt`, `AssignedTo`, `Priority` (0..9, validated), `Tags`, `ParentItemId` — plus `Notes`, `Quantity`/`Unit` (shopping), `SortOrder`, `StatusReason` |
+| Due / assignee / priority / tags / subtasks | `DueOn`/`DueAt`, `AssignedTo`, `Priority` (0..9, validated), `Tags`, `ParentItemId` — plus `Notes`, `Quantity`/`Unit` (shopping), `SortOrder`, `StatusReason` |
 | Agent surface | 16 MCP tools — lists, tasks (incl. `set_task_status`/`set_task_metadata`), relations, sharing (`Mcp/TaskTools.cs`); OIDC bearer JWT, `/mcp` LAN/WireGuard-only |
 | Offline-safe writes | per-field LWW `(OccurredAt, CommandId)` + idempotency ledger (insert-not-upsert, so a duplicate command rolls back whole), single `SaveChangesAsync` (`Lupira.Marten.Idempotency`, `Domain/Items/ItemLww.cs`) |
 | Event sourcing | Marten inline snapshots, Quick append mode, schema `tasks` (`Data/MartenRegistrations.cs`); DAV sync-token = global event `Sequence`; REST `/sync/lists` + `/sync/items` cursor = settled global event sequence + readable-list scope (`Application/Sync/SyncFeed.cs`, `Lupira.Sync.Marten`) |
@@ -32,7 +32,7 @@ So "the assistant gets its own lists and drives them" needs **no new model** —
 
 ## Non-goal — no scheduler in tasks-api
 
-tasks-api must **not** grow due-date firing, reminders, recurrence expansion, a daemon, or an outbox. That is exactly what cal-api's `scheduled_fire` engine is for. Keeping firing out of tasks-api is what makes the substrate split clean: any timed behaviour on a task is a **linked cal-api Prompt**, not a tasks-api feature. The existing `DueAt` stays a passive sort/display field.
+tasks-api must **not** grow due-date firing, reminders, recurrence expansion, a daemon, or an outbox. That is exactly what cal-api's `scheduled_fire` engine is for. Keeping firing out of tasks-api is what makes the substrate split clean: any timed behaviour on a task is a **linked cal-api Prompt**, not a tasks-api feature. The due stays a passive sort/display field.
 
 ## The additions
 
@@ -46,6 +46,7 @@ classDiagram
   class Item {
     string Title
     bool Completed
+    DateOnly DueOn
     DateTimeOffset DueAt
     int Priority
     ItemStatus Status

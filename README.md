@@ -143,6 +143,7 @@ containers). Defaults shown are the code defaults.
 | `Auth__AllowedOrigins__0`, `__1`, … | no | CORS allow-list for browser clients. Omit to disable CORS. |
 | `RateLimit__RequestsPerMinute` | no (120) | Per-caller token-bucket limit (partitioned by email, else remote IP; disabled on `/dav-backend`). |
 | `Share__LinkBaseUrl` | no | Base URL used to build share-link URLs returned to clients. |
+| `Tasks__DefaultTimezone` | no (`Europe/Stockholm`) | IANA zone a date-only due's day is read in (the `dueFrom`/`dueTo` filter). |
 | `DavGateway__ClientId` | only for `/dav-backend` | The DAV gateway's client id (`azp`) accepted on the seam. |
 | `OTEL_EXPORTER_OTLP_ENDPOINT` (+ standard `OTEL_*`) | outside Development | Exports traces, metrics, and logs over OTLP; startup fails without it outside Development. |
 | `ASPNETCORE_ENVIRONMENT` | no | `Development` enables the `X-Dev-User` header and auto-applies the schema. |

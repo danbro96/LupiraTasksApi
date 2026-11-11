@@ -3946,6 +3946,14 @@
             ],
             "format": "uuid"
           },
+          "dueOn": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "A date-only due; `dueAt` is the timed one. At most one is set.",
+            "format": "date"
+          },
           "dueAt": {
             "type": [
               "null",
@@ -4200,6 +4208,14 @@
                 "$ref": "#/components/schemas/PersonRef"
               }
             ]
+          },
+          "dueOn": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "A date-only due; `dueAt` is the timed one. At most one is set.",
+            "format": "date"
           },
           "dueAt": {
             "type": [
@@ -4850,6 +4866,14 @@
             ],
             "format": "date-time"
           },
+          "dueOn": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "A date-only due; `dueAt` is the timed one. At most one is set.",
+            "format": "date"
+          },
           "dueAt": {
             "type": [
               "null",
@@ -5133,6 +5157,14 @@
           },
           "notesProvided": {
             "type": "boolean"
+          },
+          "dueOn": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "A date-only due; `dueAt` is the timed one. `dueAtProvided` covers both:\n            one of them set replaces the due, both null clears it, both set is rejected.",
+            "format": "date"
           },
           "dueAt": {
             "type": [

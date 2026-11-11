@@ -50,7 +50,7 @@ public sealed class TaskTools
 
     /// <summary>A task as the agent sees it — trimmed, with its owning list named and its parent for nesting.</summary>
     public sealed record TaskSummary(
-        Guid Id, Guid ListId, string ListName, Guid? ParentTaskId, string Title, ItemStatus Status, bool Completed, DateTimeOffset? DueAt, string? AssignedTo, int Priority, JsonObject? Metadata);
+        Guid Id, Guid ListId, string ListName, Guid? ParentTaskId, string Title, ItemStatus Status, bool Completed, DateOnly? DueOn, DateTimeOffset? DueAt, string? AssignedTo, int Priority, JsonObject? Metadata);
 
     /// <summary>A task created by <c>add_tasks_batch</c> — just enough to follow it up or check the tree.</summary>
     public sealed record CreatedTask(Guid Id, Guid? ParentTaskId, string Title);
@@ -137,7 +137,8 @@ public sealed class TaskTools
         [Description("The list to add the task to.")] Guid listId,
         [Description("Task title.")] string title,
         [Description("Make this a subtask of that task (optional). Must be a task in the same list; omit for a top-level task.")] Guid? parentTaskId = null,
-        [Description("Optional due date/time (ISO-8601).")] DateTimeOffset? dueAt = null,
+        [Description("Optional due day (YYYY-MM-DD) when no time of day matters. Give at most one of dueOn and dueAt.")] DateOnly? dueOn = null,
+        [Description("Optional due date and time (ISO-8601) when the time of day matters.")] DateTimeOffset? dueAt = null,
         [Description("Optional assignee email.")] string? assignee = null,
         [Description("Optional quantity (useful for shopping lists).")] decimal? quantity = null,
         [Description("Optional unit, e.g. 'kg' (useful for shopping lists).")] string? unit = null,
@@ -153,6 +154,7 @@ public sealed class TaskTools
             Id = Guid.CreateVersion7(),
             Title = title,
             ParentItemId = parentTaskId,
+            DueOn = dueOn,
             DueAt = dueAt,
             AssigneeEmail = assignee,
             Quantity = quantity,
@@ -280,11 +282,16 @@ public sealed class TaskTools
         [Description("The task id.")] Guid taskId,
         [Description("New title (optional).")] string? title = null,
         [Description("New notes (optional).")] string? notes = null,
-        [Description("New due date/time, ISO-8601 (optional).")] DateTimeOffset? dueAt = null,
+        [Description("New due day, YYYY-MM-DD, when no time of day matters (optional). Give at most one of dueOn and dueAt.")] DateOnly? dueOn = null,
+        [Description("New due date and time, ISO-8601, when the time of day matters (optional).")] DateTimeOffset? dueAt = null,
+        [Description("Remove the due (optional). Not combined with dueOn or dueAt.")] bool clearDue = false,
         [Description("New assignee email (optional).")] string? assignee = null,
         [Description("New priority 0..9, 0 = none (optional; omitted leaves it unchanged).")] int? priority = null,
         CancellationToken ct = default)
     {
+        if (clearDue && (dueOn is not null || dueAt is not null))
+            throw new McpException("clearDue cannot be combined with dueOn or dueAt.");
+
         var caller = await CallerAsync(ct);
         var listId = await _items.FindListIdAsync(taskId, ct)
             ?? throw new McpException($"No task found with id {taskId}.");
@@ -294,8 +301,9 @@ public sealed class TaskTools
             TitleProvided = title is not null,
             Notes = notes,
             NotesProvided = notes is not null,
+            DueOn = dueOn,
             DueAt = dueAt,
-            DueAtProvided = dueAt is not null,
+            DueAtProvided = clearDue || dueOn is not null || dueAt is not null,
             AssigneeEmail = assignee,
             AssigneeEmailProvided = assignee is not null,
             Priority = priority ?? 0,
@@ -519,11 +527,11 @@ public sealed class TaskTools
     private async Task<TaskSummary> ToTaskSummaryAsync(Caller caller, Guid listId, ItemDto item, CancellationToken ct)
     {
         var listName = (await _lists.GetAsync(caller, listId, ct)).Value?.Name ?? string.Empty;
-        return new TaskSummary(item.Id, listId, listName, item.ParentItemId, item.Title, item.Status, item.Completed, item.DueAt, item.Assignee?.Email, item.Priority, item.Metadata);
+        return new TaskSummary(item.Id, listId, listName, item.ParentItemId, item.Title, item.Status, item.Completed, item.DueOn, item.DueAt, item.Assignee?.Email, item.Priority, item.Metadata);
     }
 
     private static TaskSummary Summarize(ListDto list, ItemDto item) =>
-        new(item.Id, list.Id, list.Name, item.ParentItemId, item.Title, item.Status, item.Completed, item.DueAt, item.Assignee?.Email, item.Priority, item.Metadata);
+        new(item.Id, list.Id, list.Name, item.ParentItemId, item.Title, item.Status, item.Completed, item.DueOn, item.DueAt, item.Assignee?.Email, item.Priority, item.Metadata);
 
     private static ShareLinkSummary ToShareSummary(ShareDto s) =>
         new(s.ShareId, s.Token, s.Url, s.Access, s.Label, s.ExpiresAt, s.Revoked);

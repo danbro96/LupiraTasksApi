@@ -38,6 +38,9 @@ public sealed class ItemState
     /// <summary>The assignee's internal principal id (null = unassigned). Resolved to a person on read.</summary>
     public Guid? AssignedToPrincipalId { get; set; }
 
+    /// <summary>A date-only due; <see cref="DueAt"/> is the timed one. At most one is set, both under the Due guard.</summary>
+    public DateOnly? DueOn { get; set; }
+
     public DateTimeOffset? DueAt { get; set; }
 
     public decimal? Quantity { get; set; }

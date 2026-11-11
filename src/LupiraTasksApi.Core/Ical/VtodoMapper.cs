@@ -40,7 +40,8 @@ public static class VtodoMapper
 
         if (!string.IsNullOrWhiteSpace(item.Title)) todo.Summary = item.Title;
         if (!string.IsNullOrWhiteSpace(item.Notes)) todo.Description = item.Notes;
-        if (item.DueAt is { } due) todo.Due = Utc(due);
+        if (item.DueOn is { } day) todo.Due = new CalDateTime(day);
+        else if (item.DueAt is { } due) todo.Due = Utc(due);
         // Standard VTODO PRIORITY (RFC 5545): 1..9 in range; 0 = undefined, so omit it.
         if (item.Priority is >= 1 and <= 9) todo.Priority = item.Priority;
 
@@ -111,7 +112,8 @@ public static class VtodoMapper
 
         var status = ParseStatus(todo);
         DateTimeOffset? completedAt = todo.Completed is { } c ? new DateTimeOffset(c.AsUtc, TimeSpan.Zero) : null;
-        DateTimeOffset? dueAt = todo.Due is { } d ? new DateTimeOffset(d.AsUtc, TimeSpan.Zero) : null;
+        DateOnly? dueOn = todo.Due is { HasTime: false } day ? DateOnly.FromDateTime(day.Value) : null;
+        DateTimeOffset? dueAt = todo.Due is { HasTime: true } d ? new DateTimeOffset(d.AsUtc, TimeSpan.Zero) : null;
         var categories = (todo.Categories ?? Enumerable.Empty<string>())
             .Where(s => !string.IsNullOrWhiteSpace(s))
             .Select(s => s.Trim())
@@ -120,7 +122,7 @@ public static class VtodoMapper
         // PRIORITY is defined 0..9; clamp defensively so a stray client value can't fail the sync.
         var priority = Math.Clamp(todo.Priority, 0, 9);
 
-        return new VtodoFields(todo.Summary ?? string.Empty, todo.Description, dueAt, status, completedAt, categories, priority);
+        return new VtodoFields(todo.Summary ?? string.Empty, todo.Description, dueOn, dueAt, status, completedAt, categories, priority);
     }
 
     /// <summary>

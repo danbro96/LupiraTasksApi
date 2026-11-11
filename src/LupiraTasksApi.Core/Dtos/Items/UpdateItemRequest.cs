@@ -16,6 +16,10 @@ public sealed class UpdateItemRequest
 
     public bool NotesProvided { get; set; }
 
+    /// <summary>A date-only due; <c>dueAt</c> is the timed one. <c>dueAtProvided</c> covers both:
+    /// one of them set replaces the due, both null clears it, both set is rejected.</summary>
+    public DateOnly? DueOn { get; set; }
+
     public DateTimeOffset? DueAt { get; set; }
 
     public bool DueAtProvided { get; set; }

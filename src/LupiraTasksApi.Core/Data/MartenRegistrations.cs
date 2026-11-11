@@ -77,6 +77,7 @@ public static class MartenRegistrations
         opts.Events.MapEventType<ItemNotesEdited>("item_notes_edited");
         opts.Events.MapEventType<ItemAssigned>("item_assigned");
         opts.Events.MapEventType<ItemDueDateSet>("item_due_date_set");
+        opts.Events.MapEventTypeWithSchemaVersion<ItemDueDateSetV2>("item_due_date_set", 2);
         opts.Events.MapEventType<ItemTagAdded>("item_tag_added");
         opts.Events.MapEventType<ItemTagRemoved>("item_tag_removed");
         opts.Events.MapEventType<ItemQuantitySet>("item_quantity_set");
@@ -88,6 +89,7 @@ public static class MartenRegistrations
         opts.Events.MapEventType<ItemMetadataSet>("item_metadata_set");
         opts.Events.MapEventType<ItemDeleted>("item_deleted");
         opts.Events.MapEventType<ItemVtodoPut>("item_vtodo_put");
+        opts.Events.MapEventTypeWithSchemaVersion<ItemVtodoPutV2>("item_vtodo_put", 2);
 
         opts.Events.MapEventType<ListCreated>("list_created");
         opts.Events.MapEventType<ListRenamed>("list_renamed");
@@ -106,5 +108,8 @@ public static class MartenRegistrations
 
         opts.Events.MapEventType<ShareLinkCreated>("share_link_created");
         opts.Events.MapEventType<ShareLinkRevoked>("share_link_revoked");
+
+        opts.Events.Upcast<ItemDueDateSet, ItemDueDateSetV2>("item_due_date_set", EventUpcasts.DueDateSet);
+        opts.Events.Upcast<ItemVtodoPut, ItemVtodoPutV2>("item_vtodo_put", EventUpcasts.VtodoPut);
     }
 }
