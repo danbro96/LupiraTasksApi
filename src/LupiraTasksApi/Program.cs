@@ -213,16 +213,6 @@ if (args.Contains("--rebuild-projections"))
     return;
 }
 
-// One-off: `--backfill-date-only-dues [--dry-run]` turns 23:59-local timed dues into date-only dues.
-if (args.Contains("--backfill-date-only-dues"))
-{
-    await using var scope = app.Services.CreateAsyncScope();
-    var backfill = ActivatorUtilities.CreateInstance<DateOnlyDueBackfill>(scope.ServiceProvider);
-    var report = await backfill.RunAsync(dryRun: args.Contains("--dry-run"), CancellationToken.None);
-    foreach (var line in report.Lines()) Console.WriteLine(line);
-    return;
-}
-
 // Keep the LAN-only surfaces (/mcp + its discovery metadata, /dav-backend) LAN/WireGuard-only: reject
 // anything that arrived via the Cloudflare Tunnel (backstop behind the ingress not routing them at all).
 // Before auth so a tunnelled probe never even receives a challenge.
