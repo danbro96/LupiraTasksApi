@@ -39,7 +39,7 @@
     <PackageReference Include="Lupira.Contracts.Dav" Version="1.0.0" />
     <PackageReference Include="Lupira.Hosting.Defaults" Version="0.1.0" />
     <PackageReference Include="Lupira.Hosting.Health" Version="0.1.0" />
-    <PackageReference Include="Lupira.Hosting.LanEdge" Version="1.0.0" />
+    <PackageReference Include="Lupira.Hosting.LanEdge" Version="1.1.0" />
     <PackageReference Include="Lupira.Hosting.Observability" Version="0.1.1" />
     <PackageReference Include="Lupira.Hosting.OpenApi" Version="0.1.0" />
     <PackageReference Include="Lupira.Hosting.Problems" Version="0.1.0" />
